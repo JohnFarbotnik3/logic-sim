@@ -1,0 +1,189 @@
+
+============================================================
+Long term.
+------------------------------------------------------------
+
+> Add new content type: RAM
+- it will store an array of uint32 data.
+- it will have its own links, rather than using cell links.
+- it will only have one target per link.
+- RAM targets: [addr, data, read, write, clock, output]
+- allow users to configure placed RAM size.
+- allow users to import and export RAM contents
+
+
+> Add new content type: Bus
+- can have a multiple of 32 bits of width (ex: 256-bit).
+- stores its own list of links ("bus_links"), with bit-offset,
+	cell-target, (and mask?) of lanes being read or written.
+- bus will have a draw path made up of multiple line segments.
+- all buses with the same bus_name will share properties.
+
+
+> Add new content variant: Links -> Wires
+- wires will essentially transpile to links (on a per-template basis)
+	when building simulation data.
+- will have draw path consisting of multiple line-segments.
+- will have single cell-output as value source (checked by validation functions),
+	but potentially many cell-inputs i.e. destinations.
+- wires can be connected to nothing since user may first start
+	by laying out unconnected wire.
+
+
+> Implement string-based Chunked-Merge-Radix sort (off-topic):
+- string returns 0 if out-of-range char is requested.
+- break main array into 32 (example) sub-arrays.
+- each subarray performs string-radix sort,
+	starting from length of longest string in subarray
+	(we break data into subarrays so that length-outliers
+	dont cause whole sort operation to be in that length.)
+- afterwards, the sorted subarrays are merged by merge-sorts.
+* lots of multithreading potential.
+
+
+> Implement memory pool in C++
+* different types could potentially be allocated from
+the same pool - in particular, a struct and its child-structs
+could be contiguous.
+
+
+> C++ Simulation and Renderer.
+- allow pushing arrays of pre-generated data to buffers, returning vertex range [beg,end] in buffer.
+- allow directly writing to buffers, to perform transformations or individual writes.
+? create variant of renderData for each group in Buffers.js, then create generators for each?
+? create queue for each shape to draw?
+	^ add() would involve providing all information required to draw and push shape to buffer.
+*** create named BufferGroup_X classes and define standard groups (coloured_triangles, textured_triangles, font, lines, ...).
+^^^ add constructor overload for providing buffers so that different groups can share the same buffers.
+
+
+> WireSim
+* a successor to this application, using electrical components instead of logical ones.
+* wires connect by touching, and voltage/current is sent between blocks by
+placing wire along the perimiter (make sure to support both point-contact and line-contact).
+* should wires have resistivity and capacitance?
+* four options to consider for simulation:
+	- we may treat all touching wire segments as a single wire.
+		(simple, but not physically realistic)
+	- we treat wire segments as seperate.
+		(easier multithreading)
+	- we first join all touching wires into one, then split it again using some length-heuristic.
+		(harder, but easier multhithreading, and more performant than using original build).
+	- join touching wire segments into a single wire,
+		then have each wire do finite-element-analysis,
+		i.e. treat single combined wire as seperate length-wise segments internally.
+	* I will likely start with the first "touching-as-single-wire" approach during development.
+* allow blocks to overlap? (try to make that a "yes")
+* progressively cache sum of wires+components from self and child blocks
+	during simulation-build.
+* start with C++ this time, and try to build entire app in WASM if possible,
+	with only a little bit of glue code for interface.
+
+
+============================================================
+Near-term.
+------------------------------------------------------------
+
+
+> Investigate potential (major) performance problem
+- it is possible that when re-initializing canvas,
+the old canvas still exists, and its update code is still running as well.
+- if so, that would be a gigantic performance leak!
+* at first glance, this doesnt appear to be happening, but revisit later on to be sure.
+
+
+
+> Multithreading notes:
+* C++: it would be strongly advised to create memory pools to allocate various
+fixed or variable length structs to prevent an absurd levels of heap-memory fragmentation,
+as this will allow writing tree-structs without major performance problems.
+^ learn about C++ memory allocators, to see if it is related to what I am trying to do.
+? performance: seperate task-internal and task-external links?
+
+
+> add Graphs panel
+- use same graphing utility class as performance panel?
+- have a table of graphs, which show selected cell output-values over time.
+
+
+> create CollisionUtil, with various useful and performant collision checking functions.
+
+
+> Draw links using triangles (allowing for adjustable thickness).
+
+
+> Hotkeys panel
+- put in sidebar.
+* create Hotkeys class? (for named bindings such as "Hotkeys.state_move_L" and "*.delta_move_L")
+
+
+> Performance panel
+- create a tab in the header for viewing performance graphs.
+- create Graph data structure and GraphComponent for UI.
+- add records of [time_stamp, time_taken] pairs into arrays,
+	and use object fields instead of maps with string keys.
+- rework performance class:
+	- frameIndex = frameNumber % graphLength
+	- Performance.arrayX[frameIndex] = time_millis.
+
+
+> Misc settings panel
+* add panel for configuring various game settings.
+- misc settings
+	- movement speed
+	- grid snap
+	- cursor radius
+- rendering settings
+	- 1-bit mode			draw value text as just 1 or 0, instead of full 32-bit value.
+	- draw cell bits		draw all 32 bits as seperate rectangles for cells (will require optimized renderer).
+	- draw depth			maximum recursive drawing depth for blocks nested inside blocks.
+	- max drawn blocks		maximum number of blocks allowed to be drawn (safety value to prevent program from freezing).
+
+
+
+> seperate tree types (RenderBlock and SimulationBlock) into a data-nodes (XBlock) and a tree-manager (XBlockTree).
+- nodes should not initialize recursively. instead, an init function should be called in tree-manager which
+may have recursive behaviour.
+- initialization may be broken into multiple phases (for example with SimulationBlocks), with seperate recursive init-functions.
+^ RenderBlock may not see the same benefits from this, but it is worth examining as well.
+
+
+> add list management features for BlockTemplates
+
+
+> UndoStack
+- add a struct which has a list of undo states consisting of:
+	- block library JSON
+	- timestamp
+	- description of operation performed (which produced the new state)
+- add "Undo" panel for moving through the list of states
+- allow saving (and loading) the entire UndoStack struct as JSON
+
+
+> re-arrange functionality found in GameUI, GameControls, and InputUtil,
+as they are kind of spaghetti-like.
+
+
+> renderer improvements:
+- create shape 'writers' (tri_rect, line_rect, etc.) which allocate fixed-size arrays of vdata, idata, etc.,
+^ apply transformations to vdata after written, then push to relevant GLBuffers.
+^ allows re-use of a shape-writer. (shape writers can perhaps be per-function)
+^ implement: push(), clear(), transform(), commit().
+
+
+
+> write documentation.
+
+ 
+> add a "View" panel
+- add inputs for some draw settings.
+- and "Pan" mode button, for navigating with mouse.
+
+
+
+
+
+
+
+
+

@@ -408,13 +408,13 @@ class GameRenderer {
 		// draw cell areas.
 		{
 			const rects = RenderTreeBlock.AREA_RECTS;
-			this.push_content_tri_rects(tran, depth+1, rects, area_clrs);
+			this.push_content_tri_rects(tran, depth, rects, area_clrs);
 		}
 		// draw link points.
 		{
-			const rects = RenderTreeBlock.LINK_RECTS_ARR;
+			const rects = RenderTreeBlock.LINK_RECTS_ARR.slice(0, numTargets);
 			const clrs = [0xffeeccff, 0xffeeccff, 0xffeeccff];
-			this.push_content_tri_rects(tran, depth+1, rects, clrs);
+			this.push_content_tri_rects(tran, depth, rects, clrs);
 		}
 		// draw text.
 		/* TODO:
@@ -453,11 +453,11 @@ class GameRenderer {
 		const { link, p0, p1 } = renderData;
 		const depth = renderblock.depth;
 		const tran = null;
-		this.push_content_line(tran, depth, p0, p1, link.clr);
+		this.push_content_line(tran, depth+1, p0, p1, link.clr);
 	}
 	static drawLink_alt(p0, p1, clr, depth=0) {
 		const tran = null;
-		this.push_content_line(tran, depth, p0, p1, clr);
+		this.push_content_line(tran, depth+1, p0, p1, clr);
 	}
 	
 	static drawText(renderblock, renderData) {
@@ -497,12 +497,12 @@ class GameRenderer {
 		// draw background.
 		{
 			const { block, tran } = renderData;
-			const depth = renderblock.depth;
+			const depth = renderblock.depth - 0.5;
 			const itran = renderblock.itemTran;
 			// draw underlay.
 			this.push_content_tri_rects(itran, depth, [[0,0,1,1]], [0x00000033]);
 			// draw grid.
-			if(depth === 0) {
+			if(renderblock.depth === 0) {
 				const w = block.templateWidth;
 				const h = block.templateHeight;
 				this.push_content_line_grid(itran, depth, [0,0,1,1], 0x77aaff99, w, h);

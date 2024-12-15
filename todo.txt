@@ -99,14 +99,42 @@ fixed or variable length structs to prevent an absurd levels of heap-memory frag
 as this will allow writing tree-structs without major performance problems.
 ^ learn about C++ memory allocators, to see if it is related to what I am trying to do.
 ? performance: seperate task-internal and task-external links?
+* potential method to make cell+link building multithreaded:
+	- when generating simblock tree, assign cell indices (c_id -> c_index),
+		but also emit a list of {c_id, simblock_index} tuples.
+	- send a list/queue of pairs to each thread.
+	- given each thread has shared (read-only) access to the simblock tree,
+	this should be enough information to allow generating cell data and link data.
+
+
+> renderer improvements:
+- create shape 'writers' (tri_rect, line_rect, etc.) which allocate fixed-size arrays of vdata, idata, etc.,
+^ apply transformations to vdata after written, then push to relevant GLBuffers.
+^ allows re-use of a shape-writer. (shape writers can perhaps be per-function)
+^ implement: push(), clear(), transform(), commit().
+
+
+> Multithreading plan:
+- service workers will act as threads
+- simulation:
+	*build*
+	1. [s] create SimulationBlock tree
+	2. [s] create cell data
+	3. [s] create link data
+	4. [s] create threads, and send cell+link data to them
+	5. [m] trigger task initialization (init cell values, local propagation, etc.)
+	*loop*
+	1. [m] update threads
+	2. [s] gather and spread ('gather': request updated cell values, 'spread': send updated values to destination tasks)
+- rendering:
+	TODO
+
 
 
 > add Graphs panel
 - use same graphing utility class as performance panel?
 - have a table of graphs, which show selected cell output-values over time.
 
-
-> create CollisionUtil, with various useful and performant collision checking functions.
 
 
 > Draw links using triangles (allowing for adjustable thickness).
@@ -164,38 +192,15 @@ may have recursive behaviour.
 as they are kind of spaghetti-like.
 
 
-> renderer improvements:
-- create shape 'writers' (tri_rect, line_rect, etc.) which allocate fixed-size arrays of vdata, idata, etc.,
-^ apply transformations to vdata after written, then push to relevant GLBuffers.
-^ allows re-use of a shape-writer. (shape writers can perhaps be per-function)
-^ implement: push(), clear(), transform(), commit().
+> begin implementing stuff in c++/wasm.
+
+> troubleshoot poor performance on older devices with modest processing power
+- why is my laptop browser struggling to render even a mostly empty scene?
 
 
-
-> write documentation.
-
- 
 > add a "View" panel
 - add inputs for some draw settings.
 - and "Pan" mode button, for navigating with mouse.
-
-
-> Multithreading plan:
-- service workers will act as threads
-- simulation:
-	*build*
-	1. [1] create SimulationBlock tree
-	2. [1] assign cell ids to threads
-	3. [1] create cell data		(TODO: multithread)
-	4. [1] create link data		(TODO: multithread)
-	5. [1] create threads
-	6. [1] send data to threads (cells + links)
-	7. [n] trigger task initialization (create structs, init cell values, local propagation, etc.)
-	*loop*
-	1. [n] update threads
-	2. [1] gather and spread ('gather': request updated cell values, 'spread': send updated values to destination tasks)
-- rendering:
-	TODO
 
 
 

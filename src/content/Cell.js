@@ -54,10 +54,7 @@ class Cell {
 		return newobj;
 	}
 	clone() {
-		const newobj = new Cell();
-		Object.assign(newobj, this);
-		newobj.dimensions = this.dimensions.clone();
-		return newobj;
+		return this.load(this.save());
 	}
 	
 	// ============================================================

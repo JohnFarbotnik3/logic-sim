@@ -52,10 +52,7 @@ class Block {
 		return newobj;
 	}
 	clone() {
-		const newobj = new Block();
-		Object.assign(newobj, this);
-		newobj.dimensions = this.dimensions.clone();
-		return newobj;
+		return this.load(this.save());
 	}
 	
 	// ============================================================

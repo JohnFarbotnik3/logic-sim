@@ -26,7 +26,6 @@ class BlockTemplate {
 		this.placeH		= 0;				// u32			default height of block when placed.
 		this.name		= null;				// String
 		this.desc		= null;				// String
-		this._scaleTransformation = null;	// Transformation2D		scaling transformation to apply to contents of template.
 		// constructor overloads.
 		const _INDEX = VerificationUtil.getConstructorOverloadIndex_throw(args, [
 			[Number, Number],
@@ -44,11 +43,8 @@ class BlockTemplate {
 			this.placeH		= height / 4;
 			this.name		= "NAME_" + this.templateId;
 			this.desc		= "DESCRIPTION";
-			this._scaleTransformation = new Transformation2D(0, 0, 1.0/width, 1.0/height, 0);
 		}
 	}
-	
-	get scaleTransformation() { return this._scaleTransformation; }
 	
 	// ============================================================
 	// Serialization

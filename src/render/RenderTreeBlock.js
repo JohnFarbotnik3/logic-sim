@@ -105,8 +105,9 @@ class RenderTreeBlock {
 	static UNIT_SQUARE_TRANSFORMATION = new Transformation2D(-0.5, -0.5, 1.0, 1.0, 0);
 	static get_item_transformation(item, externalTran) {
 		const unit = RenderTreeBlock.UNIT_SQUARE_TRANSFORMATION;
-		const idim = item.dimensions.transformation;
-		return externalTran.compose(idim).compose(unit);
+		const dim = item.dimensions;
+		const itran = new Transformation2D(dim.x, dim.y, dim.w, dim.h, dim.r);
+		return externalTran.compose(itran).compose(unit);
 	}
 	static get_content_transformation(block, externalTran) {
 		VerificationUtil.verifyTypes_throw([block, externalTran], [Block, Transformation2D]);

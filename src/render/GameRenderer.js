@@ -523,10 +523,10 @@ class GameRenderer {
 			if(childRB) GameRenderer.drawBlock(childRB, data);
 			else GameRenderer.drawBlockPlaceholder(renderblock, data);
 		}
-		Performance.increment_time("render.draw_block.block", t1-t0);
-		Performance.increment_time("render.draw_block.texts", t2-t1);
-		Performance.increment_time("render.draw_block.cells", t3-t2);
-		Performance.increment_time("render.draw_block.links", t4-t3);
+		Performance.increment_time("render.gather.block", t1-t0);
+		Performance.increment_time("render.gather.texts", t2-t1);
+		Performance.increment_time("render.gather.cells", t3-t2);
+		Performance.increment_time("render.gather.links", t4-t3);
 	}
 	
 	// ============================================================

@@ -49,12 +49,6 @@ class Text {
 		newobj.dimensions = ComponentDimensions.load(obj.dimensions);
 		return newobj;
 	}
-	clone() {
-		const newobj = new Text();
-		Object.assign(newobj, this);
-		newobj.dimensions = this.dimensions.clone();
-		return newobj;
-	}
 	
 };
 

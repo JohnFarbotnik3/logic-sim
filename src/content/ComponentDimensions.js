@@ -1,11 +1,15 @@
 
-class ComponentDimensions extends Transformation2DParams {
+class ComponentDimensions {
 	// ============================================================
 	// Structors
 	// ------------------------------------------------------------
 	
-	constructor(...args) {
-		super(...args);
+	constructor(x=0,y=0,w=1,h=1,r=0) {
+		this.x = x;
+		this.y = y;
+		this.w = w;
+		this.h = h;
+		this.r = r;
 	}
 	
 	// ============================================================
@@ -22,9 +26,7 @@ class ComponentDimensions extends Transformation2DParams {
 		return newobj;
 	}
 	clone() {
-		const newobj = new ComponentDimensions();
-		Object.assign(newobj, this);
-		return newobj;
+		return this.load(this.save());
 	}
 };
 

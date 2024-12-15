@@ -150,17 +150,15 @@ class RenderTreeBlock {
 	// ------------------------------------------------------------
 	
 	_update_cell_values(simblock) {
-		if(simblock) {
-			for(const renderData of this.render_data_cells) {
-				const cell = renderData.cell;
-				const cid  = cell.id;
-				const vals = renderData.vals;
-				simulation.populateCellValues(simblock, cid, vals);
-				const clrs = renderData.area_clrs;
-				const clr		= cell.clr;
-				const clr_off	= GameRenderer.hexColour_scale(clr, 0.5);
-				for(let i=0;i<3;i++) clrs[i] = vals[i] ? clr : clr_off;
-			}
+		for(const renderData of this.render_data_cells) {
+			const cell		= renderData.cell;
+			const cid		= cell.id;
+			const vals		= renderData.vals;
+			if(simblock) simulation.populateCellValues(simblock, cid, vals);
+			const clrs		= renderData.area_clrs;
+			const clr		= cell.clr;
+			const clr_off	= GameRenderer.hexColour_scale(clr, 0.5);
+			for(let i=0;i<3;i++) clrs[i] = vals[i] ? clr : clr_off;
 		}
 		for(const [blockId, childRB] of this.children.entries()) childRB._update_cell_values(simblock.getSimblock(blockId));
 	}
@@ -186,7 +184,8 @@ class RenderTreeBlock {
 		const tran			= RenderTreeBlock.get_item_transformation(item, this.contentTran);
 		const numTargets	= cell.numTargets;
 		const vals			= [0x0, 0x0, 0x0];
-		const area_clrs		= [0x0, 0x0, 0x0];
+		const clr			= cell.clr;
+		const area_clrs		= [clr, clr, clr];
 		const rdata 		= { cell, tran, numTargets, vals, area_clrs };
 		return rdata;
 	}

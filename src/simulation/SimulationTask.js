@@ -91,6 +91,17 @@ class SimulationTask {
 		}
 	}
 	
+	/* Initialize and propagate cell value. */
+	initializeCellValue(ind, val) {
+		// push cell update containing initial value.
+		this.pushCellUpdate(ind, Cell.LINK_TARGET.OUTPUT, val);
+		// special handling for constants: manually propagate (since constants do not update normally).
+		const x = ind - this.ibeg;
+		if(this.cell_buffer.get_cell_order(x) === TASK_CELL_TYPE_ORDER_MAP.get(CELL_PROPERTIES.CONSTANT.type)) {
+			this.applyCellOutputChange(x, val);
+		}
+	}
+	
 	/* Empty out list of update-indices. */
 	clearCellUpdateList() {
 		// NOTE: per-update is O(N) whereas array.fill is O(LENGTH >= N).

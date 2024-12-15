@@ -139,27 +139,10 @@ class GameSimulation {
 				for(let x=0;x<len;x++) task.link_buffer.copyFrom(linkbuf, newofs++, ofs+x);
 			}
 			task.link_buffer.count = newofs;
+			// initialize and propagate initial cell values.
+			for(let i=ibeg;i<iend;i++) task.initializeCellValue(i, cellbuf.get_value_out(i));
 		}
 		this.tasks = tasks;
-	}
-	
-	/*
-		After initialization, values may need to be propagated
-		so that transient initial outputs aren't ignored.
-	*/
-	rebuild_generateInitialOutputs(cell_buffer) {
-		const num = cell_buffer.count;
-		const CONSTANT_ORDER = 0;
-		for(let i=0;i<num;i++) {
-			const ind = i;
-			const tgt = Cell.LINK_TARGET.OUTPUT;
-			const val = cell_buffer.get_value_out(i);
-			this.pushCellUpdate(ind, tgt, val);
-			if(cell_buffer.get_cell_order(i) === TASK_CELL_TYPE_ORDER_MAP.get(CELL_PROPERTIES.CONSTANT.type)) {
-				// special handling for constants: manually propagate.
-				this.applyCellOutputChange(ind, val);
-			}
-		}
 	}
 	
 	/* Initialize or rebuild simulation data. */
@@ -183,8 +166,6 @@ class GameSimulation {
 		// create new task objects.
 		this.rebuild_createTasks(cell_buffer, link_buffer);
 		console.log("rebuild_createTasks", this.tasks.length);
-		// perform initial update cycle.
-		this.rebuild_generateInitialOutputs(cell_buffer);
 		// finishing touches.
 		this.shouldRebuild = false;
 		this.shouldReset = false;

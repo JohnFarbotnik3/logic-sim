@@ -180,7 +180,22 @@ as they are kind of spaghetti-like.
 - and "Pan" mode button, for navigating with mouse.
 
 
-
+> Multithreading plan:
+- service workers will act as threads
+- simulation:
+	*build*
+	1. [1] create SimulationBlock tree
+	2. [1] assign cell ids to threads
+	3. [1] create cell data		(TODO: multithread)
+	4. [1] create link data		(TODO: multithread)
+	5. [1] create threads
+	6. [1] send data to threads (cells + links)
+	7. [n] trigger task initialization (create structs, init cell values, local propagation, etc.)
+	*loop*
+	1. [n] update threads
+	2. [1] gather and spread ('gather': request updated cell values, 'spread': send updated values to destination tasks)
+- rendering:
+	TODO
 
 
 

@@ -543,7 +543,12 @@ class GameRenderer {
 	static drawPreviewBlock() {
 		const block = gameControls.get_render_preview_block();
 		if(!block) return;
-		const renblock = gameData.renderBlock;
+		const parent	= gameData.renderBlock;
+		const exttran	= parent.contentTran;
+		const depth		= parent.depth + 1;
+		const maxDepth	= parent.depth + 2;
+		// TODO: creating a new RenderTreeBlock each frame has a noticable performance penalty.
+		const renblock	= new RenderTreeBlock(parent, block, exttran, depth, maxDepth);
 		GameRenderer.drawBlock(renblock, renblock.get_render_data_block(block));
 	}
 	

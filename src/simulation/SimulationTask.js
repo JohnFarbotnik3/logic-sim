@@ -56,9 +56,6 @@ class SimulationTask {
 		/* Performance metrics. */
 		this.perf_n_updates = 0;
 		this.perf_n_outputs = 0;
-		this.perf_t_sorting = 0;
-		this.perf_t_compute = 0;
-		this.perf_t_outputs = 0;
 	}
 	
 	// ==================================================
@@ -125,8 +122,6 @@ class SimulationTask {
 		// ============================================================
 		// Sort inputs.
 		// ------------------------------------------------------------
-		const t0 = Date.now();
-		
 		// sort update indices into buckets based on cell type (bucket sort).
 		const num = this.update_count;
 		const counts  = new Uint32Array(TASK_CELL_TYPE_ORDER_ARR.length);
@@ -151,8 +146,6 @@ class SimulationTask {
 		// ============================================================
 		// Compute values.
 		// ------------------------------------------------------------
-		const t1 = Date.now();
-		
 		// gather input values.
 		const inputA_values = new Uint32Array(num);
 		const inputB_values = new Uint32Array(num);
@@ -191,8 +184,6 @@ class SimulationTask {
 		// ============================================================
 		// Collect outputs.
 		// ------------------------------------------------------------
-		const t2 = Date.now();
-		
 		// collect changed outputs.
 		this.clearCellUpdateList();
 		out_buffer.clear();
@@ -203,12 +194,8 @@ class SimulationTask {
 		}
 		
 		// gather remaining performance metrics.
-		const t3 = Date.now();
 		this.perf_n_updates += num;
 		this.perf_n_outputs += out_buffer.count;
-		this.perf_t_sorting += t1 - t0;
-		this.perf_t_compute += t2 - t1;
-		this.perf_t_outputs += t3 - t2;
 	}
 	
 };

@@ -54,8 +54,8 @@ class GameRenderer {
 		if(gameControls.cursor_mode === gameControls.CURSOR_MODE.PLACE_BLOCK) GameRenderer.drawPreviewBlock();
 		GameRenderer.drawHovered();
 		// commit data to buffers.
-		this.commit_buffers();
 		const t2 = Date.now();
+		this.commit_buffers();
 		// clear canvas
 		const gl = this.triangles_shader.glContext;
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);

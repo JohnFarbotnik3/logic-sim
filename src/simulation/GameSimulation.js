@@ -215,13 +215,11 @@ class GameSimulation {
 				const t1 = Date.now();
 				this.update_gatherAndSpreadBuffers();
 				const t2 = Date.now();
+				Performance.increment_time("simulation.update_tasks  ", t1-t0);
 				Performance.increment_time("simulation.update_gth+spr", t2-t1);
 				for(const task of this.tasks) {
 					Performance.increment_count("simulation.task.perf_n_updates", task.perf_n_updates); task.perf_n_updates=0;
 					Performance.increment_count("simulation.task.perf_n_outputs", task.perf_n_outputs); task.perf_n_outputs=0;
-					Performance.increment_time ("simulation.task.perf_t_sorting", task.perf_t_sorting); task.perf_t_sorting=0;
-					Performance.increment_time ("simulation.task.perf_t_compute", task.perf_t_compute); task.perf_t_compute=0;
-					Performance.increment_time ("simulation.task.perf_t_outputs", task.perf_t_outputs); task.perf_t_outputs=0;
 				}
 				Performance.increment_time("simulation.update        ", t2-t0);
 			}

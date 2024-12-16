@@ -9,35 +9,31 @@ class RenderTreeBlock {
 	// Constants.
 	// ------------------------------------------------------------
 	
-	get LINK_POINTS_F32() { return RenderTreeBlock.LINK_POINTS_F32; }
 	static LINK_POINTS_F32 = new Float32Array([
 		1.00, 0.50, 0.00,// output
 		0.00, 0.75, 0.00,// input-a
 		0.00, 0.25, 0.00,// input-b
 	]);
 	
-	get LINK_POINTS_ARR() { return RenderTreeBlock.LINK_POINTS_ARR; }
 	static LINK_POINTS_ARR = ([
 		[1.00, 0.50, 0.00],// output
 		[0.00, 0.75, 0.00],// input-a
 		[0.00, 0.25, 0.00],// input-b
 	]);
 	
-	get LINK_RECTS_ARR() { return RenderTreeBlock.LINK_RECTS_ARR; }
 	static LINK_RECTS_ARR = RenderTreeBlock.LINK_POINTS_ARR.map(([x,y,z]) => {
 		const s = 0.1;
 		return [x-s,y-s,s*2,s*2];
 	});
 	
-	get AREA_RECTS() { return RenderTreeBlock.AREA_RECTS; }
-	static AREA_RECTS = ([
+	static CELL_AREA_RECTS = ([
 		[0.5, 0.0, 0.5, 1.0],// OUTPUT
 		[0.0, 0.5, 0.5, 0.5],// INPUT_A
 		[0.0, 0.0, 0.5, 0.5],// INPUT_B
 	]);
 	
 	static CELL_RECTS = [
-		...RenderTreeBlock.AREA_RECTS,
+		...RenderTreeBlock.CELL_AREA_RECTS,
 		...RenderTreeBlock.LINK_RECTS_ARR,
 	];
 
@@ -76,7 +72,7 @@ class RenderTreeBlock {
 		for(const item of template.blocks) this.item_trans.set(item.id, RenderTreeBlock.get_item_transformation(item, contran));
 		// initialize cell link-points.
 		for(const item of template.cells) {
-			const points = this.LINK_POINTS_F32.slice();
+			const points = RenderTreeBlock.LINK_POINTS_F32.slice();
 			const tran = this.item_trans.get(item.id);
 			tran.apply(points, 0, points.length, 3);
 			this.c_points.set(item.id, points);

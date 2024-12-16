@@ -205,7 +205,7 @@ as they are kind of spaghetti-like.
 - instead of cells/celldatas being in treeBlocks, just generate a shared per-tree queue.
 ^ same goes for other content types.
 - cells should have simcell index to speed up and simplify value access.
-
+- give cells a Colour class for easier value editing (for feature parity with c++).
 
 
 

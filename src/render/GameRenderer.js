@@ -466,8 +466,8 @@ class GameRenderer {
 				const str = labels[i] + GameRenderer.valueToHex_u32(vals[i], 8);
 				const clr = fontColour & (vals[i] === 0 ? 0x777777ff : 0xffffffff);
 				const unitRectPoint = [
-					renderblock.LINK_POINTS_F32[i*3+0],
-					renderblock.LINK_POINTS_F32[i*3+1],
+					RenderTreeBlock.LINK_POINTS_F32[i*3+0],
+					RenderTreeBlock.LINK_POINTS_F32[i*3+1],
 				];
 				this.push_content_text_box_against_circle(tran, depth, str, fontHeight, clr, unitRectPoint, dist);
 			}

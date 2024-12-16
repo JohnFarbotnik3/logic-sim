@@ -358,7 +358,7 @@ class GameControls {
 	place_cursor_xy() {
 		const mult = this.cursor_snap;
 		const minv = 1.0 / mult;
-		const offset = gameData.renderBlock.contentTran.offset;
+		const offset = gameData.renderBlock.contentTran;// NOTE: direct T2D array access.
 		const x = Math.round((this.cursor_pos[0] - offset[0]) * minv) * mult;
 		const y = Math.round((this.cursor_pos[1] - offset[1]) * minv) * mult;
 		return [x,y];

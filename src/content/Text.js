@@ -49,6 +49,9 @@ class Text {
 		newobj.dimensions = ComponentDimensions.load(obj.dimensions);
 		return newobj;
 	}
+	clone() {
+		return Text.load(this.save());
+	}
 	
 };
 

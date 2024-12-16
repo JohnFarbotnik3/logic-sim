@@ -71,7 +71,7 @@ class GameRenderer {
 		this.triangles_shader.drawElements();
 		this.lines_shader    .drawElements();
 		this.font_shader     .drawElements();
-		gl.flush();// optional?
+		//gl.flush();// optional?
 		const t3 = Date.now();
 		Performance.increment_time("render.update", t1-t0);
 		Performance.increment_time("render.gather", t2-t1);
@@ -175,77 +175,88 @@ class GameRenderer {
 		this.font_buffer_tex.commitNewDataToBuffer();
 	}
 	
+	static DEPTH_ON_TOP = 33;
+	static transform_vdata(tran, depth, vdata, beg, end) {
+		if(tran) tran.apply(vdata, beg, end, 3);
+		const zofs = depth * -0.01;
+		for(let i=beg+2;i<end;i+=3) vdata[i] += zofs;
+	}
+	
+	static triangles_reserve(ilen, vlen, clen) {
+		this.triangles_buffer_ind.reserve(ilen);
+		this.triangles_buffer_pos.reserve(vlen);
+		this.triangles_buffer_clr.reserve(clen);
+	}
+	static triangles_push(idata, vdata, cdata) {
+		this.triangles_buffer_ind.pushData(idata, 0, idata.length, this.triangles_buffer_pos.vertexCount);
+		this.triangles_buffer_pos.pushData(vdata, 0, vdata.length);
+		this.triangles_buffer_clr.pushData(cdata, 0, cdata.length);
+	}
+	static triangles_transform(tran, depth, length) {
+		const buf	= this.triangles_buffer_pos;
+		const beg	= buf.writePos - length;
+		const end	= buf.writePos;
+		this.transform_vdata(tran, depth, buf.data, beg, end);
+	}
+	
+	static lines_reserve(ilen, vlen, clen) {
+		this.lines_buffer_ind.reserve(ilen);
+		this.lines_buffer_pos.reserve(vlen);
+		this.lines_buffer_clr.reserve(clen);
+	}
+	static lines_push(idata, vdata, cdata) {
+		this.lines_buffer_ind.pushData(idata, 0, idata.length, this.lines_buffer_pos.vertexCount);
+		this.lines_buffer_pos.pushData(vdata, 0, vdata.length);
+		this.lines_buffer_clr.pushData(cdata, 0, cdata.length);
+	}
+	static lines_transform(tran, depth, length) {
+		const buf	= this.lines_buffer_pos;
+		const beg	= buf.writePos - length;
+		const end	= buf.writePos;
+		this.transform_vdata(tran, depth, buf.data, beg, end);
+	}
+	
 	// ============================================================
 	// Shape generators
 	// ------------------------------------------------------------
 	
-	static DEPTH_ON_TOP = 33;
-	static offsetPositionByDepth(vdata, depth) {
-		//VerificationUtil.verifyType_throw(vdata, Float32Array);
-		const zofs = depth * -0.01;
-		const beg = 2;// index of z component.
-		const end = vdata.length;
-		const stride = 3;
-		for(let i=beg;i<end;i+=stride) vdata[i] += zofs;
+	// triangle-rectangles.
+	static tri_rects_reserve(N) {
+		const ilen = N*6;
+		const vlen = N*4*3;
+		const clen = N*4;
+		this.triangles_reserve(ilen, vlen, clen);
+	}
+	static tri_rects_write(rect, clr) {
+		const [x,y,w,h]	= rect;
+		const idata = [0,1,2,2,3,0];
+		const vdata = [
+			x+0, y+0, 0.0,
+			x+w, y+0, 0.0,
+			x+w, y+h, 0.0,
+			x+0, y+h, 0.0,
+		];
+		const cdata = [clr, clr, clr, clr];
+		this.triangles_push(idata, vdata, cdata);
+	}
+	static tri_rects_transform(N, tran, depth) {
+		this.triangles_transform(tran, depth, N*4*3);
+	}
+	static tri_rects_push(tran, depth, rect, clr) {
+		this.tri_rects_reserve(1);
+		this.tri_rects_write(rect, clr);
+		this.tri_rects_transform(1, tran, depth);
 	}
 	
-	static transform_and_push_triangles(tran, depth, idata, vdata, cdata) {
-		if(tran) tran.apply(vdata, 0, vdata.length, 3);
-		this.offsetPositionByDepth(vdata, depth);
-		const voffset = this.triangles_buffer_pos.vertexCount;
-		this.triangles_buffer_ind.reserveAndPushData(idata, 0, idata.length, voffset);
-		this.triangles_buffer_pos.reserveAndPushData(vdata, 0, vdata.length);
-		this.triangles_buffer_clr.reserveAndPushData(cdata, 0, cdata.length);
+	// line-rectangles
+	static line_rects_reserve(N) {
+		const ilen = N*8;
+		const vlen = N*4*3;
+		const clen = N*4;
+		this.lines_reserve(ilen, vlen, clen);
 	}
-	
-	static transform_and_push_lines(tran, depth, idata, vdata, cdata) {
-		if(tran) tran.apply(vdata, 0, vdata.length, 3);
-		this.offsetPositionByDepth(vdata, depth);
-		const voffset = this.lines_buffer_pos.vertexCount;
-		this.lines_buffer_ind.reserveAndPushData(idata, 0, idata.length, voffset);
-		this.lines_buffer_pos.reserveAndPushData(vdata, 0, vdata.length);
-		this.lines_buffer_clr.reserveAndPushData(cdata, 0, cdata.length);
-	}
-	
-	static transform_and_push_font(tran, depth, idata, vdata, cdata, tdata) {
-		if(tran) tran.apply(vdata, 0, vdata.length, 3);
-		this.offsetPositionByDepth(vdata, depth);
-		const voffset = this.font_buffer_pos.vertexCount;
-		this.font_buffer_ind.reserveAndPushData(idata, 0, idata.length, voffset);
-		this.font_buffer_pos.reserveAndPushData(vdata, 0, vdata.length);
-		this.font_buffer_clr.reserveAndPushData(cdata, 0, cdata.length);
-		this.font_buffer_tex.reserveAndPushData(tdata, 0, tdata.length);
-	}
-	
-	static push_content_tri_rects(tran, depth, rects, clrs) {
-		// generate data.
-		const N = rects.length;
-		const idata = new Array(N*6);
-		const vdata = new Array(N*4*3);
-		const cdata = new Array(N*4);
-		for(let n=0;n<N;n++) {
-			const [x,y,w,h]	= rects[n];
-			const clr		= clrs[n];
-			const icount = n*6;
-			const vcount = n*4;
-			const idata_rect = [0,1,2,2,3,0];
-			const vdata_rect = [
-				x+0, y+0, 0.0,
-				x+w, y+0, 0.0,
-				x+w, y+h, 0.0,
-				x+0, y+h, 0.0,
-			];
-			for(let j=0;j< 6;j++) idata[icount  +j] = idata_rect[j] + vcount;
-			for(let j=0;j<12;j++) vdata[vcount*3+j] = vdata_rect[j];
-			for(let j=0;j< 4;j++) cdata[vcount  +j] = clr;
-		}
-		// push data.
-		this.transform_and_push_triangles(tran, depth, idata, vdata, cdata);
-	}
-	
-	static push_content_line_rect(tran, depth, rect, clr) {
-		// generate data.
-		const [x,y,w,h] = rect;
+	static line_rects_write(rect, clr) {
+		const [x,y,w,h]	= rect;
 		const idata = [0,1,1,2,2,3,3,0];
 		const vdata = [
 			x+0, y+0, 0.0,
@@ -254,10 +265,50 @@ class GameRenderer {
 			x+0, y+h, 0.0,
 		];
 		const cdata = [clr, clr, clr, clr];
+		this.lines_push(idata, vdata, cdata);
+	}
+	static line_rects_transform(N, tran, depth) {
+		this.lines_transform(tran, depth, N*4*3);
+	}
+	static line_rects_push(tran, depth, rect, clr) {
+		this.line_rects_reserve(1);
+		this.line_rects_write(rect, clr);
+		this.line_rects_transform(1, tran, depth);
+	}
+	
+	// TODO: replace
+	static transform_and_push_lines(tran, depth, idata, vdata, cdata) {
+		this.transform_vdata(tran, depth, vdata, 0, vdata.length);
+		const voffset = this.lines_buffer_pos.vertexCount;
+		this.lines_buffer_ind.reserveAndPushData(idata, 0, idata.length, voffset);
+		this.lines_buffer_pos.reserveAndPushData(vdata, 0, vdata.length);
+		this.lines_buffer_clr.reserveAndPushData(cdata, 0, cdata.length);
+	}
+	
+	// TODO: replace
+	static transform_and_push_font(tran, depth, idata, vdata, cdata, tdata) {
+		this.transform_vdata(tran, depth, vdata, 0, vdata.length);
+		const voffset = this.font_buffer_pos.vertexCount;
+		this.font_buffer_ind.reserveAndPushData(idata, 0, idata.length, voffset);
+		this.font_buffer_pos.reserveAndPushData(vdata, 0, vdata.length);
+		this.font_buffer_clr.reserveAndPushData(cdata, 0, cdata.length);
+		this.font_buffer_tex.reserveAndPushData(tdata, 0, tdata.length);
+	}
+	
+	// lines
+	static push_content_line(tran, depth, p0, p1, clr) {
+		// generate data.
+		const idata = [0,1];
+		const vdata = [
+			p0[0], p0[1], 0.0,
+			p1[0], p1[1], 0.0,
+		];
+		const cdata = [clr, clr];
 		// push data.
 		this.transform_and_push_lines(tran, depth, idata, vdata, cdata);
 	}
 	
+	// line grid
 	static push_content_line_grid(tran, depth, rect, clr, nx, ny) {
 		// generate data.
 		const [x,y,w,h] = rect;
@@ -287,20 +338,8 @@ class GameRenderer {
 		this.transform_and_push_lines(tran, depth, idata, vdata, cdata);
 	}
 	
-	static push_content_line(tran, depth, p0, p1, clr) {
-		// generate data.
-		const idata = [0,1];
-		const vdata = [
-			p0[0], p0[1], 0.0,
-			p1[0], p1[1], 0.0,
-		];
-		const cdata = [clr, clr];
-		// push data.
-		this.transform_and_push_lines(tran, depth, idata, vdata, cdata);
-	}
-	
+	// line circle
 	static push_content_line_circle(tran, depth, x, y, r, n, clr) {
-		if(n < 2) return;
 		const idata = new Array(n*2);
 		const vdata = new Array(n*3);
 		const cdata = new Array(n).fill(clr);
@@ -379,7 +418,7 @@ class GameRenderer {
 	// Components
 	// ------------------------------------------------------------
 	
-	static valueToHexStr(value, len) {
+	static valueToHex_u32(value, len) {
 		const hex = value.toString(16).toUpperCase();
 		let pad = "0x";
 		for(let x=hex.length;x<len;x++) pad += "0";
@@ -393,29 +432,15 @@ class GameRenderer {
 			((((hex >>  0) & 0xff) * 1) <<  0)
 		);
 	}
-	static hexColour_scale_components(hex,r,g,b,a) {
-		return (
-			((((hex >> 24) & 0xff) * r) << 24) |
-			((((hex >> 16) & 0xff) * g) << 16) |
-			((((hex >>  8) & 0xff) * b) <<  8) |
-			((((hex >>  0) & 0xff) * a) <<  0)
-		);
-	}
 	
 	static drawCell(renderblock, renderData) {
-		const { cell, tran, numTargets, vals, area_clrs } = renderData;
+		const { cell, tran, numTargets, vals, cell_clrs } = renderData;
 		const depth = renderblock.depth;
-		// draw cell areas.
-		{
-			const rects = RenderTreeBlock.AREA_RECTS;
-			this.push_content_tri_rects(tran, depth, rects, area_clrs);
-		}
-		// draw link points.
-		{
-			const rects = RenderTreeBlock.LINK_RECTS_ARR.slice(0, numTargets);
-			const clrs = [0xffeeccff, 0xffeeccff, 0xffeeccff];
-			this.push_content_tri_rects(tran, depth, rects, clrs);
-		}
+		// draw cell areas + link points
+		const N = 3 + numTargets;
+		this.tri_rects_reserve(N);
+		for(let n=0;n<N;n++) this.tri_rects_write(RenderTreeBlock.CELL_RECTS[n], cell_clrs[n]);
+		this.tri_rects_transform(N, tran, depth);
 		// draw text.
 		/* TODO:
 			- go back to using average scale factor of containing block instead of applying basis vectors.
@@ -438,7 +463,7 @@ class GameRenderer {
 			// draw values.
 			const labels = ["OUT:", "A:", "B:"];
 			for(let i=0;i<numTargets;i++) {
-				const str = labels[i] + GameRenderer.valueToHexStr(vals[i], 8);
+				const str = labels[i] + GameRenderer.valueToHex_u32(vals[i], 8);
 				const clr = fontColour & (vals[i] === 0 ? 0x777777ff : 0xffffffff);
 				const unitRectPoint = [
 					renderblock.LINK_POINTS_F32[i*3+0],
@@ -486,9 +511,9 @@ class GameRenderer {
 		const { block, tran } = renderData;
 		const depth = renderblock.depth;
 		// draw background.
-		this.push_content_tri_rects(tran, depth, [[0,0,1,1]], [0x00000033]);
+		this.tri_rects_push(tran, depth, [0,0,1,1], 0x00000033);
 		// draw outline.
-		this.push_content_line_rect(tran, depth, [0,0,1,1], 0x77aaff99);
+		this.line_rects_push(tran, depth, [0,0,1,1], 0x77aaff99);
 		// draw thumbnail.
 		// ...TODO...
 	}
@@ -500,14 +525,14 @@ class GameRenderer {
 			const depth = renderblock.depth - 0.5;
 			const itran = renderblock.itemTran;
 			// draw underlay.
-			this.push_content_tri_rects(itran, depth, [[0,0,1,1]], [0x00000033]);
+			this.tri_rects_push(itran, depth, [0,0,1,1], 0x00000033);
 			// draw grid.
 			if(renderblock.depth === 0) {
 				const w = block.templateWidth;
 				const h = block.templateHeight;
 				this.push_content_line_grid(itran, depth, [0,0,1,1], 0x77aaff99, w, h);
 			} else {
-				this.push_content_line_rect(itran, depth, [0,0,1,1], 0x77aaff99);
+				this.line_rects_push(itran, depth, [0,0,1,1], 0x77aaff99);
 			}
 		}
 		// draw contents.
@@ -585,15 +610,15 @@ class GameRenderer {
 		const depth = GameRenderer.DEPTH_ON_TOP;
 		const rect = [x1,y1,(x2-x1),(y2-y1)];
 		const clr = 0xffffff55;
-		GameRenderer.push_content_tri_rects(tran, depth, [rect], [clr]);
+		GameRenderer.tri_rects_push(tran, depth, rect, clr);
 	}
 	
 	static pushSelectionRectangles(collection, rect, clr) {
 		const renblock = gameData.renderBlock;
 		const depth = GameRenderer.DEPTH_ON_TOP;
-		for(const item of collection.cells ) { const tran=renblock.item_trans.get(item.id); GameRenderer.push_content_line_rect(tran, depth, rect, clr); }
-		for(const item of collection.texts ) { const tran=renblock.item_trans.get(item.id); GameRenderer.push_content_line_rect(tran, depth, rect, clr); }
-		for(const item of collection.blocks) { const tran=renblock.item_trans.get(item.id); GameRenderer.push_content_line_rect(tran, depth, rect, clr); }
+		for(const item of collection.cells ) { const tran=renblock.item_trans.get(item.id); GameRenderer.line_rects_push(tran, depth, rect, clr); }
+		for(const item of collection.texts ) { const tran=renblock.item_trans.get(item.id); GameRenderer.line_rects_push(tran, depth, rect, clr); }
+		for(const item of collection.blocks) { const tran=renblock.item_trans.get(item.id); GameRenderer.line_rects_push(tran, depth, rect, clr); }
 	}
 	
 	static drawSelection() {

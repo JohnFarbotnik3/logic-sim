@@ -35,6 +35,11 @@ class RenderTreeBlock {
 		[0.0, 0.5, 0.5, 0.5],// INPUT_A
 		[0.0, 0.0, 0.5, 0.5],// INPUT_B
 	]);
+	
+	static CELL_RECTS = [
+		...RenderTreeBlock.AREA_RECTS,
+		...RenderTreeBlock.LINK_RECTS_ARR,
+	];
 
 	// ============================================================
 	// Structors.
@@ -156,7 +161,7 @@ class RenderTreeBlock {
 			const cid		= cell.id;
 			const vals		= renderData.vals;
 			if(simblock) simulation.populateCellValues(simblock, cid, vals);
-			const clrs		= renderData.area_clrs;
+			const clrs		= renderData.cell_clrs;
 			const clr		= cell.clr;
 			const clr_off	= GameRenderer.hexColour_scale(clr, 0.5);
 			for(let i=0;i<3;i++) clrs[i] = vals[i] ? clr : clr_off;
@@ -187,7 +192,9 @@ class RenderTreeBlock {
 		const vals			= [0x0, 0x0, 0x0];
 		const clr			= cell.clr;
 		const area_clrs		= [clr, clr, clr];
-		const rdata 		= { cell, tran, numTargets, vals, area_clrs };
+		const link_clrs		= [0xffeeccff, 0xffeeccff, 0xffeeccff];
+		const cell_clrs		= [...area_clrs, ...link_clrs];
+		const rdata 		= { cell, tran, numTargets, vals, cell_clrs };
 		return rdata;
 	}
 	

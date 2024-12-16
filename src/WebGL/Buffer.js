@@ -47,7 +47,7 @@ class Buffer {
 		this.arrayType		= arrayType;
 		this.data			= new arrayType(arrayLength);// client-side data to be sent to buffer.
 		this.buffer			= BufferUtil.createBuffer(glContext, this.data.byteLength, target, usage);
-		this.dataPos		= 0;// amount of data (and current write position) in the data stack.
+		this.writePos		= 0;// amount of data (and current write position) in the data stack.
 		this.bufferPos		= 0;// amount of data that has been committed to backing buffer.
 	}
 	get BYTES_PER_ELEMENT() {
@@ -56,49 +56,46 @@ class Buffer {
 	get GL_ENUM_TYPE() {
 		return GL_ARRAY_ENUM_TYPE(this.arrayType);
 	}
-	updateBufferData(src, isrc, len, ofs) {
-		const dst_offset = ofs  * this.BYTES_PER_ELEMENT;
-		const src_offset = isrc;
-		const src_length = len;
-		const gl = this.glContext;
-		gl.bindBuffer(this.target, this.buffer);
-		// https://developer.mozilla.org/en-US/docs/Web/API/WebGL2RenderingContext/bufferSubData
-		gl.bufferSubData(this.target, dst_offset, src, src_offset, src_length);
-	}
-	resize(newLength, copy=false, force=false) {
-		newLength = Math.ceil(newLength);
+	resize(newLength, copy) {
 		const oldLength = this.data.length;
-		if(force || newLength > oldLength) {
-			console.debug("[Buffer.resize] newLength", newLength);
-			this.data = ArrayUtil.resize(this.data, newLength, copy);
-			this.buffer = BufferUtil.createBuffer(this.glContext, this.data.byteLength, this.target, this.usage);
-			this.dataPos = copy ? Math.min(this.dataPos, oldLength) : 0;
-			this.bufferPos = 0;// data will need to be re-added to buffer since it was cleared when re-allocated.
-			return true;
-		}
+		this.data = ArrayUtil.resize(this.data, Math.ceil(newLength), copy);
+		this.buffer = BufferUtil.createBuffer(this.glContext, this.data.byteLength, this.target, this.usage);
+		this.writePos = copy ? Math.min(this.writePos, oldLength) : 0;
+		this.bufferPos = 0;// data will need to be re-added to buffer since it was cleared when re-allocated.
+		return true;
 		return false;
 	}
 	clear() {
-		this.dataPos = 0;
+		this.writePos = 0;
 		this.bufferPos = 0;
 	}
-	reserve(reqLength, copy=true) {
-		const newLength = this.dataPos + reqLength;
-		if(newLength > this.data.length) this.resize((newLength*3)/2 + 32, copy);
-	}
 	// add data from external sources.
+	reserve(reqLength) {
+		const newLength = this.writePos + reqLength;
+		if(newLength > this.data.length) this.resize((newLength*3)/2 + 32, true);
+	}
+	pushData(src, isrc, len) {
+		ArrayUtil.memcopy(this.data, this.writePos, src, isrc, len);
+		this.writePos += len;
+		return this.writePos;
+	}
 	reserveAndPushData(src, isrc, len) {
-		this.reserve(len, true);
-		ArrayUtil.memcopy(this.data, this.dataPos, src, isrc, len);
-		this.dataPos += len;
-		return this.dataPos;
+		this.reserve(len);
+		this.pushData(src, isrc, len);
 	}
 	// commit all new data to buffer.
 	commitNewDataToBuffer() {
 		const ofs = this.bufferPos;
-		const len = this.dataPos - this.bufferPos;
-		this.updateBufferData(this.data, ofs, len, ofs);
-		this.bufferPos = this.dataPos;
+		const len = this.writePos - this.bufferPos;
+		const src = this.data;
+		const dst_offset = ofs  * this.BYTES_PER_ELEMENT;
+		const src_offset = ofs;
+		const gl = this.glContext;
+		// https://developer.mozilla.org/en-US/docs/Web/API/WebGL2RenderingContext/bufferData
+		// https://developer.mozilla.org/en-US/docs/Web/API/WebGL2RenderingContext/bufferSubData
+		gl.bindBuffer(this.target, this.buffer);
+		gl.bufferSubData(this.target, dst_offset, src, src_offset, len);
+		this.bufferPos = this.writePos;
 	}
 };
 
@@ -110,7 +107,7 @@ class AttributeBuffer extends Buffer {
 		this.vertexLength	= this.vertexSize / this.BYTES_PER_ELEMENT;
 	}
 	get vertexCount() {
-		return this.dataPos / this.vertexLength;
+		return this.writePos / this.vertexLength;
 	}
 };
 
@@ -119,13 +116,17 @@ class IndexBuffer extends Buffer {
 		super(glContext, arrayType, arrayLength, BUFFER_TARGET.INDEX_BUFFER, usage);
 	}
 	get indexCount() {
-		return this.dataPos;
+		return this.writePos;
+	}
+	pushData(src, isrc, len, vertexOffset=0) {
+		const beg = this.writePos;// write position before pushing data.
+		super.pushData(src, isrc, len);
+		const end = this.writePos;// write position after pushing data.
+		if(vertexOffset !== 0) for(let i=beg;i<end;i++) this.data[i] += vertexOffset;
 	}
 	reserveAndPushData(src, isrc, len, vertexOffset=0) {
-		const beg = this.dataPos;// write position before pushing data.
-		super.reserveAndPushData(src, isrc, len);
-		const end = this.dataPos;// write position after pushing data.
-		if(vertexOffset !== 0) for(let i=beg;i<end;i++) this.data[i] += vertexOffset;
+		this.reserve(len);
+		this.pushData(src, isrc, len, vertexOffset);
 	}
 };
 

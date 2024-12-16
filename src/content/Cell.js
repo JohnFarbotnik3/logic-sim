@@ -54,7 +54,7 @@ class Cell {
 		return newobj;
 	}
 	clone() {
-		return this.load(this.save());
+		return Cell.load(this.save());
 	}
 	
 	// ============================================================

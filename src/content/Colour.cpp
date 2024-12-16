@@ -1,7 +1,7 @@
 #include <cstdint>
 
 struct Colour {
-	uint32_t rgba;
+	uint32_t rgba;//TODO: break into seperate components
 	
 	Colour() {
 		this->rgba = 0xff00ffff;

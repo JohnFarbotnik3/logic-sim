@@ -68,9 +68,7 @@ class Link {
 		return newobj;
 	}
 	clone() {
-		const newobj = new Link();
-		Object.assign(newobj, this);
-		return newobj;
+		return Link.load(this.save());
 	}
 	
 	// ============================================================

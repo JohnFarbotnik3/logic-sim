@@ -52,7 +52,7 @@ class Block {
 		return newobj;
 	}
 	clone() {
-		return this.load(this.save());
+		return Block.load(this.save());
 	}
 	
 	// ============================================================

@@ -85,12 +85,6 @@ Near-term.
 ------------------------------------------------------------
 
 
-> Investigate potential (major) performance problem
-- it is possible that when re-initializing canvas,
-the old canvas still exists, and its update code is still running as well.
-- if so, that would be a gigantic performance leak!
-* at first glance, this doesnt appear to be happening, but revisit later on to be sure.
-
 
 
 > Multithreading notes:
@@ -194,13 +188,25 @@ as they are kind of spaghetti-like.
 
 > begin implementing stuff in c++/wasm.
 
+
 > troubleshoot poor performance on older devices with modest processing power
 - why is my laptop browser struggling to render even a mostly empty scene?
+! it is a software rendering problem - empty webGL canvas already costs 65% cpu to render!
+(even a highly optimized renderer cant really do much when blank canvas is overwhelming the cpu by rendering nothing)
 
 
 > add a "View" panel
 - add inputs for some draw settings.
 - and "Pan" mode button, for navigating with mouse.
+
+
+> Renderer improvements:
+- simplify render-tree generation and updates.
+- instead of cells/celldatas being in treeBlocks, just generate a shared per-tree queue.
+^ same goes for other content types.
+- cells should have simcell index to speed up and simplify value access.
+
+
 
 
 

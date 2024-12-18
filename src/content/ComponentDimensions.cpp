@@ -18,7 +18,7 @@ struct ComponentDimensions {
 		this->r = r;
 	}
 	
-	getTransformation() {
+	Transformation2D getTransformation() {
 		return new Transformation2D(x,y,w,h,r);
 	}
 };

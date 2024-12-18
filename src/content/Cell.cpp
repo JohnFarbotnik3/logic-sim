@@ -24,14 +24,20 @@ struct Cell {
 	// ============================================================
 	// Extra cell properties
 	// ------------------------------------------------------------
-	Colour 	clr;
-	String	typecode;
-	u32 	numTargets;
+	Transformation2D	tran;
+	String				typecode;
+	Colour 				clr;
+	u32 				numTargets;
+	u32					taskOrder;
 	
 	void initProperties() {
-		this->clr			= CELL_TYPES_MAP[this->type].clr;
+		this->tran			= this->dimensions.getTransformation();
 		this->typecode		= CELL_TYPES_MAP[this->type].typecode;
+		this->clr			= CELL_TYPES_MAP[this->type].clr;
 		this->numTargets	= CELL_TYPES_MAP[this->type].numTargets;
+		this->taskOrder		= TASK_CELL_TYPE_ORDER_MAP[this->type];
 	}
 };
+
+
 

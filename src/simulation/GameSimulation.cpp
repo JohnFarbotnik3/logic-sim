@@ -33,22 +33,18 @@ class GameSimulation {
 		
 	}
 	
-	// TODO: continue from here
-	
 	// ============================================================
 	// Helpers.
 	// ------------------------------------------------------------
 	
-	getTaskIndex(cellIndex) {
-		return Math.floor(cellIndex / CELLS_PER_TASK);
+	void pushCellUpdate(ind, tgt, val) {
+		const t = ind / CELLS_PER_TASK;
+		this.tasks[t].pushCellUpdate(ind, tgt, val);
 	}
 	
-	pushCellUpdate(ind, tgt, val) {
-		this.tasks[this.getTaskIndex(ind)].pushCellUpdate(ind, tgt, val);
-	}
-	
-	applyCellOutputChange(ind, val) {
-		this.tasks[this.getTaskIndex(ind)].applyCellOutputChange(ind, val);
+	void applyCellOutputChange(ind, val) {
+		const t = ind / CELLS_PER_TASK;
+		this.tasks[t].applyCellOutputChange(ind, val);
 	}
 	
 	// ============================================================
@@ -56,41 +52,28 @@ class GameSimulation {
 	// ------------------------------------------------------------
 	
 	/* Generate cell data. */
-	rebuild_generateCellData(simblock, cell_buffer) {
-		const template = simblock.template;
-		for(const cell of template.cells) {
-			const cind = simblock.getCellIndex(cell.id);
-			const typeInd = TASK_CELL_TYPE_ORDER_MAP.get(cell.type);
-			cell_buffer.set_all(cind, cell.value, 0x0, 0x0, typeInd, 0, 0);
+	void rebuild_generateCellData(SimulationTree& simtree, SimulationBlock& simblock, Vector<SimulationCell>& cell_buffer) {
+		BlockTemplate btemp = simtree.getTemplate(simblock);
+		simblock.cmap.reserve(btemp.cells.length());
+		for(const Cell cell : btemp.cells) {
+			simblock.cmap[cell.id] = cell_buffer.size();
+			cell_buffer.push_back(SimulationCell(cell.value, cell.taskOrder));
 		}
-		for(const block of template.blocks) {
-			const sb = simblock.getSimblock(block.id);
-			this.rebuild_generateCellData(sb, cell_buffer);
+		for(const Block block : btemp.blocks) {
+			const SimulationBlock childSB = simblock.bmap[block.id];
+			this->rebuild_generateCellData(simtree, childSB, cell_buffer);
 		}
 	}
 	
+	// TODO: continue from here...
+	
 	/*
-		Recursively generate link data.
-		
-		NOTE: this is generated after simblock tree and cells
-		because it sometimes requires cells in siblings during linkgen.
+		Recursively generate link data for links that output from given simblock.
 	*/
 	rebuild_generateSimblockLinks(simblock, parentSB, cell_buffer, link_buffer) {
-		this.rebuild_generateLinkData(simblock, parentSB, cell_buffer, link_buffer);
-		for(const block of simblock.template.blocks) {
-			const sb = simblock.getSimblock(block.id);
-			this.rebuild_generateSimblockLinks(sb, simblock, cell_buffer, link_buffer);
-		}
-	}
-	
-	/*
-		Generate link data for links that output from given simblock.
-		NOTE: this function sometimes requires cell-data from simblock-siblings.
-	*/
-	rebuild_generateLinkData(simblock, parentSB, cell_buffer, link_buffer) {
-		// get links from self which have a cell in this block as an output.
+		// get links in this block which output from a cell in this block.
 		const s_data = simblock.template.getOutputtingLinks(ComponentId.THIS_BLOCK);
-		// get links from parent which have a cell in this block as an output.
+		// get links in parent which output from a cell in this child-block.
 		const p_data = parentSB ? parentSB.template.getOutputtingLinks(simblock.blockId) : null;
 		// add links to buffer and set cell link-lists.
 		for(const cell of simblock.template.cells) {
@@ -112,6 +95,11 @@ class GameSimulation {
 			}
 			cell_buffer.setLinkList(cind, len, ofs);
 			link_buffer.count += len;
+		}
+		// call recursively.
+		for(const block of simblock.template.blocks) {
+			const sb = simblock.getSimblock(block.id);
+			this.rebuild_generateSimblockLinks(sb, simblock, cell_buffer, link_buffer);
 		}
 	}
 	

@@ -4,7 +4,7 @@ struct SimulationBlock {
 	ComponentId	templateId;
 	/* BlockId of this simulation block inside parent. */
 	ComponentId	blockId;
-	/* Map of indices of child simblocks in simblock array. */
+	/* Map of indices of children in simblock array. */
 	Map<ComponentId, u32> bmap;
 	/* Map of indices of cells in simulation data. */
 	Map<ComponentId, u32> cmap;
@@ -28,7 +28,10 @@ struct SimulationTree {
 		this->templates = templates;
 	}
 	
-	BlockTemplate getTemplate(simblock) {
+	BlockTemplate getTemplate(ComponentId templateId) {
+		return this->templates.getTemplate(templateId);
+	}
+	BlockTemplate getTemplate(SimulationBlock& simblock) {
 		return this->templates.getTemplate(simblock.templateId);
 	}
 	SimulationBlock getSimblock(simblock, blockId) {
@@ -36,13 +39,13 @@ struct SimulationTree {
 	}
 	
 	void initNode(ComponentId templateId, ComponentId blockId) {
+		const BlockTemplate btemp = this->getTemplate(templateId);
 		const SimulationBlock simblock(templateId, blockId);
 		this->simblocks.push_back(simblock);
-		const BlockTemplate blockTemplate = this->getTemplate(simblock);
-		for(const Block block : blockTemplate.blocks) {
-			const ComponentId tid = block.templateId;
-			const ComponentId bid = block.id;
-			this->initNode(tid, bid);
+		simblock.bmap.reserve(bt.blocks.length());
+		for(const Block block : btemp.blocks) {
+			simblock.bmap[bid] = this->simblocks.size();
+			this->initNode(block.templateId, block.id);
 		}
 	}
 	void initTree(ComponentId rootTemplateId) {

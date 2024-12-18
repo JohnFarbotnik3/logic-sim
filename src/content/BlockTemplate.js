@@ -97,16 +97,13 @@ class BlockTemplate {
 	
 	getCellById (id) { return this.cells .find(item => item.id == id); }
 	getBlockById(id) { return this.blocks.find(item => item.id == id); }
-	indexOfItem(list, ref) {
-		return list.findIndex(it => it == ref);
-	}
 	
 	insertItem(list, item) { list.push(item); }
 	removeItem(list, item) {
-		// replace item with last item in list.
-		const index = this.indexOfItem(list, item);
-		list[index] = list[list.length - 1];
-		list.pop();
+		for(let i=0;i<list.length;i++) if(list[i].id === item.id) {
+			list[i] = list[list.length-1];
+			list.pop();
+		}
 	}
 	insertCell (item) { this.insertItem(this.cells , item); }
 	insertLink (item) { this.insertItem(this.links , item); }
@@ -157,6 +154,7 @@ class BlockTemplate {
 	getTemplateIdOfBlock(bid) {
 		return (bid === ComponentId.THIS_BLOCK) ? this.templateId : this.getBlockById(bid).templateId;
 	}
+	
 	getLinksThatPointToCellInTemplate(tid, cid) {
 		const arr = [];
 		for(const link of this.links) {
@@ -167,6 +165,16 @@ class BlockTemplate {
 		}
 		return arr;
 	}
+	static getLinksThatPointToCellInTemplate(tid, cid, includeSelf) {
+		const list = [];// [template, link[]][]
+		for(const [templateId, template] of gameData.blockTemplates.entries()) {
+			if(templateId === tid && !includeSelf) continue;// skip same template.
+			const arr = template.getLinksThatPointToCellInTemplate(tid, cid);
+			if(arr.length > 0) list.push([template, arr]);
+		}
+		return list;
+	}
+	
 	getLinksThatCantFindTargets() {
 		const arr = [];
 		for(const link of this.links) {
@@ -178,6 +186,23 @@ class BlockTemplate {
 			if(!tmp_src.getCellById(cid_src) | !tmp_dst.getCellById(cid_dst)) arr.push(link);
 		}
 		return arr;
+	}
+	static getLinksThatCantFindTargets() {
+		const list = [];// [template, link[]][]
+		for(const [templateId, template] of gameData.blockTemplates.entries()) {
+			const arr = template.getLinksThatCantFindTargets();
+			if(arr.length > 0) list.push([template, arr]);
+		}
+		return list;
+	}
+	
+	static deleteLinksInTemplateLinkList(list) {
+		for(const [template, links] of list) {
+			for(const link of links) {
+				template.removeLink(link);
+				simulation.onContentChanged_remLink(link);
+			}
+		}
 	}
 	
 	// ============================================================

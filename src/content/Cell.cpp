@@ -22,7 +22,7 @@ struct Cell {
 	}
 	
 	// ============================================================
-	// Extra cell properties
+	// Extra properties
 	// ------------------------------------------------------------
 	Transformation2D	tran;
 	String				typecode;

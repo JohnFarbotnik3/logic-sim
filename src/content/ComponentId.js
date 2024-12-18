@@ -19,6 +19,8 @@ class ComponentId {
 		Id used to identify the block that owns the link,
 		i.e. when a link targets a cell in the same block.
 	*/
+	// TODO: try to remove this, and instead just use "this->id" style comparisons.
+	// ^ also create getBlock() style functions for cases where "this" block may be requested.
 	static THIS_BLOCK = 1;
 	
 	static _next = Date.now();

@@ -112,39 +112,11 @@ class GameData {
 	// Link deletion and verification.
 	// ------------------------------------------------------------
 	
-	getLinksThatPointToCellInTemplate(tid, cid, includeSelf) {
-		const list = [];// [template, link[]][]
-		for(const [templateId, template] of this.blockTemplates.entries()) {
-			if(templateId === tid && !includeSelf) continue;// skip same template.
-			const arr = template.getLinksThatPointToCellInTemplate(tid, cid);
-			if(arr.length > 0) list.push([template, arr]);
-		}
-		return list;
-	}
-	
-	getLinksThatCantFindTargets() {
-		const list = [];// [template, link[]][]
-		for(const [templateId, template] of this.blockTemplates.entries()) {
-			const arr = template.getLinksThatCantFindTargets();
-			if(arr.length > 0) list.push([template, arr]);
-		}
-		return list;
-	}
-	
-	deleteLinksInTemplateLinkList(list) {
-		for(const [template, links] of list) {
-			for(const link of links) {
-				template.removeLink(link);
-				simulation.onContentChanged_remLink(link);
-			}
-		}
-	}
-	
 	verifyLinksCanFindTargets() {
-		const deletionList = gameData.getLinksThatCantFindTargets();
+		const deletionList = BlockTemplate.getLinksThatCantFindTargets();
 		const promise = new Promise((resolve, reject) => {
 			const onsubmit = () => {
-				gameData.deleteLinksInTemplateLinkList(deletionList);
+				BlockTemplate.deleteLinksInTemplateLinkList(deletionList);
 				resolve(true);
 				return true;
 			};

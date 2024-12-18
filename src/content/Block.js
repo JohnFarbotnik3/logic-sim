@@ -73,12 +73,12 @@ class Block {
 	get links () { return this.template.links; }
 	get texts () { return this.template.texts; }
 	get blocks() { return this.template.blocks; }
-	//getCellById (id) { return this.template.getCellById(id); }
-	//getBlockById(id) { return id === ComponentId.THIS_BLOCK ? this : this.template.getBlockById(id); }
 	
 	// ============================================================
 	// Item creation and deletion
 	// ------------------------------------------------------------
+	
+	// TODO: these functions should probably go in BlockTemplate instead...
 	
 	insertCell (item) { VerificationUtil.verifyType_throw(item, Cell ); 									this.template.insertCell (item); CachedValue_Content.onChange(); simulation.onContentChanged_addCell (item); return item; }
 	insertLink (item) { VerificationUtil.verifyType_throw(item, Link ); this.cleanupBeforeInsertLink(item); this.template.insertLink (item); CachedValue_Content.onChange(); simulation.onContentChanged_addLink (item); return item; }
@@ -116,14 +116,17 @@ class Block {
 			this code gathers links from said templates which
 			would have to be deleted (for linking consistency) if the cell is deleted.
 		*/
+		const tid = this.templateId;
+		const cid = cell.id;
 		const includeSelf = false;
-		const deletionList = gameData.getLinksThatPointToCellInTemplate(this.templateId, cell.id, includeSelf);
+		const deletionList = BlockTemplate.getLinksThatPointToCellInTemplate(tid, cid, includeSelf);
 		console.debug("deletionList", deletionList);
+		// show popup.
 		const promise = new Promise((resolve, reject) => {
 			const onsubmit = () => {
 				console.debug("deletionList submit");
 				for(const link of this.links.slice()) if(link.isConnectedToCell(cell.id)) this.deleteLink(link);
-				gameData.deleteLinksInTemplateLinkList(deletionList);
+				BlockTemplate.deleteLinksInTemplateLinkList(deletionList);
 				resolve(true);
 				return true;
 			};

@@ -5,8 +5,8 @@
 struct Cell {
 	ComponentDimensions	dimensions;
 	ComponentId			id;
-	uint32_t			type;
-	uint32_t			value;
+	u32					type;
+	u32					value;
 	
 	Cell() {
 		this->dimensions	= ComponentDimensions(0,0,1,1,0);
@@ -14,21 +14,24 @@ struct Cell {
 		this->type			= 0;
 		this->value			= 0;
 	}
-	Cell(uint32_t type, uint32_t value) {
+	Cell(u32 type, u32 value) {
 		this->dimensions	= ComponentDimensions(0,0,1,1,0);
 		this->id			= ComponentId::next();
 		this->type			= type;
 		this->value			= value;
 	}
 	
-	Colour clr() {
-		return CELL_TYPES_MAP[this->type].clr;
-	}
-	std::string typecode() {
-		return CELL_TYPES_MAP[this->type].typecode;
-	}
-	uint32_t numTargets() {
-		return CELL_TYPES_MAP[this->type].numTargets;
+	// ============================================================
+	// Extra cell properties
+	// ------------------------------------------------------------
+	Colour 	clr;
+	String	typecode;
+	u32 	numTargets;
+	
+	void initProperties() {
+		this->clr			= CELL_TYPES_MAP[this->type].clr;
+		this->typecode		= CELL_TYPES_MAP[this->type].typecode;
+		this->numTargets	= CELL_TYPES_MAP[this->type].numTargets;
 	}
 };
 

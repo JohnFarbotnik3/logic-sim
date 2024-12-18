@@ -1,22 +1,22 @@
 #include <time.h>
 
 struct ComponentId {
-	static const uint32_t NONE = 0;
-	static const uint32_t THIS_BLOCK = 1;
+	static const uint64_t NONE = 0;
+	static const uint64_t THIS_BLOCK = 1;
 	
-	uint32_t value;
+	uint64_t value;
 	ComponentId() {
 		this->value = NONE;
 	}
-	ComponentId(uint32_t value) {
+	ComponentId(uint64_t value) {
 		this->value = value;
 	}
 	
-	static uint32_t _next;
+	static uint64_t _next;
 	static ComponentId next() {
 		return ComponentId(_next++);
 	}
 };
 
-uint32_t ComponentId::_next = (uint32_t)time(NULL);
+uint64_t ComponentId::_next = (uint64_t)time(NULL);
 

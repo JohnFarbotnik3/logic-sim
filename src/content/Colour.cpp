@@ -1,16 +1,28 @@
-#include <cstdint>
+#include "../Imports.cpp"
 
 struct Colour {
-	uint32_t rgba;//TODO: break into seperate components
+	u8 r,g,b,a;
 	
+	Colour(u8 r, u8 g, u8 b, u8 a) {
+		this->r = r;
+		this->g = g;
+		this->b = b;
+		this->a = a;
+	}
 	Colour() {
-		this->rgba = 0xff00ffff;
+		Colour(0xff, 0x00, 0x00, 0xff);
 	}
-	Colour(uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
-		this->rgba = (r<<24) | (g<<16) | (b<<8) | (a<<0);
+	Colour(u32 clr) {
+		Colour(
+			(clr >> 24) & 0xff,
+			(clr >> 16) & 0xff,
+			(clr >>  8) & 0xff,
+			(clr >>  0) & 0xff
+		);
 	}
-	Colour(uint32_t rgba) {
-		this->rgba = rgba;
+	
+	getHex() {
+		return (r<<24) | (g<<16) | (b<<8) | (a<<0);
 	}
 };
 

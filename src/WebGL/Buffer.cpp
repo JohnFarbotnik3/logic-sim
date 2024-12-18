@@ -1,5 +1,7 @@
 
-// TODO
+// TODO:
+// - implement simple buffers for c++-side renderer
+// - only needs to store/generate data, doesnt need any GL functionality
 
 struct Buffer {};
 

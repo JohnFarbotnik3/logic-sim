@@ -6,6 +6,9 @@ struct CellType {
 	u32			type;
 	u32			numTargets;
 	Colour 		clr;
+	u32			taskOrder;
+	
+	static u32	NEXT_TASK_ORDER;
 	
 	CellType() {}
 	CellType(std::string typecode, uint32_t numTargets, Colour clr) {
@@ -13,9 +16,12 @@ struct CellType {
 		this->type			= 0;
 		this->clr			= clr;
 		this->numTargets	= numTargets;
+		this->taskOrder		= CellType::NEXT_TASK_ORDER++;
 		for(int x=0;x<4;x++) this->type = (this->type << 8) | (typecode.length() > x ? typecode[x] : 0);
 	}
 };
+
+CellType::NEXT_TASK_ORDER = 0;
 
 Map<uint32_t, CellType> CELL_TYPES_MAP;
 CellType addCellType(std::string typecode, Colour clr, uint32_t numTargets) {
@@ -46,4 +52,7 @@ struct CELL_TYPES {
 	CellType GEQ		= addCellType(">="	, 3, 0xffffffff);
 	CellType LEQ		= addCellType("<="	, 3, 0xffffffff);
 };
+
+
+
 

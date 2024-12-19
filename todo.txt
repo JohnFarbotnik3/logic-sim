@@ -71,6 +71,15 @@ placing wire along the perimiter (make sure to support both point-contact and li
 	with only a little bit of glue code for interface.
 
 
+> Optimization: Leaf node collapsing (Template tree)
+- leaf nodes in the template tree with a small number of cells can be collapsed into their parents
+before building a simulation-tree or render-tree to reduce block overhead by 1 level.
+- note that generating a seperate CollapsedBlockLibrary will introduce a bunch of complexity,
+but if build/render performance is a problem, this is one potential solution.
+
+
+
+
 ============================================================
 Near-term.
 ------------------------------------------------------------
@@ -91,12 +100,6 @@ as this will allow writing tree-structs without major performance problems.
 	- given each thread has shared (read-only) access to the simblock tree,
 	this should be enough information to allow generating cell data and link data.
 
-
-> renderer improvements:
-- create shape 'writers' (tri_rect, line_rect, etc.) which allocate fixed-size arrays of vdata, idata, etc.,
-^ apply transformations to vdata after written, then push to relevant GLBuffers.
-^ allows re-use of a shape-writer. (shape writers can perhaps be per-function)
-^ implement: push(), clear(), transform(), commit().
 
 
 > Multithreading plan:
@@ -185,6 +188,7 @@ as they are kind of spaghetti-like.
 > add a "View" panel
 - add inputs for some draw settings.
 - and "Pan" mode button, for navigating with mouse.
+
 
 
 > Renderer improvements:

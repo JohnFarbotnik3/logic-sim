@@ -35,7 +35,7 @@ struct Cell {
 		this->typecode		= CELL_TYPES_MAP[this->type].typecode;
 		this->clr			= CELL_TYPES_MAP[this->type].clr;
 		this->numTargets	= CELL_TYPES_MAP[this->type].numTargets;
-		this->taskOrder		= TASK_CELL_TYPE_ORDER_MAP[this->type];
+		this->taskOrder		= CELL_TYPES_MAP[this->type].taskOrder;
 	}
 };
 

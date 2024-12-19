@@ -52,16 +52,14 @@ class GameSimulation {
 	// ------------------------------------------------------------
 	
 	/* Generate cell data. */
-	void rebuild_generateCellData(SimulationTree& simtree, SimulationBlock& simblock, Vector<SimulationCell>& cell_buffer) {
-		BlockTemplate btemp = simtree.getTemplate(simblock);
-		simblock.cmap.reserve(btemp.cells.length());
-		for(const Cell cell : btemp.cells) {
-			simblock.cmap[cell.id] = cell_buffer.size();
-			cell_buffer.push_back(SimulationCell(cell.value, cell.taskOrder));
-		}
-		for(const Block block : btemp.blocks) {
-			const SimulationBlock childSB = simblock.bmap[block.id];
-			this->rebuild_generateCellData(simtree, childSB, cell_buffer);
+	void rebuild_generateCellData(SimulationTree& simtree, Vector<SimulationCell>& cell_buffer) {
+		for(const SimulationBlock& simblock : simtree) {
+			BlockTemplate btmp = simtree.getTemplate(simblock);
+			for(const Cell& cell : btmp.cells) {
+				const int index = cell_buffer.size();
+				simblock.cmap[cell.id] = index;
+				cell_buffer.push_back(SimulationCell(cell.value, cell.taskOrder));
+			}
 		}
 	}
 	

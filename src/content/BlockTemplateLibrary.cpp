@@ -1,15 +1,28 @@
 
+/*
+	A collection of block-templates, as well as functions
+	for managing them and caching useful content logistics.
+	
+	Content addition and removal will also be managed through this structure
+	since it may need to update or clear caches based on changes to content.
+*/
 struct BlockTemplateLibrary {
 	Map<ComponentId, BlockTemplate> templates;
+	/* Template currently being edited. */
+	BlockTemplate rootTemplate;
 	
 	BlockTemplateLibrary() {}
+	
+	// ============================================================
+	// Content logistics
+	// ------------------------------------------------------------
 	
 	/*
 		Returns a map with the number of instances of all templates that appear
 		in this BlockTemplate's tree (including itself).
 	*/
 	Map<ComponentId, Map<ComponentId, int>> countUsedTemplates_cache;
-	Map<ComponentId, int> countUsedTemplates(ComponentId templateId) {
+	Map<ComponentId, int>& countUsedTemplates(ComponentId templateId) {
 		// check if already cached.
 		if(countUsedTemplates_cache.contains(templateId)) return countUsedTemplates_cache[templateId];
 		// add self to use-count.
@@ -20,70 +33,58 @@ struct BlockTemplateLibrary {
 		for(const Block block : temp.blocks) {
 			// NOTE: when values are accessed with '[]' that do not yet exist, c++ maps zero-initialize them.
 			const auto map = countUsedTemplates(block.templateId);
-			for(const auto& [tid, num] : map) used[tid] += num;
+			for(const auto& [tid, count] : map) used[tid] += count;
 		}
 		// add to cache and return.
-		countUsedTemplates_cache[templateId] = used;
-		return used;
+		return countUsedTemplates_cache[templateId] = used;
 	}
 	
-	// TODO: continue from here...
-	
-	/*
-		returns true if rootBlock's template occurs anywhere in this BlockTemplate's tree,
-		as that would make it unsafe to add to the root block.
-	*/
-	containsRootBlockTemplate() {
-		const used = this.countUsedTemplates();
-		return used.has(gameData.rootBlock.templateId);
+	/* Returns true if rootBlock's template occurs anywhere in given BlockTemplate's tree. */
+	bool containsRootTemplate(ComponentId templateId) {
+		return countUsedTemplates(templateId).contains(rootTemplate.templateId);
 	}
 	
-	_totalCellsInTree() {
-		let used = this.countUsedTemplates();
-		let sum = 0;
-		for(const [tid, count] of used.entries()) { sum += count * gameData.blockTemplates.get(tid).cells.length; }
+	int totalCellsInTree(ComponentId templateId) {
+		const auto used = countUsedTemplates(templateId);
+		int sum = 0;
+		for(const auto& [tid, count] : used) sum += count * templates[tid].cells.size();
 		return sum;
 	}
-	_totalLinksInTree() {
-		let used = this.countUsedTemplates();
-		let sum = 0;
-		for(const [tid, count] of used.entries()) sum += count * gameData.blockTemplates.get(tid).links.length;
+	int totalLinksInTree(ComponentId templateId) {
+		const auto used = countUsedTemplates(templateId);
+		int sum = 0;
+		for(const auto& [tid, count] : used) sum += count * templates[tid].links.size();
 		return sum;
 	}
-	_totalBlocksInTree() {
-		let used = this.countUsedTemplates();
-		let sum = 1;// start by counting this block.
-		for(const [tid, count] of used.entries()) sum += count * gameData.blockTemplates.get(tid).blocks.length;
+	int totalBlocksInTree(ComponentId templateId) {
+		const auto used = countUsedTemplates(templateId);
+		int sum = 0;
+		for(const auto& [tid, count] : used) sum += count * templates[tid].blocks.size();
 		return sum;
 	}
-	_totalCellsInTree_cache = new CachedValue_Content(() => this._totalCellsInTree());
-	_totalLinksInTree_cache = new CachedValue_Content(() => this._totalLinksInTree());
-	_totalBlocksInTree_cache = new CachedValue_Content(() => this._totalBlocksInTree());
-	totalCellsInTree() { return this._totalCellsInTree_cache.value; }
-	totalLinksInTree() { return this._totalLinksInTree_cache.value; }
-	totalBlocksInTree() { return this._totalBlocksInTree_cache.value; }
 	
 	// ============================================================
-	// Simulation data-gen helpers.
+	// Simulation helpers
 	// ------------------------------------------------------------
 	
-	/* Collect all outputting links into maps for generating link data. */
-	_getOutputtingLinks() {
-		const bmap = new Map();// Map<bid_src, Map<cid_src, [bid_dst, cid_dst, tgt_dst][]>>
-		for(const link of this.links) {
-			const {bid_src, bid_dst, cid_src, cid_dst, tgt_src, tgt_dst} = link;
-			if(!bmap.has(bid_src)) bmap.set(bid_src, new Map());
-			const cmap = bmap.get(bid_src);
-			if(!cmap.has(cid_src)) cmap.set(cid_src, []);
-			const arr = cmap.get(cid_src);
-			arr.push([bid_dst, cid_dst, tgt_dst]);
+	/*
+		Returns map containing all links in [templateId],
+		sorted into per-cell lists based on link source-address.
+	*/
+	Map<ComponentId, Map<ComponentId, Map<ComponentId, Vector<Link>>>> getOutputtingLinks_cache;
+	Map<ComponentId, Map<ComponentId, Vector<Link>>>& getOutputtingLinks(ComponentId templateId) {
+		// check if already cached.
+		if(getOutputtingLinks_cache.contains(templateId)) return getOutputtingLinks_cache[templateId];
+		// collect links into lists based on output source block.
+		const Map<ComponentId, Map<ComponentId, Vector<Link>>> map;
+		const BlockTemplate btmp = this->templates[templateId];
+		for(const auto link : btmp.links) {
+			map[link.src.bid][link.src.cid].push_back(link);
 		}
-		return bmap;
+		// add to cache and return.
+		return getOutputtingLinks_cache[templateId] = map;
 	}
-	_getOutputtingLinks_cache = new CachedValue_Content(() => this._getOutputtingLinks());
-	getOutputtingLinks(blockId) {
-		const bmap = this._getOutputtingLinks_cache.value;
-		return bmap.has(blockId) ? bmap.get(blockId) : null;
-	}
-	
-};//TODO
+};
+
+
+

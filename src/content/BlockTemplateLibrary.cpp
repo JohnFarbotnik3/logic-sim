@@ -21,10 +21,10 @@ struct BlockTemplateLibrary {
 		Returns a map with the number of instances of all templates that appear
 		in this BlockTemplate's tree (including itself).
 	*/
-	Map<ComponentId, Map<ComponentId, int>> countUsedTemplates_cache;
-	Map<ComponentId, int>& countUsedTemplates(ComponentId templateId) {
+	Map<ComponentId, Map<ComponentId, int>> getUsedTemplateCount_cache;
+	Map<ComponentId, int>& getUsedTemplateCount(ComponentId templateId) {
 		// check if already cached.
-		if(countUsedTemplates_cache.contains(templateId)) return countUsedTemplates_cache[templateId];
+		if(getUsedTemplateCount_cache.contains(templateId)) return getUsedTemplateCount_cache[templateId];
 		// add self to use-count.
 		Map<ComponentId, int> used;
 		used[templateId] = 1;
@@ -32,32 +32,32 @@ struct BlockTemplateLibrary {
 		const BlockTemplate temp = this->templates[templateId];
 		for(const Block block : temp.blocks) {
 			// NOTE: when values are accessed with '[]' that do not yet exist, c++ maps zero-initialize them.
-			const auto map = countUsedTemplates(block.templateId);
+			const auto map = getUsedTemplateCount(block.templateId);
 			for(const auto& [tid, count] : map) used[tid] += count;
 		}
 		// add to cache and return.
-		return countUsedTemplates_cache[templateId] = used;
+		return getUsedTemplateCount_cache[templateId] = used;
 	}
 	
 	/* Returns true if rootBlock's template occurs anywhere in given BlockTemplate's tree. */
 	bool containsRootTemplate(ComponentId templateId) {
-		return countUsedTemplates(templateId).contains(rootTemplate.templateId);
+		return getUsedTemplateCount(templateId).contains(rootTemplate.templateId);
 	}
 	
 	int totalCellsInTree(ComponentId templateId) {
-		const auto used = countUsedTemplates(templateId);
+		const auto used = getUsedTemplateCount(templateId);
 		int sum = 0;
 		for(const auto& [tid, count] : used) sum += count * templates[tid].cells.size();
 		return sum;
 	}
 	int totalLinksInTree(ComponentId templateId) {
-		const auto used = countUsedTemplates(templateId);
+		const auto used = getUsedTemplateCount(templateId);
 		int sum = 0;
 		for(const auto& [tid, count] : used) sum += count * templates[tid].links.size();
 		return sum;
 	}
 	int totalBlocksInTree(ComponentId templateId) {
-		const auto used = countUsedTemplates(templateId);
+		const auto used = getUsedTemplateCount(templateId);
 		int sum = 0;
 		for(const auto& [tid, count] : used) sum += count * templates[tid].blocks.size();
 		return sum;

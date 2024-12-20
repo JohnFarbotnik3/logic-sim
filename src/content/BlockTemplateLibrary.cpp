@@ -9,7 +9,7 @@
 struct BlockTemplateLibrary {
 	Map<ComponentId, BlockTemplate> templates;
 	/* Template currently being edited. */
-	BlockTemplate rootTemplate;
+	ComponentId rootTemplateId;
 	
 	BlockTemplateLibrary() {}
 	
@@ -41,7 +41,7 @@ struct BlockTemplateLibrary {
 	
 	/* Returns true if rootBlock's template occurs anywhere in given BlockTemplate's tree. */
 	bool containsRootTemplate(ComponentId templateId) {
-		return getUsedTemplateCount(templateId).contains(rootTemplate.templateId);
+		return getUsedTemplateCount(templateId).contains(rootTemplateId);
 	}
 	
 	int totalCellsInTree(ComponentId templateId) {

@@ -21,9 +21,17 @@ struct SimulationTask {
 	u32		perf_n_updates;
 	u32		perf_n_outputs;
 	
-	SimulationTask(u32 cell_ibeg, u32 cell_iend, u32 link_ibeg, u32 link_iend) {
-		const u32 cell_count = cell_iend - cell_ibeg;
-		const u32 link_count = link_iend - link_ibeg;
+	SimulationTask(
+		Vector<SimulationCell>& cellbuf,
+		Vector<SimulationLink>& linkbuf,
+		u32 cell_ibeg,
+		u32 cell_iend
+	) {
+		// count total number of items.
+		u32 cell_count = cell_iend - cell_ibeg;
+		u32 link_count = 0;
+		for(u32 i=cell_ibeg;i<cell_iend;i++) link_count += cellbuf[i].links_len;
+		// initialize buffers.
 		this->cell_ibeg = cell_ibeg;
 		this->cell_iend = cell_iend;
 		this->cell_buffer.reserve(cell_count);
@@ -32,6 +40,16 @@ struct SimulationTask {
 		this->update_map.clear();
 		this->perf_n_updates = 0;
 		this->perf_n_outputs = 0;
+		// copy cells to task-local buffer.
+		for(u32 i=cell_ibeg;i<cell_iend;i++) task.cell_buffer.push_back(cellbuf[i]);
+		// copy links to task-local buffer, and update cell list pointers.
+		for(u32 i=cell_ibeg;i<cell_iend;i++)  {
+			const len = cellbuf[i].links_len;
+			const ofs = cellbuf[i].links_ofs;
+			const u32 x = i - cell_ibeg;
+			this->cell_buffer[x].links_ofs = this->link_buffer.size();
+			for(let k=0;k<len;k++) task.link_buffer.push_back(linkbuf[ofs + k]);
+		}
 	}
 	
 	bool shouldUpdate() { return this->update_map.count > 0; }
@@ -42,6 +60,11 @@ struct SimulationTask {
 	void pushCellUpdate(u32 ind, u32 tgt, u32 val) {
 		const u32 x = toLocalIndex(ind);
 		this->cell_buffer[x].setValue(tgt, val);
+		this->update_map.add(x);
+	}
+	void pushCellUpdate(SimulationUpdate& upd) {
+		const u32 x = toLocalIndex(upd.ind);
+		this->cell_buffer[x].setValue(upd.tgt, upd.val);
 		this->update_map.add(x);
 	}
 	
@@ -80,10 +103,6 @@ struct SimulationTask {
 	
 	/* Perform an update cycle. */
 	void update() {
-		
-		// TODO: move this check to caller instead.
-		if(!this->shouldUpdate()) return;
-		
 		// ============================================================
 		// Sort inputs.
 		// ------------------------------------------------------------

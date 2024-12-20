@@ -1,4 +1,5 @@
 #include "./SimulationTree.cpp"
+#include "../lib/Date.cpp"
 
 /*
 	Shared simulation data will be stored in this struct.
@@ -12,8 +13,8 @@
 class GameSimulation {
 	/* The simulation tree created by expanding root block template. */
 	SimulationTree simtree;
-	/* Array of task objects. */
-	SimulationTask tasks;
+	/* List of task objects. */
+	Vector<SimulationTask> tasks;
 	/* True if tree should rebuild. */
 	bool shouldRebuild;
 	/* True if tree should be reset. (i.e. rebuild, but without saving values - NOT YET IMPLEMENTED) */
@@ -21,15 +22,17 @@ class GameSimulation {
 	/* True if simulation should update. */
 	bool isRunning;
 	/* Amount of accumulated simulation steps, based on elapsed time and simulation-speed. */
-	u64 previousTime;
-	u32 accumulatedSteps;
+	u64 prev_time_ms;
+	u64 curr_time_ms;
+	u32 accumulated_msteps;
 	
 	GameSimulation() {
 		this->shouldRebuild	= true;
 		this->shouldReset	= true;
 		this->isRunning		= true;
-		this->previousTime		= 0;
-		this->accumulatedSteps	= 0;
+		this->prev_time_ms			= 0;
+		this->curr_time_ms			= 0;
+		this->accumulated_msteps	= 0;
 	}
 	
 	// ============================================================
@@ -39,6 +42,10 @@ class GameSimulation {
 	void pushCellUpdate(u32 ind, u32 tgt, u32 val) {
 		const t = ind / CELLS_PER_TASK;
 		this.tasks[t].pushCellUpdate(ind, tgt, val);
+	}
+	void pushCellUpdate(SimulationUpdate& upd) {
+		const t = upd.ind / CELLS_PER_TASK;
+		this.tasks[t].pushCellUpdate(upd);
 	}
 	
 	void applyCellOutputChange(u32 ind, u32 val) {
@@ -105,162 +112,76 @@ class GameSimulation {
 		}
 	}
 	
-	// TODO: continue from here...
-	
-	/* create new array of task objects. */
-	rebuild_createTasks(cellbuf, linkbuf) {
-		const tasks = [];
-		const N = cellbuf.count;
-		for(let ibeg=0; ibeg<N; ibeg+=CELLS_PER_TASK) {
-			let iend = Math.min(N, ibeg + CELLS_PER_TASK);
-			// get total number of links.
-			let link_count = 0;
-			for(let i=ibeg;i<iend;i++) link_count += cellbuf.get_links_len(i);
+	void generate_tasks(
+		Vector<SimulationCell>& cellbuf,
+		Vector<SimulationLink>& linkbuf,
+	) {
+		this->tasks.clear();
+		const u32 N = cellbuf.size();
+		for(u32 n=0;n<N;n+=CELLS_PER_TASK) {
 			// create task.
-			const task = new SimulationTask(ibeg, iend, link_count);
-			tasks.push(task);
-			// copy cells to task-local buffer.
-			for(let i=ibeg;i<iend;i++) task.cell_buffer.copyFrom(cellbuf, i-ibeg, i);
-			// copy links to task-local buffer, and update link-list pointers.
-			let newofs = 0;
-			for(let i=ibeg;i<iend;i++) {
-				const len = cellbuf.get_links_len(i);
-				const ofs = cellbuf.get_links_ofs(i);
-				task.cell_buffer.set_links_ofs(i-ibeg, newofs);
-				for(let x=0;x<len;x++) task.link_buffer.copyFrom(linkbuf, newofs++, ofs+x);
-			}
-			task.link_buffer.count = newofs;
+			const u32 ibeg = n;
+			const u32 iend = Math.min(N, ibeg + CELLS_PER_TASK);
+			tasks.emplace_back(cellbuf, linkbuf, ibeg, iend);
 			// initialize and propagate initial cell values.
-			for(let i=ibeg;i<iend;i++) task.initializeCellValue(i, cellbuf.get_value_out(i));
+			for(let i=ibeg;i<iend;i++) task.initializeCellValue(i, cellbuf[i].value[LINK_TARGET::OUTPUT]);
 		}
-		this.tasks = tasks;
 	}
 	
 	/* Initialize or rebuild simulation data. */
-	rebuild() {
-		const t0 = Date.now();
-		// create buffers.
-		const rootTemplate = gameData.rootBlock.template;
-		const cell_buffer = new SimulationCellBuffer(rootTemplate.totalCellsInTree());
-		const link_buffer = new SimulationLinkBuffer(rootTemplate.totalLinksInTree());
-		// build simulation data, as well as new sim-block tree, starting from bottom of tree and finishing with root block.
-		const oldTree = this.root_simulation_block;
-		const newTree = new SimulationTreeBlock(gameData.rootBlock.template, ComponentId.NONE, 0);
-		this.root_simulation_block = newTree;
-		this.generate_cell_data(newTree, cell_buffer);
-		const numCells = cell_buffer.count = newTree.numCells;
-		console.log("numCells", numCells);
-		// build simulation links once tree and cell data have been generated.
-		this.generate_link_data(newTree, null, cell_buffer, link_buffer);
-		const numLinks = link_buffer.count;
-		console.log("numLinks", numLinks);
-		// create new task objects.
-		this.rebuild_createTasks(cell_buffer, link_buffer);
-		console.log("rebuild_createTasks", this.tasks.length);
-		// finishing touches.
-		this.shouldRebuild = false;
-		this.shouldReset = false;
-		const t1 = Date.now();
-		console.log("simulation.rebuild", t1-t0, numCells, numLinks);
-	}
-	
-	// ============================================================
-	// Update stages.
-	// ------------------------------------------------------------
-	
-	update_gatherAndSpreadBuffers() {
-		// gather and spread updates.
-		for(const task of this.tasks) {
-			const N = task.out_buffer.count;
-			for(let x=0;x<N;x++) {
-				const ind = task.out_buffer.get_ind(x);
-				const tgt = task.out_buffer.get_tgt(x);
-				const val = task.out_buffer.get_val(x);
-				this.pushCellUpdate(ind, tgt, val);
-			}
-		}
-	}
-	
-	update_tasks() {
-		// TODO: make multi-threaded.
-		for(const task of this.tasks) task.update();
-	}
-	
-	update() {
-		if(this.previousTime === 0 | !this.isRunning) this.previousTime = Date.now();
-		const prev = this.previousTime;
-		const curr = Date.now();
-		const runlimit = 1000 / 60;// safety: minimum fps target.
-		this.accumulatedSteps += (curr - prev) * gameData.simulationSpeed / 1000;
-		this.previousTime = curr;
+	void rebuild(BlockTemplateLibrary& library) {
+		const ComponentId& rootTemplateId = library.rootTemplateId;
+		const SimulationTreeBlock  oldTree = this->simtree;
+		const SimulationTreeBlock& newTree = this->simtree = SimulationTreeBlock(rootTemplateId, ComponentId.NONE, 0);
 		
+		const Vector<SimulationCell> cell_buffer;
+		cell_buffer.reserve(library.totalCellsInTree(rootTemplateId));
+		this->generate_cell_data(newTree, cell_buffer);
+		console.log("num cells", cell_buffer.size());
+		
+		const Vector<SimulationLink> link_buffer;
+		link_buffer.reserve(library.totalLinksInTree(rootTemplateId));
+		this.generate_link_data(newTree, cell_buffer, link_buffer);
+		console.log("num links", link_buffer.size());
+		
+		this.generate_tasks(cell_buffer, link_buffer);
+		console.log("num tasks", this->tasks.size());
+		
+		this->shouldRebuild = false;
+		this->shouldReset = false;
+	}
+	
+	// ============================================================
+	// Update
+	// ------------------------------------------------------------
+	update(u32 simulationRate) {
 		if(this.shouldRebuild | this.shouldReset) this.rebuild();
+		const u64 max_runtime_ms = 1000 / 60;
+		const u64 prev = this->prev_time_ms = this->curr_time_ms;
+		const u64 curr = this->curr_time_ms = Date::now_ms();
+		if(prev === 0 | !this.isRunning) prev = curr;
+		this.accumulated_msteps += (curr - prev) * simulationRate;
 		if(this.isRunning) {
-			while(this.accumulatedSteps > 1) {
+			while(this.accumulated_msteps > 1000) {
 				// check if time limit reached
-				if(Date.now() - curr < runlimit) { this.accumulatedSteps -= 1.0; }
-				else { this.accumulatedSteps = 0.0; break; }
-				// perform simulation step.
-				const t0 = Date.now();
-				this.update_tasks();
-				const t1 = Date.now();
-				this.update_gatherAndSpreadBuffers();
-				const t2 = Date.now();
-				Performance.increment_time("simulation.update_tasks  ", t1-t0);
-				Performance.increment_time("simulation.update_gth+spr", t2-t1);
-				for(const task of this.tasks) {
-					Performance.increment_count("simulation.task.perf_n_updates", task.perf_n_updates); task.perf_n_updates=0;
-					Performance.increment_count("simulation.task.perf_n_outputs", task.perf_n_outputs); task.perf_n_outputs=0;
+				if(Date::now() - curr < max_runtime_ms) {
+					this.accumulated_msteps -= 1000;
+				} else {
+					this.accumulated_msteps = 0;
+					break;
 				}
-				Performance.increment_time("simulation.update        ", t2-t0);
+				// perform simulation step.
+				for(const SimulationTask& task : this->tasks) {
+					if(task.shouldUpdate()) task.update();
+				}
+				// gather and spread outputs.
+				for(const SimulationTask& task : this->tasks) {
+					for(const SimulationUpdate& upd : task.out_buffer) this.pushCellUpdate(upd);
+				}
 			}
 		}
 	}
-	
-	// ============================================================
-	// Content change handlers.
-	// Note: It is assumed that content is being added to root-block.
-	// ------------------------------------------------------------
-	onContentChanged_addCell(cell) {
-		this.shouldRebuild = true;
-		// TODO: add cell to task and rebuild task only.
-	}
-	onContentChanged_remCell(cell) {
-		this.shouldRebuild = true;
-		// TODO: remove cell to task and rebuild task only.
-	}
-	onContentChanged_addLink(link) {
-		this.shouldRebuild = true;
-		// TODO: add link to task and rebuild task only.
-	}
-	onContentChanged_remLink(link) {
-		this.shouldRebuild = true;
-		// TODO: remove link from task and rebuild task only.
-	}
-	onContentChanged_addBlock() { this.shouldRebuild = true; }
-	onContentChanged_remBlock() { this.shouldRebuild = true; }
-	
-	// ============================================================
-	// Rendering Helpers.
-	// ------------------------------------------------------------
-	
-	populateCellValues(simblock, cid, dst) {
-		if(simblock?.hasCellIndex(cid)) {
-			const cind = simblock.getCellIndex(cid);
-			const task = this.tasks[this.getTaskIndex(cind)];
-			dst[0] = task.cell_buffer.get_value_out(cind - task.ibeg);
-			dst[1] = task.cell_buffer.get_value_ina(cind - task.ibeg);
-			dst[2] = task.cell_buffer.get_value_inb(cind - task.ibeg);
-		} else {
-			dst[0] = cell.value;
-			dst[1] = 0x0;
-			dst[2] = 0x0;
-		}
-	}
-	
 };
-
-
 
 
 

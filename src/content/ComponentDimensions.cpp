@@ -1,4 +1,7 @@
-#include "./Transformation2D.cpp"
+#ifndef _ComponentDimensions
+#define _ComponentDimensions
+
+#include "../lib/Transformation2D.cpp"
 
 struct ComponentDimensions {
 	float x,y,w,h,r;
@@ -19,7 +22,8 @@ struct ComponentDimensions {
 	}
 	
 	Transformation2D getTransformation() {
-		return new Transformation2D(x,y,w,h,r);
+		return Transformation2D(x,y,w,h,r);
 	}
 };
 
+#endif

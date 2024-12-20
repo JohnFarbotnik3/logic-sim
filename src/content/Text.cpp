@@ -1,3 +1,7 @@
+#include "../Imports.cpp"
+#include "./ComponentDimensions.cpp"
+#include "./ComponentId.cpp"
+#include "./Colour.cpp"
 
 struct Text {
 	ComponentDimensions	dim;
@@ -15,7 +19,7 @@ struct Text {
 	Text() {}
 	Text(ComponentDimensions dim, String str, f32 fhgt, Colour fclr, Colour bclr, Colour oclr) {
 		this->dim	= dim;
-		this->id	= ComponentId::next();
+		this->id	= ComponentIdUtil::next();
 		this->str	= str;
 		this->fhgt	= fhgt;
 		this->fclr	= fclr;

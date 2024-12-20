@@ -1,3 +1,6 @@
+#ifndef _CellTypes
+#define _CellTypes
+
 #include "../Imports.cpp"
 #include "./Colour.cpp"
 
@@ -21,11 +24,11 @@ struct CellType {
 	}
 };
 
-CellType::NEXT_TASK_ORDER = 0;
+u32 CellType::NEXT_TASK_ORDER = 0;
 
 Map<uint32_t, CellType> CELL_TYPES_MAP;
 CellType addCellType(std::string typecode, Colour clr, uint32_t numTargets) {
-	CellType ctype(typecode, clr, numTargets);
+	CellType ctype(typecode, numTargets, clr);
 	CELL_TYPES_MAP[ctype.type] = ctype;
 	return ctype;
 }
@@ -53,6 +56,4 @@ struct CELL_TYPES {
 	CellType LEQ		= addCellType("<="	, 3, 0xffffffff);
 };
 
-
-
-
+#endif

@@ -1,22 +1,20 @@
-#include <time.h>
+#ifndef _ComponentId
+#define _ComponentId
 
-struct ComponentId {
-	static const uint64_t NONE = 0;
-	static const uint64_t THIS_BLOCK = 1;
+#include "../lib/Date.cpp"
+
+typedef uint64_t ComponentId;
+
+struct ComponentIdUtil {
+	static const ComponentId NONE = 0;
+	static const ComponentId THIS_BLOCK = 1;
 	
-	uint64_t value;
-	ComponentId() {
-		this->value = NONE;
-	}
-	ComponentId(uint64_t value) {
-		this->value = value;
-	}
-	
-	static uint64_t _next;
+	static ComponentId _next;
 	static ComponentId next() {
-		return ComponentId(_next++);
+		return ComponentId(ComponentIdUtil::_next++);
 	}
 };
 
-uint64_t ComponentId::_next = (uint64_t)time(NULL);
+ComponentId ComponentIdUtil::_next = Date::now_ms();
 
+#endif

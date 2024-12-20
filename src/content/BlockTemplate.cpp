@@ -1,3 +1,7 @@
+#include "./Cell.cpp"
+#include "./Link.cpp"
+#include "./Text.cpp"
+#include "./Block.cpp"
 
 /*
 	A BlockTemplate stores the actual implementation of a logic block,
@@ -23,7 +27,7 @@ struct BlockTemplate {
 	
 	BlockTemplate() {}
 	BlockTemplate(String name, String desc, float w, float h) {
-		this->templateId = componentId::next();
+		this->templateId = ComponentIdUtil::next();
 		this->name		= name;
 		this->desc		= desc;
 		this->innerW	= w;

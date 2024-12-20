@@ -1,3 +1,6 @@
+#ifndef _Date
+#define _Date
+
 #include <ctime>
 #include <cstdint>
 
@@ -18,3 +21,4 @@ struct Date {
 	}
 };
 
+#endif

@@ -1,3 +1,6 @@
+#ifndef _Colour
+#define _Colour
+
 #include "../Imports.cpp"
 
 struct Colour {
@@ -21,8 +24,9 @@ struct Colour {
 		);
 	}
 	
-	getHex() {
+	u32 getHex() {
 		return (r<<24) | (g<<16) | (b<<8) | (a<<0);
 	}
 };
 
+#endif

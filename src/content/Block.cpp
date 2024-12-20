@@ -1,3 +1,5 @@
+#include "./ComponentDimensions.cpp"
+#include "./ComponentId.cpp"
 
 /*
 	A Block is a virtual instance of some BlockTemplate.
@@ -10,8 +12,7 @@ struct Block {
 	Block() {}
 	Block(ComponentDimensions dim, ComponentId templateId) {
 		this->dim			= dim;
-		this->id			= ComponentId::next();
+		this->id			= ComponentIdUtil::next();
 		this->templateId	= templateId;
 	}
 };
-

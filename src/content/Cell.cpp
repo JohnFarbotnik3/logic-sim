@@ -8,15 +8,10 @@ struct Cell {
 	u32					type;
 	u32					value;
 	
-	Cell() {
-		this->dimensions	= ComponentDimensions(0,0,1,1,0);
-		this->id			= ComponentId::NONE;
-		this->type			= 0;
-		this->value			= 0;
-	}
+	Cell() {}
 	Cell(u32 type, u32 value) {
 		this->dimensions	= ComponentDimensions(0,0,1,1,0);
-		this->id			= ComponentId::next();
+		this->id			= ComponentIdUtil::next();
 		this->type			= type;
 		this->value			= value;
 	}

@@ -1,7 +1,10 @@
+#include "../Imports.cpp"
+#include "./ComponentId.cpp"
+#include "./Colour.cpp"
 
-using LinkTarget = uint32_t;
+using LinkTarget = u8;
 
-struct LINK_TARGETS = {
+struct LINK_TARGETS {
 	const LinkTarget OUTPUT  = 0;
 	const LinkTarget INPUT_A = 1;
 	const LinkTarget INPUT_B = 2;
@@ -15,14 +18,10 @@ struct LinkAddress {
 	/* Target on linked cell. */
 	LinkTarget tgt;
 	
+	LinkAddress() {}
 	LinkAddress(ComponentId bid, ComponentId cid, LinkTarget tgt) {
 		this->bid = bid;
 		this->cid = cid;
-		this->tgt = tgt;
-	}
-	LinkAddress(Block block, Cell cell, LinkTarget tgt) {
-		this->bid = block.id;
-		this->cid = cell.id;
 		this->tgt = tgt;
 	}
 	
@@ -46,13 +45,13 @@ struct Link {
 	Colour clr;
 	
 	Link(LinkAddress src, LinkAddress dst, Colour clr) {
-		this->id	= ComponentId::next();
+		this->id	= ComponentIdUtil::next();
 		this->src	= src;
 		this->dst	= dst;
 		this->clr	= clr;
 	}
 	
-	bool isConnectedToCell (ComponentId id) { return (this.cid.src == id) | (this.cid.dst == id); }
-	bool isConnectedToBlock(ComponentId id) { return (this.bid.src == id) | (this.bid.dst == id); }
+	bool isConnectedToCell (ComponentId id) { return (this->src.cid == id) | (this->dst.cid == id); }
+	bool isConnectedToBlock(ComponentId id) { return (this->src.bid == id) | (this->dst.bid == id); }
 };
 

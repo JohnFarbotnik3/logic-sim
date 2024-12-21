@@ -1,3 +1,5 @@
+#include "../Imports.cpp"
+#include "../Constants.cpp"
 
 struct SimulationArrayMap {
 	/* Number of indices in stack. */

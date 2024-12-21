@@ -1,3 +1,6 @@
+#ifndef _BlockTemplate
+#define _BlockTemplate
+
 #include "./Cell.cpp"
 #include "./Link.cpp"
 #include "./Text.cpp"
@@ -9,7 +12,7 @@
 	as well as Blocks, which refer to some other BlockTemplate.
 */
 struct BlockTemplate {
-	ComponentId		templateId;
+	ItemId		templateId;
 	Vector<Cell>	cells;
 	Vector<Link>	links;
 	Vector<Text>	texts;
@@ -27,7 +30,7 @@ struct BlockTemplate {
 	
 	BlockTemplate() {}
 	BlockTemplate(String name, String desc, float w, float h) {
-		this->templateId = ComponentIdUtil::next();
+		this->templateId = ItemId::next();
 		this->name		= name;
 		this->desc		= desc;
 		this->innerW	= w;
@@ -37,5 +40,4 @@ struct BlockTemplate {
 	}
 };
 
-
-
+#endif

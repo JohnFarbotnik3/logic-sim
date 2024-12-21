@@ -1,3 +1,4 @@
+#include "../Imports.cpp"
 
 struct SimulationLink {
 	u32 data;
@@ -7,7 +8,7 @@ struct SimulationLink {
 		this->data = (ind << 2) | tgt;
 	}
 	
-	get_ind() { return this.data >> 2; }
-	get_tgt() { return this.data & 0b11; }
+	u32 get_ind() { return this->data >> 2; }
+	u32 get_tgt() { return this->data & 0b11; }
 };
 

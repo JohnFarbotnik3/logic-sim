@@ -1,4 +1,7 @@
-#include "./ComponentId.cpp"
+#ifndef _BlockTemplateLibrary
+#define _BlockTemplateLibrary
+
+#include "./ItemId.cpp"
 #include "./BlockTemplate.cpp"
 
 /*
@@ -9,9 +12,9 @@
 	since it may need to update or clear caches based on changes to content.
 */
 struct BlockTemplateLibrary {
-	Map<ComponentId, BlockTemplate> templates;
+	Map<ItemId, BlockTemplate> templates;
 	/* Template currently being edited. */
-	ComponentId rootTemplateId;
+	ItemId rootTemplateId;
 	
 	BlockTemplateLibrary() {}
 	
@@ -23,12 +26,12 @@ struct BlockTemplateLibrary {
 		Returns a map with the number of instances of all templates that appear
 		in this BlockTemplate's tree (including itself).
 	*/
-	Map<ComponentId, Map<ComponentId, int>> getUsedTemplateCount_cache;
-	Map<ComponentId, int>& getUsedTemplateCount(ComponentId templateId) {
+	Map<ItemId, Map<ItemId, int>> getUsedTemplateCount_cache;
+	Map<ItemId, int>& getUsedTemplateCount(ItemId templateId) {
 		// check if already cached.
 		if(getUsedTemplateCount_cache.contains(templateId)) return getUsedTemplateCount_cache[templateId];
 		// add self to use-count.
-		Map<ComponentId, int> used;
+		Map<ItemId, int> used;
 		used[templateId] = 1;
 		// sum across child blocks.
 		const BlockTemplate temp = this->templates[templateId];
@@ -42,23 +45,23 @@ struct BlockTemplateLibrary {
 	}
 	
 	/* Returns true if rootBlock's template occurs anywhere in given BlockTemplate's tree. */
-	bool containsRootTemplate(ComponentId templateId) {
+	bool containsRootTemplate(ItemId templateId) {
 		return getUsedTemplateCount(templateId).contains(rootTemplateId);
 	}
 	
-	int totalCellsInTree(ComponentId templateId) {
+	int totalCellsInTree(ItemId templateId) {
 		const auto used = getUsedTemplateCount(templateId);
 		int sum = 0;
 		for(const auto& [tid, count] : used) sum += count * templates[tid].cells.size();
 		return sum;
 	}
-	int totalLinksInTree(ComponentId templateId) {
+	int totalLinksInTree(ItemId templateId) {
 		const auto used = getUsedTemplateCount(templateId);
 		int sum = 0;
 		for(const auto& [tid, count] : used) sum += count * templates[tid].links.size();
 		return sum;
 	}
-	int totalBlocksInTree(ComponentId templateId) {
+	int totalBlocksInTree(ItemId templateId) {
 		const auto used = getUsedTemplateCount(templateId);
 		int sum = 0;
 		for(const auto& [tid, count] : used) sum += count * templates[tid].blocks.size();
@@ -73,12 +76,12 @@ struct BlockTemplateLibrary {
 		Returns map containing all links in [templateId],
 		sorted into per-cell lists based on link source-address.
 	*/
-	Map<ComponentId, Map<ComponentId, Map<ComponentId, Vector<Link>>>> getOutputtingLinks_cache;
-	Map<ComponentId, Map<ComponentId, Vector<Link>>>& getOutputtingLinks(ComponentId templateId) {
+	Map<ItemId, Map<ItemId, Map<ItemId, Vector<Link>>>> getOutputtingLinks_cache;
+	Map<ItemId, Map<ItemId, Vector<Link>>>& getOutputtingLinks(ItemId templateId) {
 		// check if already cached.
 		if(getOutputtingLinks_cache.contains(templateId)) return getOutputtingLinks_cache[templateId];
 		// collect links into lists based on output source block.
-		Map<ComponentId, Map<ComponentId, Vector<Link>>> map;
+		Map<ItemId, Map<ItemId, Vector<Link>>> map;
 		const BlockTemplate btmp = this->templates[templateId];
 		for(const auto link : btmp.links) {
 			map[link.src.bid][link.src.cid].push_back(link);
@@ -87,52 +90,6 @@ struct BlockTemplateLibrary {
 		return getOutputtingLinks_cache[templateId] = map;
 	}
 
-	// ============================================================
-	// Content modification - server helpers.
-	// ------------------------------------------------------------
-
-	void server_set_root_template(ComponentId templateId) {
-		this->rootTemplateId = templateId;
-	}
-
-	void server_add_template(ComponentId templateId) {
-		printf("add_template: %lu\n", templateId);
-		BlockTemplate btmp;
-		btmp.templateId = templateId;
-		this->templates[templateId] = btmp;
-	}
-
-	void server_rem_template(ComponentId templateId) {
-		printf("rem_template: %lu\n", templateId);
-		this->templates.erase(templateId);
-	}
-
-	void server_set_template_props(ComponentId templateId, String name, String desc, float innerW, float innerH, float placeW, float placeH) {
-		BlockTemplate& btmp = this->templates[templateId];
-		btmp.name = name;
-		btmp.desc = desc;
-		btmp.innerW = innerW;
-		btmp.innerH = innerH;
-		btmp.placeW = placeW;
-		btmp.placeH = placeH;
-	}
-
-	void server_add_cell(
-		ComponentId templateId,
-		ComponentId id, u32 type, u32 value,
-		float x, float y, float w, float h, float r
-	) {
-		BlockTemplate& btmp = this->templates[templateId];
-		Cell cell;
-		cell.id = id;
-		cell.type = type;
-		cell.value = value;
-		cell.dimensions = ComponentDimensions(x,y,w,h,r);
-		btmp.cells.push_back(cell);
-	}
-
-	// TODO: continue from here...
-
 };
 
-
+#endif

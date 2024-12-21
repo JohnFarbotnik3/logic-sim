@@ -33,27 +33,28 @@ CellType addCellType(std::string typecode, Colour clr, uint32_t numTargets) {
 	return ctype;
 }
 
-struct CELL_TYPES {
-	CellType CONSTANT	= addCellType("CNST", 1, 0x4f7f7fff);
-	CellType COPY		= addCellType("COPY", 2, 0x6f6f6fff);
+struct _CELL_TYPES {
+	const CellType CONSTANT	= addCellType("CNST", 1, 0x4f7f7fff);
+	const CellType COPY		= addCellType("COPY", 2, 0x6f6f6fff);
 	// bitwise operators
-	CellType OR			= addCellType("OR"	, 3, 0xa2e4a2ff);
-	CellType XOR		= addCellType("XOR"	, 3, 0xffffffff);
-	CellType NOT		= addCellType("NOT"	, 2, 0xe65ce6ff);
-	CellType AND		= addCellType("AND"	, 3, 0x7d887dff);
-	CellType LSHIFT		= addCellType("LSH"	, 3, 0xffffffff);
-	CellType RSHIFT		= addCellType("RSH"	, 3, 0xffffffff);
+	const CellType OR		= addCellType("OR"	, 3, 0xa2e4a2ff);
+	const CellType XOR		= addCellType("XOR"	, 3, 0xffffffff);
+	const CellType NOT		= addCellType("NOT"	, 2, 0xe65ce6ff);
+	const CellType AND		= addCellType("AND"	, 3, 0x7d887dff);
+	const CellType LSHIFT	= addCellType("LSH"	, 3, 0xffffffff);
+	const CellType RSHIFT	= addCellType("RSH"	, 3, 0xffffffff);
 	// arithmetic & comparison
 	// TODO: add NOTEQUALS
-	CellType ADD		= addCellType("+"	, 3, 0xffffffff);
-	CellType SUB		= addCellType("-"	, 3, 0xffffffff);
-	CellType MULT		= addCellType("x"	, 3, 0xffffffff);
-	CellType DIV		= addCellType("÷"	, 3, 0xffffffff);
-	CellType GTH		= addCellType(">"	, 3, 0xffffffff);
-	CellType LTH		= addCellType("<"	, 3, 0xffffffff);
-	CellType EQUALS		= addCellType("=="	, 3, 0xffffffff);
-	CellType GEQ		= addCellType(">="	, 3, 0xffffffff);
-	CellType LEQ		= addCellType("<="	, 3, 0xffffffff);
+	const CellType ADD		= addCellType("+"	, 3, 0xffffffff);
+	const CellType SUB		= addCellType("-"	, 3, 0xffffffff);
+	const CellType MULT		= addCellType("x"	, 3, 0xffffffff);
+	const CellType DIV		= addCellType("÷"	, 3, 0xffffffff);
+	const CellType GTH		= addCellType(">"	, 3, 0xffffffff);
+	const CellType LTH		= addCellType("<"	, 3, 0xffffffff);
+	const CellType EQUALS	= addCellType("=="	, 3, 0xffffffff);
+	const CellType GEQ		= addCellType(">="	, 3, 0xffffffff);
+	const CellType LEQ		= addCellType("<="	, 3, 0xffffffff);
 };
+static const _CELL_TYPES CELL_TYPES;
 
 #endif

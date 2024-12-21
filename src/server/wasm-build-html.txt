@@ -3,6 +3,8 @@ source ./emsdk_env.sh
 cd /home/developer/Documents/Development/Emscripten/logic-sim/LogicSim/src/server
 
 clear && \
-em++ -O2 --bind ./GameServer_wasm.cpp -o ./em_index.html \
+em++ -O2 --bind \
+./GameServer_wasm.cpp -o ./em_index.html \
 -sEXPORTED_RUNTIME_METHODS=ccall,cwrap \
+-sASSERTIONS \
 && node serve

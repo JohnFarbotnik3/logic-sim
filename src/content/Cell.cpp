@@ -1,19 +1,22 @@
+#ifndef _Cell
+#define _Cell
+
 #include "./CellTypes.cpp"
-#include "./ComponentDimensions.cpp"
-#include "./ComponentId.cpp"
+#include "./ItemDim.cpp"
+#include "./ItemId.cpp"
 
 struct Cell {
-	ComponentDimensions	dimensions;
-	ComponentId			id;
-	u32					type;
-	u32					value;
+	ItemDim	dim;
+	ItemId	id;
+	u32		type;
+	u32		value;
 	
 	Cell() {}
 	Cell(u32 type, u32 value) {
-		this->dimensions	= ComponentDimensions(0,0,1,1,0);
-		this->id			= ComponentIdUtil::next();
-		this->type			= type;
-		this->value			= value;
+		this->dim	= ItemDim(0,0,1,1,0);
+		this->id	= ItemId::next();
+		this->type	= type;
+		this->value	= value;
 	}
 	
 	// ============================================================
@@ -26,7 +29,7 @@ struct Cell {
 	u32					taskOrder;
 	
 	void initProperties() {
-		this->tran			= this->dimensions.getTransformation();
+		this->tran			= this->dim.getTransformation();
 		this->typecode		= CELL_TYPES_MAP[this->type].typecode;
 		this->clr			= CELL_TYPES_MAP[this->type].clr;
 		this->numTargets	= CELL_TYPES_MAP[this->type].numTargets;
@@ -34,5 +37,4 @@ struct Cell {
 	}
 };
 
-
-
+#endif

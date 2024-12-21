@@ -1,25 +1,30 @@
+#ifndef _Link
+#define _Link
+
 #include "../Imports.cpp"
-#include "./ComponentId.cpp"
+#include "./ItemId.cpp"
 #include "./Colour.cpp"
 
 using LinkTarget = u8;
 
-struct LINK_TARGETS {
+struct _LINK_TARGETS {
 	const LinkTarget OUTPUT  = 0;
 	const LinkTarget INPUT_A = 1;
 	const LinkTarget INPUT_B = 2;
 };
 
+static const _LINK_TARGETS LINK_TARGETS;
+
 struct LinkAddress {
 	/* ID of child-block containing cell, or THIS_BLOCK if cell is in same block as this link. */
-	ComponentId bid;
+	ItemId bid;
 	/* ID of the linked cell. */
-	ComponentId cid;
+	ItemId cid;
 	/* Target on linked cell. */
 	LinkTarget tgt;
 	
 	LinkAddress() {}
-	LinkAddress(ComponentId bid, ComponentId cid, LinkTarget tgt) {
+	LinkAddress(ItemId bid, ItemId cid, LinkTarget tgt) {
 		this->bid = bid;
 		this->cid = cid;
 		this->tgt = tgt;
@@ -39,19 +44,21 @@ struct LinkAddress {
 	Links can target cells inside either the current block, or inside its child blocks.
 */
 struct Link {
-	ComponentId	id;
+	ItemId	id;
 	LinkAddress src;
 	LinkAddress dst;
 	Colour clr;
 	
+	Link() {}
 	Link(LinkAddress src, LinkAddress dst, Colour clr) {
-		this->id	= ComponentIdUtil::next();
+		this->id	= ItemId::next();
 		this->src	= src;
 		this->dst	= dst;
 		this->clr	= clr;
 	}
 	
-	bool isConnectedToCell (ComponentId id) { return (this->src.cid == id) | (this->dst.cid == id); }
-	bool isConnectedToBlock(ComponentId id) { return (this->src.bid == id) | (this->dst.bid == id); }
+	bool isConnectedToCell (ItemId id) { return (this->src.cid == id) | (this->dst.cid == id); }
+	bool isConnectedToBlock(ItemId id) { return (this->src.bid == id) | (this->dst.bid == id); }
 };
 
+#endif

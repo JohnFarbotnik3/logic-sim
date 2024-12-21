@@ -1,5 +1,6 @@
-#include "./SimulationTree.cpp"
 #include "../lib/Date.cpp"
+#include "./SimulationTree.cpp"
+#include "./SimulationTask.cpp"
 
 /*
 	Shared simulation data will be stored in this struct.
@@ -10,7 +11,7 @@
 	so they can be added to a list of cells to update during next
 	simulation-step when an input-value changes.
 */
-class GameSimulation {
+struct GameSimulation {
 	/* The simulation tree created by expanding root block template. */
 	SimulationTree simtree;
 	/* List of task objects. */
@@ -40,17 +41,14 @@ class GameSimulation {
 	// ------------------------------------------------------------
 	
 	void pushCellUpdate(u32 ind, u32 tgt, u32 val) {
-		const t = ind / CELLS_PER_TASK;
-		this.tasks[t].pushCellUpdate(ind, tgt, val);
+		this->tasks[ind / CELLS_PER_TASK].pushCellUpdate(ind, tgt, val);
 	}
 	void pushCellUpdate(SimulationUpdate& upd) {
-		const t = upd.ind / CELLS_PER_TASK;
-		this.tasks[t].pushCellUpdate(upd);
+		this->tasks[upd.get_ind() / CELLS_PER_TASK].pushCellUpdate(upd);
 	}
 	
 	void applyCellOutputChange(u32 ind, u32 val) {
-		const t = ind / CELLS_PER_TASK;
-		this.tasks[t].applyCellOutputChange(ind, val);
+		this->tasks[ind / CELLS_PER_TASK].applyCellOutputChange(ind, val);
 	}
 	
 	// ============================================================
@@ -61,8 +59,8 @@ class GameSimulation {
 		SimulationTree& simtree,
 		Vector<SimulationCell>& cell_buffer
 	) {
-		for(const SimulationBlock& simblock : simtree) {
-			BlockTemplate btmp = simtree.getTemplate(simblock);
+		for(SimulationBlock& simblock : simtree.simblocks) {
+			const BlockTemplate& btmp = simtree.getTemplate(simblock);
 			for(const Cell& cell : btmp.cells) {
 				const int index = cell_buffer.size();
 				simblock.cmap[cell.id] = index;
@@ -74,11 +72,11 @@ class GameSimulation {
 	void generate_link_data(
 		SimulationTree& simtree,
 		Vector<SimulationCell>& cell_buffer,
-		Vector<SimulationLink>& link_buffer,
+		Vector<SimulationLink>& link_buffer
 	) {
-		for(const SimulationBlock& simblock : simtree) {
-			BlockTemplate btmp = simtree.getTemplate(simblock);
-			Map<ComponentId, Vector<SimulationLink>> gathered_links;
+		for(SimulationBlock& simblock : simtree.simblocks) {
+			const BlockTemplate& btmp = simtree.getTemplate(simblock);
+			Map<ItemId, Vector<SimulationLink>> gathered_links;
 			// get links in this block which output from a cell in this block.
 			{
 				const auto& map = simtree.library.getOutputtingLinks(simblock.templateId)[simblock.blockId];
@@ -92,7 +90,7 @@ class GameSimulation {
 			}
 			// get links in parent which output from a cell in this (child) block.
 			if(simblock.parent != nullptr) {
-				const Simblock& parentSB = *(simblock.parent);
+				const SimulationBlock& parentSB = *(simblock.parent);
 				const auto& map = simtree.library.getOutputtingLinks(parentSB.templateId)[simblock.blockId];
 				for(const auto& [cellId, list] : map) {
 					for(const Link& link : list) {
@@ -104,7 +102,7 @@ class GameSimulation {
 			}
 			// add links to buffer and notify simcells.
 			for(const auto& [cellId, list] : gathered_links) {
-				const auto& cell = cell_buffer[simblock.cmap[cell.id]];
+				auto& cell = cell_buffer[simblock.cmap[cellId]];
 				cell.links_len = list.size();
 				cell.links_ofs = link_buffer.size();
 				for(const SimulationLink simlink : list) link_buffer.push_back(simlink);
@@ -114,39 +112,36 @@ class GameSimulation {
 	
 	void generate_tasks(
 		Vector<SimulationCell>& cellbuf,
-		Vector<SimulationLink>& linkbuf,
+		Vector<SimulationLink>& linkbuf
 	) {
 		this->tasks.clear();
 		const u32 N = cellbuf.size();
 		for(u32 n=0;n<N;n+=CELLS_PER_TASK) {
 			// create task.
 			const u32 ibeg = n;
-			const u32 iend = Math.min(N, ibeg + CELLS_PER_TASK);
-			tasks.emplace_back(cellbuf, linkbuf, ibeg, iend);
+			const u32 iend = std::min(N, ibeg + CELLS_PER_TASK);
+			SimulationTask& task = tasks.emplace_back(cellbuf, linkbuf, ibeg, iend);
 			// initialize and propagate initial cell values.
-			for(let i=ibeg;i<iend;i++) task.initializeCellValue(i, cellbuf[i].value[LINK_TARGET::OUTPUT]);
+			for(int i=ibeg;i<iend;i++) task.initializeCellValue(i, cellbuf[i].values[LINK_TARGETS.OUTPUT]);
 		}
 	}
 	
 	/* Initialize or rebuild simulation data. */
 	void rebuild(BlockTemplateLibrary& library) {
-		const ComponentId& rootTemplateId = library.rootTemplateId;
-		const SimulationTreeBlock  oldTree = this->simtree;
-		const SimulationTreeBlock& newTree = this->simtree = SimulationTreeBlock(rootTemplateId, ComponentId.NONE, 0);
+		const ItemId& rootTemplateId = library.rootTemplateId;
+		SimulationTree  oldTree = this->simtree;
+		SimulationTree& newTree = this->simtree = SimulationTree(library);
 		
-		const Vector<SimulationCell> cell_buffer;
+		Vector<SimulationCell> cell_buffer;
 		cell_buffer.reserve(library.totalCellsInTree(rootTemplateId));
 		this->generate_cell_data(newTree, cell_buffer);
-		console.log("num cells", cell_buffer.size());
-		
-		const Vector<SimulationLink> link_buffer;
+
+		Vector<SimulationLink> link_buffer;
 		link_buffer.reserve(library.totalLinksInTree(rootTemplateId));
-		this.generate_link_data(newTree, cell_buffer, link_buffer);
-		console.log("num links", link_buffer.size());
-		
-		this.generate_tasks(cell_buffer, link_buffer);
-		console.log("num tasks", this->tasks.size());
-		
+		this->generate_link_data(newTree, cell_buffer, link_buffer);
+
+		this->generate_tasks(cell_buffer, link_buffer);
+
 		this->shouldRebuild = false;
 		this->shouldReset = false;
 	}
@@ -154,34 +149,30 @@ class GameSimulation {
 	// ============================================================
 	// Update
 	// ------------------------------------------------------------
-	update(u32 simulationRate) {
-		if(this.shouldRebuild | this.shouldReset) this.rebuild();
+	void update(float simulationRate) {
 		const u64 max_runtime_ms = 1000 / 60;
-		const u64 prev = this->prev_time_ms = this->curr_time_ms;
-		const u64 curr = this->curr_time_ms = Date::now_ms();
-		if(prev === 0 | !this.isRunning) prev = curr;
-		this.accumulated_msteps += (curr - prev) * simulationRate;
-		if(this.isRunning) {
-			while(this.accumulated_msteps > 1000) {
+		u64 prev = this->prev_time_ms = this->curr_time_ms;
+		u64 curr = this->curr_time_ms = Date::now_ms();
+		if((prev == 0) | !this->isRunning) prev = curr;
+		this->accumulated_msteps += (curr - prev) * simulationRate;
+		if(this->isRunning) {
+			while(this->accumulated_msteps > 1000) {
 				// check if time limit reached
-				if(Date::now() - curr < max_runtime_ms) {
-					this.accumulated_msteps -= 1000;
+				if(Date::now_ms() - curr < max_runtime_ms) {
+					this->accumulated_msteps -= 1000;
 				} else {
-					this.accumulated_msteps = 0;
+					this->accumulated_msteps = 0;
 					break;
 				}
 				// perform simulation step.
-				for(const SimulationTask& task : this->tasks) {
+				for(SimulationTask& task : this->tasks) {
 					if(task.shouldUpdate()) task.update();
 				}
 				// gather and spread outputs.
-				for(const SimulationTask& task : this->tasks) {
-					for(const SimulationUpdate& upd : task.out_buffer) this.pushCellUpdate(upd);
+				for(SimulationTask& task : this->tasks) {
+					for(SimulationUpdate& upd : task.out_buffer) this->pushCellUpdate(upd);
 				}
 			}
 		}
 	}
 };
-
-
-

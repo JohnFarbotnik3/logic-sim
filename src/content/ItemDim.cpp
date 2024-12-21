@@ -1,19 +1,19 @@
-#ifndef _ComponentDimensions
-#define _ComponentDimensions
+#ifndef _ItemDim
+#define _ItemDim
 
 #include "../lib/Transformation2D.cpp"
 
-struct ComponentDimensions {
+struct ItemDim {
 	float x,y,w,h,r;
 	
-	ComponentDimensions() {
+	ItemDim() {
 		x = 0;
 		y = 0;
 		w = 1;
 		h = 1;
 		r = 0;
 	}
-	ComponentDimensions(float x, float y, float w, float h, float r) {
+	ItemDim(float x, float y, float w, float h, float r) {
 		this->x = x;
 		this->y = y;
 		this->w = w;

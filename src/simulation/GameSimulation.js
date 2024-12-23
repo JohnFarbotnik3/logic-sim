@@ -203,7 +203,6 @@ class GameSimulation {
 		this.accumulatedSteps += (curr - prev) * gameData.simulationSpeed / 1000;
 		this.previousTime = curr;
 		
-		if(this.shouldRebuild | this.shouldReset) this.rebuild();
 		if(this.isRunning) {
 			while(this.accumulatedSteps > 1) {
 				// check if time limit reached
@@ -248,24 +247,6 @@ class GameSimulation {
 	}
 	onContentChanged_addBlock() { this.shouldRebuild = true; }
 	onContentChanged_remBlock() { this.shouldRebuild = true; }
-	
-	// ============================================================
-	// Rendering Helpers.
-	// ------------------------------------------------------------
-	
-	populateCellValues(simblock, cid, dst) {
-		if(simblock?.hasCellIndex(cid)) {
-			const cind = simblock.getCellIndex(cid);
-			const task = this.tasks[this.getTaskIndex(cind)];
-			dst[0] = task.cell_buffer.get_value_out(cind - task.ibeg);
-			dst[1] = task.cell_buffer.get_value_ina(cind - task.ibeg);
-			dst[2] = task.cell_buffer.get_value_inb(cind - task.ibeg);
-		} else {
-			dst[0] = cell.value;
-			dst[1] = 0x0;
-			dst[2] = 0x0;
-		}
-	}
 	
 };
 

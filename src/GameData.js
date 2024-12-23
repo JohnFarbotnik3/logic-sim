@@ -17,7 +17,8 @@ class GameData {
 	// ============================================================
 	// BlockTemplate Library.
 	// ------------------------------------------------------------
-	
+	// TODO: bundle this stuff into a BTLibrary class.
+
 	// list of loaded block templates.
 	blockTemplates = new Map();// Map<templateId, BlockTemplate>
 	

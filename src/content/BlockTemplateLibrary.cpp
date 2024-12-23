@@ -3,6 +3,8 @@
 
 #include "./ItemId.cpp"
 #include "./BlockTemplate.cpp"
+#include "ItemDim.cpp"
+#include "Link.cpp"
 
 /*
 	A collection of block-templates, as well as functions
@@ -13,9 +15,7 @@
 */
 struct BlockTemplateLibrary {
 	Map<ItemId, BlockTemplate> templates;
-	/* Template currently being edited. */
-	ItemId rootTemplateId;
-	
+
 	BlockTemplateLibrary() {}
 	
 	// ============================================================
@@ -44,9 +44,9 @@ struct BlockTemplateLibrary {
 		return getUsedTemplateCount_cache[templateId] = used;
 	}
 	
-	/* Returns true if rootBlock's template occurs anywhere in given BlockTemplate's tree. */
-	bool containsRootTemplate(ItemId templateId) {
-		return getUsedTemplateCount(templateId).contains(rootTemplateId);
+	/* Returns true if template with id occurs anywhere in given BlockTemplate's tree. */
+	bool containsTemplate(ItemId templateId, ItemId id) {
+		return getUsedTemplateCount(templateId).contains(id);
 	}
 	
 	int totalCellsInTree(ItemId templateId) {
@@ -83,13 +83,79 @@ struct BlockTemplateLibrary {
 		// collect links into lists based on output source block.
 		Map<ItemId, Map<ItemId, Vector<Link>>> map;
 		const BlockTemplate btmp = this->templates[templateId];
+		//printf("<> generate outputty - nlinks: %lu\n", btmp.links.size());
 		for(const auto link : btmp.links) {
+			//printf("<> getOutputtingLinks - link src: %llu, %llu, %u\n", link.src.bid, link.src.cid, link.src.tgt);
 			map[link.src.bid][link.src.cid].push_back(link);
+			assert(map[link.src.bid][link.src.cid].size() > 0);
+		}
+		printf("<> generate outputty - n submaps: %lu\n", map.size());
+		for(const auto& [blockId, submap] : map) {
+			printf("<> generate outputty - submap: %llu, %lu\n", blockId, submap.size());
 		}
 		// add to cache and return.
 		return getOutputtingLinks_cache[templateId] = map;
 	}
 
+	// ============================================================
+	// Content modification
+	// ------------------------------------------------------------
+
+	void clear_caches() {
+		this->getUsedTemplateCount_cache.clear();
+		this->getOutputtingLinks_cache.clear();
+	}
+
+	void new_template(String templateId, String name, String desc, float innerW, float innerH, float placeW, float placeH) {
+		BlockTemplate btmp;
+		btmp.templateId = templateId;
+		btmp.name = name;
+		btmp.desc = desc;
+		btmp.innerW = innerW;
+		btmp.innerH = innerH;
+		btmp.placeW = placeW;
+		btmp.placeH = placeH;
+		this->templates[templateId] = btmp;
+		this->clear_caches();
+	}
+
+	void add_cell(String templateId, String id, ItemDim dim, u32 type, u32 value) {
+		BlockTemplate& btmp = this->templates[templateId];
+		Cell item;
+		item.id = id;
+		item.dim = dim;
+		item.type = type;
+		item.value = value;
+		item.initProperties();
+		this->templates[templateId].cells.push_back(item);
+		this->clear_caches();
+	}
+
+	void add_link(
+		String templateId,
+		String id,
+		LinkAddress src,
+		LinkAddress dst,
+		u32 clr
+	) {
+		BlockTemplate& btmp = this->templates[templateId];
+		Link item;
+		item.id = id;
+		item.src = src;
+		item.dst = dst;
+		item.clr = clr;
+		this->templates[templateId].links.push_back(item);
+		this->clear_caches();
+	}
+
+	void add_block(String templateId, String id, String tid, ItemDim dim) {
+		Block item;
+		item.id = id;
+		item.templateId = tid;
+		item.dim = dim;
+		this->templates[templateId].blocks.push_back(item);
+		this->clear_caches();
+	}
 };
 
 #endif

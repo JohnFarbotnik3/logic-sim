@@ -8,7 +8,8 @@ struct SimulationLink {
 		this->data = (ind << 2) | tgt;
 	}
 	
-	u32 get_ind() { return this->data >> 2; }
-	u32 get_tgt() { return this->data & 0b11; }
+	u32 get_ind() const { return this->data >> 2; }
+	u32 get_tgt() const { return this->data & 0b11; }
+	// NOTE: the extra ^const above is to indicate that item contents wont be mutated.
 };
 

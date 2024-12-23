@@ -27,7 +27,7 @@ struct Cell {
 	Colour 				clr;
 	u32 				numTargets;
 	u32					taskOrder;
-	
+
 	void initProperties() {
 		this->tran			= this->dim.getTransformation();
 		this->typecode		= CELL_TYPES_MAP[this->type].typecode;

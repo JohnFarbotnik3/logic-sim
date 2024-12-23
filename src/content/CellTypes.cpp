@@ -3,6 +3,7 @@
 
 #include "../Imports.cpp"
 #include "./Colour.cpp"
+#include <cassert>
 
 struct CellType {
 	String		typecode;
@@ -20,16 +21,18 @@ struct CellType {
 		this->clr			= clr;
 		this->numTargets	= numTargets;
 		this->taskOrder		= CellType::NEXT_TASK_ORDER++;
-		for(int x=0;x<4;x++) this->type = (this->type << 8) | (typecode.length() > x ? typecode[x] : 0);
+		for(int x=0;x<typecode.length();x++) this->type = (this->type << 8) | typecode[x];
+		// TODO: verify that these typecodes match typecodes in javascript-side.
 	}
 };
 
 u32 CellType::NEXT_TASK_ORDER = 0;
 
-Map<uint32_t, CellType> CELL_TYPES_MAP;
+Map<u32, CellType> CELL_TYPES_MAP;
 CellType addCellType(std::string typecode, Colour clr, uint32_t numTargets) {
 	CellType ctype(typecode, numTargets, clr);
 	CELL_TYPES_MAP[ctype.type] = ctype;
+	//printf("added to cell types map: %u, %u\n", ctype.type, CELL_TYPES_MAP[ctype.type].taskOrder);
 	return ctype;
 }
 
@@ -56,5 +59,7 @@ struct _CELL_TYPES {
 	const CellType LEQ		= addCellType("<="	, 3, 0xffffffff);
 };
 static const _CELL_TYPES CELL_TYPES;
+
+static const u32 NUM_CELL_TYPES = CellType::NEXT_TASK_ORDER;
 
 #endif

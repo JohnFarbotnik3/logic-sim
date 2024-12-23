@@ -63,7 +63,6 @@ class Buffer {
 		this.writePos = copy ? Math.min(this.writePos, oldLength) : 0;
 		this.bufferPos = 0;// data will need to be re-added to buffer since it was cleared when re-allocated.
 		return true;
-		return false;
 	}
 	clear() {
 		this.writePos = 0;

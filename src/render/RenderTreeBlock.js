@@ -156,7 +156,24 @@ class RenderTreeBlock {
 			const cell		= renderData.cell;
 			const cid		= cell.id;
 			const vals		= renderData.vals;
-			if(simblock) simulation.populateCellValues(simblock, cid, vals);
+			if(simblock?.hasCellIndex(cid)) {
+				const cind = simblock.getCellIndex(cid);
+				/*
+				const task = simulation.tasks[simulation.getTaskIndex(cind)];
+				vals[0] = task.cell_buffer.get_value_out(cind - task.ibeg);
+				vals[1] = task.cell_buffer.get_value_ina(cind - task.ibeg);
+				vals[2] = task.cell_buffer.get_value_inb(cind - task.ibeg);
+				//*/
+				///*
+				vals[0] = gameServer.simulation_get_cell_value(cind, 0);
+				vals[1] = gameServer.simulation_get_cell_value(cind, 1);
+				vals[2] = gameServer.simulation_get_cell_value(cind, 2);
+				//*/
+			} else {
+				vals[0] = cell.value;
+				vals[1] = 0x0;
+				vals[2] = 0x0;
+			}
 			const clrs		= renderData.cell_clrs;
 			const clr		= cell.clr;
 			const clr_off	= GameRenderer.hexColour_scale(clr, 0.5);

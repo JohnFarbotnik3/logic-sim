@@ -1,4 +1,9 @@
 
+// global structures
+let   gameServer		= null;
+const gameData			= new GameData();
+const gameControls		= new GameControls();
+const simulation		= new GameSimulation();
 
 class Main {
 
@@ -6,6 +11,10 @@ class Main {
 	onUpdate = null;
 	
 	async init() {
+		await GameServer_wasm.module_ready_promise.then(() => {
+			gameServer = new GameServer_wasm();
+			console.log("gameServer", gameServer);
+		});
 		GameInit.init();
 		GameUI.init();
 		await this.updateRestart();
@@ -37,7 +46,13 @@ class Main {
 			await gameData.verifyLinksCanFindTargets();
 			gameControls.update();
 			await gameData.verifyLinksCanFindTargets();
+			if(simulation.shouldRebuild | simulation.shouldReset) {
+				simulation.rebuild();
+				gameServer.send_templates(gameData.blockTemplates, gameData.rootBlock.templateId);
+				gameServer.simulation_rebuild();
+			}
 			simulation.update();
+			gameServer.simulation_update(gameData.simulationSpeed);
 			GameRenderer.render();
 			if(_this.doUpdate) requestAnimationFrame(_this.update);
 			else if(_this.onUpdate) _this.onUpdate(true);
@@ -50,12 +65,5 @@ class Main {
 		}
 	}
 };
-
-// static structures
-const gameData			= new GameData();
-const gameControls		= new GameControls();
-const simulation		= new GameSimulation();
-const main				= new Main();
-
-
+const main = new Main();
 

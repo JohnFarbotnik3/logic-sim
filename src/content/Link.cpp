@@ -5,7 +5,7 @@
 #include "./ItemId.cpp"
 #include "./Colour.cpp"
 
-using LinkTarget = u8;
+using LinkTarget = u32;
 
 struct _LINK_TARGETS {
 	const LinkTarget OUTPUT  = 0;

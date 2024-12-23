@@ -4,6 +4,7 @@
 #include "./SimulationArrayMap.cpp"
 #include "../content/Link.cpp"
 #include "../content/CellTypes.cpp"
+#include <cassert>
 
 /*
 	Simulation data is split into batches, i.e. "Tasks",
@@ -28,8 +29,8 @@ struct SimulationTask {
 	u32		perf_n_outputs;
 	
 	SimulationTask(
-		Vector<SimulationCell>& cellbuf,
-		Vector<SimulationLink>& linkbuf,
+		const Vector<SimulationCell>& cellbuf,
+		const Vector<SimulationLink>& linkbuf,
 		u32 cell_ibeg,
 		u32 cell_iend
 	) {
@@ -47,20 +48,24 @@ struct SimulationTask {
 		this->perf_n_updates = 0;
 		this->perf_n_outputs = 0;
 		// copy cells to task-local buffer.
-		for(u32 i=cell_ibeg;i<cell_iend;i++) this->cell_buffer.push_back(cellbuf[i]);
+		for(u32 i=cell_ibeg;i<cell_iend;i++) {
+			this->cell_buffer.push_back(cellbuf[i]);
+		}
 		// copy links to task-local buffer, and update cell list pointers.
 		for(u32 i=cell_ibeg;i<cell_iend;i++)  {
 			const u32 len = cellbuf[i].links_len;
 			const u32 ofs = cellbuf[i].links_ofs;
 			const u32 x = i - cell_ibeg;
 			this->cell_buffer[x].links_ofs = this->link_buffer.size();
-			for(int k=0;k<len;k++) this->link_buffer.push_back(linkbuf[ofs + k]);
+			for(int k=0;k<len;k++) {
+				this->link_buffer.push_back(linkbuf[ofs + k]);
+			}
 		}
 	}
 	
 	bool shouldUpdate() { return this->update_map.count > 0; }
-	u32 toLocalIndex(u32 ind) { return ind - this->cell_ibeg; }
-	u32 toGlobalIndex(u32 ind) { return ind + this->cell_ibeg; }
+	u32  toLocalIndex(u32 ind) const { return ind - this->cell_ibeg; }
+	u32 toGlobalIndex(u32 ind) const { return ind + this->cell_ibeg; }
 	
 	/* Update cell value and add to list of cells to update during next cycle. */
 	void pushCellUpdate(u32 ind, u32 tgt, u32 val) {
@@ -75,11 +80,13 @@ struct SimulationTask {
 	}
 	
 	/* Set the new output value of a cell, and notify output targets. */
-	void applyCellOutputChange(u32 cellInd, u32 val) {
-		const u32 len = this->cell_buffer[cellInd].links_len;
-		const u32 ofs = this->cell_buffer[cellInd].links_ofs;
+	void applyCellOutputChange(u32 x, u32 val) {
+		//printf("<> applyCellOutputChange(%u, %u)\n", x, val);
+		const u32 len = this->cell_buffer[x].links_len;
+		const u32 ofs = this->cell_buffer[x].links_ofs;
+		//printf("<> len, ofs(%u, %u)\n", len, ofs);
 		// write changed value to cell.
-		this->cell_buffer[cellInd].setValue(LINK_TARGETS.OUTPUT, val);
+		this->cell_buffer[x].setValue(LINK_TARGETS.OUTPUT, val);
 		// push update-values for output targets.
 		for(u32 k=0;k<len;k++) {
 			const u32 ind = this->link_buffer[ofs+k].get_ind();
@@ -112,25 +119,25 @@ struct SimulationTask {
 		// ============================================================
 		// Sort inputs.
 		// ------------------------------------------------------------
-		
+		printf("task sort\n");
+
 		// bucket-sort local cell indices based on cell type.
-		const int NUM_TYPES = CellType::NEXT_TASK_ORDER;
-		int offsets[NUM_TYPES];
-		int counts [NUM_TYPES];
-		for(int i=0;i<NUM_TYPES;i++) offsets[i] = 0;
-		for(int i=0;i<NUM_TYPES;i++) counts [i] = 0;
+		int offsets[NUM_CELL_TYPES];
+		int counts [NUM_CELL_TYPES];
+		for(int i=0;i<NUM_CELL_TYPES;i++) offsets[i] = 0;
+		for(int i=0;i<NUM_CELL_TYPES;i++) counts [i] = 0;
 		
 		const int num = this->update_map.count;
 		int sorted_inds[num];
 		
 		for(int i=0;i<num;i++) {
 			const int x = this->update_map.stack[i];
-			const int bucket = cell_buffer[x].task_order;
+			const int bucket = cell_buffer[x].task_order;// TODO : troubleshoot -> why is this always 0???
 			counts[bucket]++;
 		}
 		
 		int sum=0;
-		for(int x=0;x<NUM_TYPES;x++) { offsets[x]=sum; sum+=counts[x]; }
+		for(int x=0;x<NUM_CELL_TYPES;x++) { offsets[x]=sum; sum+=counts[x]; }
 		
 		for(int i=0;i<num;i++) {
 			const int x = this->update_map.stack[i];
@@ -138,18 +145,26 @@ struct SimulationTask {
 			sorted_inds[offsets[bucket]++] = x;
 		}
 		
+		for(int i=0;i<num;i++) printf("stack: %i\n", update_map.stack[i]);
+		for(int i=0;i<NUM_CELL_TYPES;i++) printf("counts: %i\n", counts[i]);
+		for(int i=0;i<NUM_CELL_TYPES;i++) printf("offsets: %i\n", offsets[i]);
+		for(int i=0;i<num;i++) printf("indices: %i\n", sorted_inds[i]);
+
 		// reset offsets for later use.
-		for(int x=0;x<NUM_TYPES;x++) { offsets[x] -= counts[x]; }
+		for(int x=0;x<NUM_CELL_TYPES;x++) { offsets[x] -= counts[x]; }
 		
 		// ============================================================
 		// Compute values.
 		// ------------------------------------------------------------
+		printf("task compute\n");
+
 		// gather input values.
 		u32 out_prev[num];
 		u32 out[num];
 		u32 ina[num];
 		u32 inb[num];
 		for(int i=0;i<num;i++) {
+			//printf("task compute: %i/%i, %i/%i\n", i, num, sorted_inds[i], cell_buffer.size());
 			const SimulationCell& cell = cell_buffer[sorted_inds[i]];
 			out_prev[i]	= cell.values[0];
 			ina[i]		= cell.values[1];
@@ -161,6 +176,7 @@ struct SimulationTask {
 		int b=0;
 		int e=0;
 		loopConfig(offsets, counts, b, e, CELL_TYPES.CONSTANT.taskOrder);	for(int x=b;x<e;x++) { out[x] = out_prev[x]; }
+		//printf("<> task loop config: %i, %i\n", b, e);
 		loopConfig(offsets, counts, b, e, CELL_TYPES.COPY	.taskOrder);	for(int x=b;x<e;x++) { out[x] = ina[x]; }
 		// bitwise operators
 		loopConfig(offsets, counts, b, e, CELL_TYPES.OR		.taskOrder);	for(int x=b;x<e;x++) { out[x] =   ina[x] |  inb[x]; }
@@ -184,6 +200,8 @@ struct SimulationTask {
 		// ============================================================
 		// Collect outputs.
 		// ------------------------------------------------------------
+		printf("task collect\n");
+
 		// collect changed outputs.
 		this->update_map.clear();
 		this->out_buffer.clear();
@@ -192,6 +210,9 @@ struct SimulationTask {
 		// gather remaining performance metrics.
 		this->perf_n_updates += num;
 		this->perf_n_outputs += out_buffer.size();
+		//printf("<> task updates: %i \n", num);
+		//printf("<> task outputs: %lu\n", out_buffer.size());
+		//printf("<> task uinputs: %i \n", this->update_map.count);
 	}
 };
 

@@ -1,5 +1,4 @@
 #include "../Imports.cpp"
-#include "../content/CellTypes.cpp"
 
 struct SimulationCell {
 	/* Cell values. */
@@ -18,7 +17,6 @@ struct SimulationCell {
 		this->task_order = order;
 		this->links_len = 0;
 		this->links_ofs = 0;
-		assert(order < NUM_CELL_TYPES);
 	}
 	
 	void setValue(u32 tgt, u32 val) {

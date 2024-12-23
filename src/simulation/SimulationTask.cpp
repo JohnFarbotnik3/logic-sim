@@ -50,6 +50,8 @@ struct SimulationTask {
 		// copy cells to task-local buffer.
 		for(u32 i=cell_ibeg;i<cell_iend;i++) {
 			this->cell_buffer.push_back(cellbuf[i]);
+			assert(cell_buffer[i-cell_ibeg].task_order < NUM_CELL_TYPES);
+			//printf("INIT ORDER: %u\n", this->cell_buffer[i-cell_ibeg].task_order);
 		}
 		// copy links to task-local buffer, and update cell list pointers.
 		for(u32 i=cell_ibeg;i<cell_iend;i++)  {
@@ -119,7 +121,7 @@ struct SimulationTask {
 		// ============================================================
 		// Sort inputs.
 		// ------------------------------------------------------------
-		printf("task sort\n");
+		//printf("task sort\n");
 
 		// bucket-sort local cell indices based on cell type.
 		int offsets[NUM_CELL_TYPES];
@@ -130,9 +132,13 @@ struct SimulationTask {
 		const int num = this->update_map.count;
 		int sorted_inds[num];
 		
+		//for(int i=0;i<num;i++) printf("stack: %i\n", update_map.stack[i]);
+		//for(int i=0;i<cell_buffer.size();i++) printf("order: %i\n", cell_buffer[i].task_order);
+
 		for(int i=0;i<num;i++) {
-			const int x = this->update_map.stack[i];
-			const int bucket = cell_buffer[x].task_order;// TODO : troubleshoot -> why is this always 0???
+			const u32 x = this->update_map.stack[i];
+			const u32 bucket = cell_buffer[x].task_order;
+			assert(bucket <NUM_CELL_TYPES);
 			counts[bucket]++;
 		}
 		
@@ -140,15 +146,14 @@ struct SimulationTask {
 		for(int x=0;x<NUM_CELL_TYPES;x++) { offsets[x]=sum; sum+=counts[x]; }
 		
 		for(int i=0;i<num;i++) {
-			const int x = this->update_map.stack[i];
-			const int bucket = cell_buffer[x].task_order;
+			const u32 x = this->update_map.stack[i];
+			const u32 bucket = cell_buffer[x].task_order;
 			sorted_inds[offsets[bucket]++] = x;
 		}
 		
-		for(int i=0;i<num;i++) printf("stack: %i\n", update_map.stack[i]);
-		for(int i=0;i<NUM_CELL_TYPES;i++) printf("counts: %i\n", counts[i]);
-		for(int i=0;i<NUM_CELL_TYPES;i++) printf("offsets: %i\n", offsets[i]);
-		for(int i=0;i<num;i++) printf("indices: %i\n", sorted_inds[i]);
+		//for(int i=0;i<NUM_CELL_TYPES;i++) printf("counts: %i\n", counts[i]);
+		//for(int i=0;i<NUM_CELL_TYPES;i++) printf("offsets: %i\n", offsets[i]);
+		//for(int i=0;i<num;i++) printf("indices: %i\n", sorted_inds[i]);
 
 		// reset offsets for later use.
 		for(int x=0;x<NUM_CELL_TYPES;x++) { offsets[x] -= counts[x]; }
@@ -156,7 +161,7 @@ struct SimulationTask {
 		// ============================================================
 		// Compute values.
 		// ------------------------------------------------------------
-		printf("task compute\n");
+		//printf("task compute\n");
 
 		// gather input values.
 		u32 out_prev[num];
@@ -200,7 +205,7 @@ struct SimulationTask {
 		// ============================================================
 		// Collect outputs.
 		// ------------------------------------------------------------
-		printf("task collect\n");
+		//printf("task collect\n");
 
 		// collect changed outputs.
 		this->update_map.clear();

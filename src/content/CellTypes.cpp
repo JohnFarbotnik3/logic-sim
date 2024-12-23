@@ -9,57 +9,58 @@ struct CellType {
 	String		typecode;
 	u32			type;
 	u32			numTargets;
-	Colour 		clr;
 	u32			taskOrder;
-	
-	static u32	NEXT_TASK_ORDER;
-	
+	Colour 		clr;
+
 	CellType() {}
-	CellType(std::string typecode, uint32_t numTargets, Colour clr) {
+	CellType(std::string typecode, u32 type, u32 numTargets, u32 taskOrder, Colour clr) {
 		this->typecode		= typecode;
-		this->type			= 0;
+		this->type			= type;
 		this->clr			= clr;
 		this->numTargets	= numTargets;
-		this->taskOrder		= CellType::NEXT_TASK_ORDER++;
-		for(int x=0;x<typecode.length();x++) this->type = (this->type << 8) | typecode[x];
+		this->taskOrder		= taskOrder;
+		printf("CREATED CELL TYPE: %u\n", this->type);
+		assert(taskOrder < 30);
 		// TODO: verify that these typecodes match typecodes in javascript-side.
 	}
 };
 
-u32 CellType::NEXT_TASK_ORDER = 0;
-
-Map<u32, CellType> CELL_TYPES_MAP;
-CellType addCellType(std::string typecode, Colour clr, uint32_t numTargets) {
-	CellType ctype(typecode, numTargets, clr);
-	CELL_TYPES_MAP[ctype.type] = ctype;
-	//printf("added to cell types map: %u, %u\n", ctype.type, CELL_TYPES_MAP[ctype.type].taskOrder);
-	return ctype;
+static Map<u32, CellType> CELL_TYPES_MAP;
+CellType addCellType(std::string typecode, u32 type, u32 numTargets, u32 taskOrder, Colour clr) {
+	return CELL_TYPES_MAP[type] = CellType(typecode, type, numTargets, taskOrder, clr);
+}
+CellType addCellType(std::string typecode, u32 numTargets, u32 taskOrder, Colour clr) {
+	u32 type = 0;
+	for(int x=0;x<typecode.length();x++) type = (type << 8) | typecode[x];
+	return addCellType(typecode, type, numTargets, taskOrder, clr);
 }
 
+static u32 NEXT_TASK_ORDER = 0;
+
 struct _CELL_TYPES {
-	const CellType CONSTANT	= addCellType("CNST", 1, 0x4f7f7fff);
-	const CellType COPY		= addCellType("COPY", 2, 0x6f6f6fff);
+	const CellType CONSTANT	= addCellType("CNST", 1, NEXT_TASK_ORDER++, 0x4f7f7fff);
+	const CellType COPY		= addCellType("COPY", 2, NEXT_TASK_ORDER++, 0x6f6f6fff);
 	// bitwise operators
-	const CellType OR		= addCellType("OR"	, 3, 0xa2e4a2ff);
-	const CellType XOR		= addCellType("XOR"	, 3, 0xffffffff);
-	const CellType NOT		= addCellType("NOT"	, 2, 0xe65ce6ff);
-	const CellType AND		= addCellType("AND"	, 3, 0x7d887dff);
-	const CellType LSHIFT	= addCellType("LSH"	, 3, 0xffffffff);
-	const CellType RSHIFT	= addCellType("RSH"	, 3, 0xffffffff);
+	const CellType OR		= addCellType("OR"	, 3, NEXT_TASK_ORDER++, 0xa2e4a2ff);
+	const CellType XOR		= addCellType("XOR"	, 3, NEXT_TASK_ORDER++, 0xffffffff);
+	const CellType NOT		= addCellType("NOT"	, 2, NEXT_TASK_ORDER++, 0xe65ce6ff);
+	const CellType AND		= addCellType("AND"	, 3, NEXT_TASK_ORDER++, 0x7d887dff);
+	const CellType LSHIFT	= addCellType("LSH"	, 3, NEXT_TASK_ORDER++, 0xffffffff);
+	const CellType RSHIFT	= addCellType("RSH"	, 3, NEXT_TASK_ORDER++, 0xffffffff);
 	// arithmetic & comparison
 	// TODO: add NOTEQUALS
-	const CellType ADD		= addCellType("+"	, 3, 0xffffffff);
-	const CellType SUB		= addCellType("-"	, 3, 0xffffffff);
-	const CellType MULT		= addCellType("x"	, 3, 0xffffffff);
-	const CellType DIV		= addCellType("÷"	, 3, 0xffffffff);
-	const CellType GTH		= addCellType(">"	, 3, 0xffffffff);
-	const CellType LTH		= addCellType("<"	, 3, 0xffffffff);
-	const CellType EQUALS	= addCellType("=="	, 3, 0xffffffff);
-	const CellType GEQ		= addCellType(">="	, 3, 0xffffffff);
-	const CellType LEQ		= addCellType("<="	, 3, 0xffffffff);
+	const CellType ADD		= addCellType("+"	, 3, NEXT_TASK_ORDER++, 0xffffffff);
+	const CellType SUB		= addCellType("-"	, 3, NEXT_TASK_ORDER++, 0xffffffff);
+	const CellType MULT		= addCellType("x"	, 3, NEXT_TASK_ORDER++, 0xffffffff);
+	const CellType DIV		= addCellType("÷",247,3, NEXT_TASK_ORDER++, 0xffffffff);
+	const CellType GTH		= addCellType(">"	, 3, NEXT_TASK_ORDER++, 0xffffffff);
+	const CellType LTH		= addCellType("<"	, 3, NEXT_TASK_ORDER++, 0xffffffff);
+	const CellType EQUALS	= addCellType("=="	, 3, NEXT_TASK_ORDER++, 0xffffffff);
+	const CellType GEQ		= addCellType(">="	, 3, NEXT_TASK_ORDER++, 0xffffffff);
+	const CellType LEQ		= addCellType("<="	, 3, NEXT_TASK_ORDER++, 0xffffffff);
 };
 static const _CELL_TYPES CELL_TYPES;
 
-static const u32 NUM_CELL_TYPES = CellType::NEXT_TASK_ORDER;
+static const u32 NUM_CELL_TYPES = NEXT_TASK_ORDER;
 
 #endif

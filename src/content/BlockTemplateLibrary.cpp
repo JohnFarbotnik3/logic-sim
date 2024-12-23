@@ -3,6 +3,7 @@
 
 #include "./ItemId.cpp"
 #include "./BlockTemplate.cpp"
+#include "CellTypes.cpp"
 #include "ItemDim.cpp"
 #include "Link.cpp"
 
@@ -127,6 +128,8 @@ struct BlockTemplateLibrary {
 		item.type = type;
 		item.value = value;
 		item.initProperties();
+		printf("item.taskOrder: %u\n", item.taskOrder);
+		assert(item.taskOrder <NUM_CELL_TYPES);
 		this->templates[templateId].cells.push_back(item);
 		this->clear_caches();
 	}

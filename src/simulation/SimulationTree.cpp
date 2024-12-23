@@ -49,15 +49,9 @@ struct SimulationTree {
 	BlockTemplate& getTemplate(const SimulationBlock& simblock) {
 		return this->library.templates[simblock.templateId];
 	}
-	/* Get cell index based on called simblock and link address (blockId + cellId). */
 	const u32 getCellIndex(const SimulationBlock& simblock, ItemId blockId, ItemId cellId) {
-		printf("<> PTP: %llu\n", simblock.templateId);
-		printf("<> MSZ: %lu\n", simblock.bmap.size());
-		for(const auto& [bid, sb] : simblock.bmap) printf("<> BMP: %llu\n", bid.value);
-		printf("<> BID: %llu\n", blockId);
-		const SimulationBlock sb = blockId == ItemId::THIS_BLOCK ? simblock : this->simblocks[simblock.bmap.at(blockId)];
-		printf("<> found sb\n");
-		return sb.cmap.at(cellId);
+		if(blockId == ItemId::THIS_BLOCK) return simblock.cmap.at(cellId);
+		else return this->simblocks[simblock.bmap.at(blockId)].cmap.at(cellId);
 	}
 	SimulationBlock& getParent(const SimulationBlock& simblock) {
 		return this->simblocks[simblock.parentIndex];

@@ -29,11 +29,16 @@ struct Cell {
 	u32					taskOrder;
 
 	void initProperties() {
+		printf("CTYPE: %u\n", this->type);
+		assert(CELL_TYPES_MAP.contains(this->type));
+		const CellType ctype = CELL_TYPES_MAP.at(this->type);
 		this->tran			= this->dim.getTransformation();
-		this->typecode		= CELL_TYPES_MAP[this->type].typecode;
-		this->clr			= CELL_TYPES_MAP[this->type].clr;
-		this->numTargets	= CELL_TYPES_MAP[this->type].numTargets;
-		this->taskOrder		= CELL_TYPES_MAP[this->type].taskOrder;
+		this->typecode		= ctype.typecode;
+		this->clr			= ctype.clr;
+		this->numTargets	= ctype.numTargets;
+		this->taskOrder		= ctype.taskOrder;
+		assert(ctype.taskOrder < NUM_CELL_TYPES);
+		assert(this->taskOrder < NUM_CELL_TYPES);
 	}
 };
 

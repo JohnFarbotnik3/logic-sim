@@ -51,7 +51,7 @@ class Main {
 				gameServer.send_templates(gameData.blockTemplates, gameData.rootBlock.templateId);
 				gameServer.simulation_rebuild();
 			}
-			simulation.update();
+			//simulation.update();
 			gameServer.simulation_update(gameData.simulationSpeed);
 			GameRenderer.render();
 			if(_this.doUpdate) requestAnimationFrame(_this.update);

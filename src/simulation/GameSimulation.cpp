@@ -62,10 +62,13 @@ struct GameSimulation {
 	) {
 		for(SimulationBlock& simblock : simtree.simblocks) {
 			const BlockTemplate& btmp = simtree.getTemplate(simblock);
+			u32 index = cell_buffer.size();
 			for(const Cell& cell : btmp.cells) {
-				const int index = cell_buffer.size();
-				simblock.cmap[cell.id] = index;
 				cell_buffer.push_back(SimulationCell(cell.value, cell.taskOrder));
+				const auto order = cell_buffer[index].task_order;
+				printf("gen order: %u\n", order);
+				assert(order < NUM_CELL_TYPES);
+				simblock.cmap[cell.id] = index++;
 			}
 		}
 	}

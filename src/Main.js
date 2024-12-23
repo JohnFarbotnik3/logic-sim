@@ -48,9 +48,11 @@ class Main {
 			await gameData.verifyLinksCanFindTargets();
 			const rootTemplateId = gameData.rootBlock.templateId;
 			if(simulation.shouldRebuild | simulation.shouldReset) {
-				simulation.rebuild(rootTemplateId);
+				//simulation.rebuild(rootTemplateId);
 				gameServer.send_templates(gameData.blockTemplates, rootTemplateId);
 				gameServer.simulation_rebuild(rootTemplateId);
+				simulation.shouldRebuild = false;
+				simulation.shouldReset = false;
 			}
 			//simulation.update();
 			gameServer.simulation_update(gameData.simulationSpeed);

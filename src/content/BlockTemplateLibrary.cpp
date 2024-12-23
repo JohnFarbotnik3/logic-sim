@@ -84,15 +84,9 @@ struct BlockTemplateLibrary {
 		// collect links into lists based on output source block.
 		Map<ItemId, Map<ItemId, Vector<Link>>> map;
 		const BlockTemplate btmp = this->templates[templateId];
-		//printf("<> generate outputty - nlinks: %lu\n", btmp.links.size());
 		for(const auto link : btmp.links) {
-			//printf("<> getOutputtingLinks - link src: %llu, %llu, %u\n", link.src.bid, link.src.cid, link.src.tgt);
 			map[link.src.bid][link.src.cid].push_back(link);
 			assert(map[link.src.bid][link.src.cid].size() > 0);
-		}
-		printf("<> generate outputty - n submaps: %lu\n", map.size());
-		for(const auto& [blockId, submap] : map) {
-			printf("<> generate outputty - submap: %llu, %lu\n", blockId, submap.size());
 		}
 		// add to cache and return.
 		return getOutputtingLinks_cache[templateId] = map;
@@ -128,8 +122,7 @@ struct BlockTemplateLibrary {
 		item.type = type;
 		item.value = value;
 		item.initProperties();
-		printf("item.taskOrder: %u\n", item.taskOrder);
-		assert(item.taskOrder <NUM_CELL_TYPES);
+		assert(item.taskOrder < NUM_CELL_TYPES);
 		this->templates[templateId].cells.push_back(item);
 		this->clear_caches();
 	}

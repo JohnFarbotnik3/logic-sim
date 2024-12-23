@@ -47,9 +47,16 @@ struct GameSimulation {
 		this->tasks[upd.get_ind() / CELLS_PER_TASK].pushCellUpdate(upd);
 	}
 
-	u32 getCellValue(u32 ind, u32 tgt) {
+	u32 getCellValue(String cellId, u32 sb, u32 tgt) {
+		if(sb == SimulationBlock::INDEX_NONE) return 0x0;
+		const u32 ind = this->simtree.simblocks[sb].cmap[cellId];
 		const SimulationTask& task = this->tasks[ind / CELLS_PER_TASK];
 		return task.cell_buffer[task.toLocalIndex(ind)].values[tgt];
+	}
+
+	u32 getChildSimblock(String blockId, u32 sb) {
+		if(sb == SimulationBlock::INDEX_NONE) return SimulationBlock::INDEX_NONE;
+		return this->simtree.simblocks[sb].bmap[blockId];
 	}
 	
 	// ============================================================
@@ -66,7 +73,6 @@ struct GameSimulation {
 			for(const Cell& cell : btmp.cells) {
 				cell_buffer.push_back(SimulationCell(cell.value, cell.taskOrder));
 				const auto order = cell_buffer[index].task_order;
-				printf("gen order: %u\n", order);
 				assert(order < NUM_CELL_TYPES);
 				simblock.cmap[cell.id] = index++;
 			}
@@ -84,7 +90,6 @@ struct GameSimulation {
 			// get links in this block which output from a cell in this block.
 			{
 				const auto& map = simtree.library.getOutputtingLinks(simblock.templateId)[ItemId::THIS_BLOCK];
-				printf("<> gathered_links - map 1: %lu\n", map.size());
 				for(const auto& [cellId, list] : map) {
 					for(const Link& link : list) {
 						const u32 ind = simtree.getCellIndex(simblock, link.dst.bid, link.dst.cid);
@@ -94,26 +99,19 @@ struct GameSimulation {
 				}
 			}
 			// get links in parent which output from a cell in this (child) block.
-			printf("<> gathered_links - csimb: %llu\n", simblock.blockId);
-			printf("<> gathered_links - ctemp: %llu\n", simblock.templateId);
 			if(simblock.parentIndex != SimulationBlock::INDEX_NONE) {
 				const SimulationBlock& parentSB = simtree.getParent(simblock);
 				const auto& map = simtree.library.getOutputtingLinks(parentSB.templateId)[simblock.blockId];
 				auto& supermap = simtree.library.getOutputtingLinks(parentSB.templateId);
-				printf("<> gathered_links - map 2: %lu\n", map.size());
 				for(const auto& [cellId, list] : map) {
 					for(const Link& link : list) {
-						printf("<> gathered_links - CID: %llu\n", cellId);
 						const u32 ind = simtree.getCellIndex(parentSB, link.dst.bid, link.dst.cid);
 						const u32 tgt = link.dst.tgt;
-						printf("<> gathered_links - PRE: %llu\n", cellId);
 						gathered_links[cellId].emplace_back(ind, tgt);
-						printf("<> gathered_links - POST: %llu\n", cellId);
 					}
 				}
 			}
 			// add links to buffer and notify simcells.
-			printf("<> gathered_links: %lu\n", gathered_links.size());
 			for(const auto& [cellId, list] : gathered_links) {
 				auto& cell = cell_buffer[simblock.cmap[cellId]];
 				cell.links_len = list.size();
@@ -177,7 +175,6 @@ struct GameSimulation {
 		if(this->isRunning) {
 			while(this->accumulated_msteps > 1000) {
 				// check if time limit reached
-				//printf("update step 0\n");
 				if(Date::now_ms() - curr < max_runtime_ms) {
 					this->accumulated_msteps -= 1000;
 				} else {
@@ -185,12 +182,10 @@ struct GameSimulation {
 					break;
 				}
 				// perform simulation step.
-				//printf("update step 1\n");
 				for(SimulationTask& task : this->tasks) {
 					if(task.shouldUpdate()) task.update();
 				}
 				// gather and spread outputs.
-				//printf("update step 2\n");
 				for(SimulationTask& task : this->tasks) {
 					for(SimulationUpdate& upd : task.out_buffer) this->pushCellUpdate(upd);
 				}

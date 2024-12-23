@@ -148,53 +148,6 @@ class RenderTreeBlock {
 	}
 	
 	// ============================================================
-	// Update.
-	// ------------------------------------------------------------
-	
-	_update_cell_values(simblock) {
-		for(const renderData of this.render_data_cells) {
-			const cell		= renderData.cell;
-			const cid		= cell.id;
-			const vals		= renderData.vals;
-			if(simblock?.hasCellIndex(cid)) {
-				const cind = simblock.getCellIndex(cid);
-				/*
-				const task = simulation.tasks[simulation.getTaskIndex(cind)];
-				vals[0] = task.cell_buffer.get_value_out(cind - task.ibeg);
-				vals[1] = task.cell_buffer.get_value_ina(cind - task.ibeg);
-				vals[2] = task.cell_buffer.get_value_inb(cind - task.ibeg);
-				//*/
-				///*
-				vals[0] = gameServer.simulation_get_cell_value(cind, 0);
-				vals[1] = gameServer.simulation_get_cell_value(cind, 1);
-				vals[2] = gameServer.simulation_get_cell_value(cind, 2);
-				//*/
-			} else {
-				vals[0] = cell.value;
-				vals[1] = 0x0;
-				vals[2] = 0x0;
-			}
-			const clrs		= renderData.cell_clrs;
-			const clr		= cell.clr;
-			const clr_off	= GameRenderer.hexColour_scale(clr, 0.5);
-			for(let i=0;i<3;i++) clrs[i] = vals[i] ? clr : clr_off;
-		}
-		for(const [blockId, childRB] of this.children.entries()) childRB._update_cell_values(simblock.getSimblock(blockId));
-	}
-	
-	_update_hover_state() {
-		this.is_hovered  = gameControls.collectionHovered .blocks.has(this.block);
-		this.is_selected = gameControls.collectionSelected.blocks.has(this.block);
-		for(const [blockId, childRB] of this.children.entries()) childRB._update_hover_state();
-	}
-	
-	update() {
-		const simblock = simulation.root_simulation_block;
-		this._update_cell_values(simblock);
-		this._update_hover_state();
-	}
-	
-	// ============================================================
 	// Render data generators.
 	// ------------------------------------------------------------
 	
@@ -202,12 +155,7 @@ class RenderTreeBlock {
 		const cell			= item;
 		const tran			= RenderTreeBlock.get_item_transformation(item, this.contentTran);
 		const numTargets	= cell.numTargets;
-		const vals			= [0x0, 0x0, 0x0];
-		const clr			= cell.clr;
-		const area_clrs		= [clr, clr, clr];
-		const link_clrs		= [0xffeeccff, 0xffeeccff, 0xffeeccff];
-		const cell_clrs		= [...area_clrs, ...link_clrs];
-		const rdata 		= { cell, tran, numTargets, vals, cell_clrs };
+		const rdata 		= { cell, tran, numTargets };
 		return rdata;
 	}
 	

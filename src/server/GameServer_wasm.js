@@ -52,23 +52,26 @@ class GameServer_wasm {
 			}
 		}
 		for(const [templateId_num, temp] of library) server.print_template_counts(templateId_num + "");
-		server.set_root_template(rootTemplateId + "");
 	}
 
 	// ============================================================
 	// Simulation
 	// ------------------------------------------------------------
 	
-	simulation_rebuild() {
-		this.server.simulation_rebuild();
+	simulation_rebuild(rootTemplateId) {
+		this.server.simulation_rebuild(rootTemplateId+"");
 	}
 
 	simulation_update(rate) {
 		this.server.simulation_update(rate);
 	}
 
-	simulation_get_cell_value(ind, tgt) {
-		return this.server.simulation_get_cell_value(ind, tgt);
+	simulation_get_cell_value(cellId, sb, tgt) {
+		return this.server.simulation_get_cell_value(cellId+"", sb, tgt);
+	}
+
+	simulation_get_child_simblock(blockId, sb) {
+		return this.server.simulation_get_child_simblock(blockId+"", sb);
 	}
 	
 	// ============================================================

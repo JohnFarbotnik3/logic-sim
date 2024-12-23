@@ -23,17 +23,6 @@ struct GameServer_wasm {
 	// ------------------------------------------------------------
 	BlockTemplateLibrary library;
 
-	/* Template currently being edited. */
-	ItemId rootTemplateId;
-
-	void set_root_template(String templateId) {
-		try {
-			this->rootTemplateId = templateId;
-		} catch(std::exception& err) {
-			printf("%s\n", err.what());
-		}
-	}
-
 	void new_template(String templateId, String name, String desc, float innerW, float innerH, float placeW, float placeH) {
 		try {
 			printf("new_template: %llu\n", ItemId(templateId).value);
@@ -96,9 +85,9 @@ struct GameServer_wasm {
 	// ------------------------------------------------------------
 	GameSimulation simulation;
 
-	void simulation_rebuild() {
+	void simulation_rebuild(String rootTemplateId) {
 		try {
-			simulation.rebuild(this->library, this->rootTemplateId);
+			simulation.rebuild(this->library, rootTemplateId);
 		} catch(std::exception& err) {
 			printf("%s\n", err.what());
 		}
@@ -112,8 +101,12 @@ struct GameServer_wasm {
 		}
 	}
 
-	u32 simulation_get_cell_value(u32 ind, u32 tgt) {
-		return simulation.getCellValue(ind, tgt);
+	u32 simulation_get_cell_value(String cellId, u32 sb, u32 tgt) {
+		return simulation.getCellValue(cellId, sb, tgt);
+	}
+
+	u32 simulation_get_child_simblock(String blockId, u32 sb) {
+		return simulation.getChildSimblock(blockId, sb);
 	}
 
 	// ============================================================
@@ -141,7 +134,6 @@ EMSCRIPTEN_BINDINGS() {
 	class_<GameServer_wasm>("GameServer")
 		.constructor<>()
 		.property("library", &GameServer_wasm::library)
-		.function("set_root_template", &GameServer_wasm::set_root_template)
 		.function("new_template", &GameServer_wasm::new_template)
 		.function("add_cell" , &GameServer_wasm::add_cell)
 		.function("add_link" , &GameServer_wasm::add_link)
@@ -150,6 +142,7 @@ EMSCRIPTEN_BINDINGS() {
 		.function("simulation_rebuild", &GameServer_wasm::simulation_rebuild)
 		.function("simulation_update", &GameServer_wasm::simulation_update)
 		.function("simulation_get_cell_value", &GameServer_wasm::simulation_get_cell_value)
+		.function("simulation_get_child_simblock", &GameServer_wasm::simulation_get_child_simblock)
 	;
 
 	class_<BlockTemplateLibrary>("BlockTemplateLibrary")

@@ -338,8 +338,7 @@ class GameControls {
 	setval_value_rmb = 0x00000000;
 	setval_hovered(val) {
 		for(const item of this.collectionHovered.cells) {
-			const ind = simulation.root_simulation_block.getCellIndex(item.id);
-			simulation.applyCellOutputChange(ind, val);
+			gameServer.simulation_set_cell_value(ComponentId.THIS_BLOCK, item.id, val);
 			if(item.type === CELL_PROPERTIES.CONSTANT.type) item.value = val;
 		}
 	}

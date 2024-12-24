@@ -25,7 +25,7 @@ using Vector = std::vector<T>;
 
 template<class K, class V>
 struct Map : std::map<K,V> {
-	bool contains(K key) {
+	bool contains(K key) const {
 		return this->count(key) > 0;
 	}
 };

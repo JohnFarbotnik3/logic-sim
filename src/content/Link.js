@@ -18,6 +18,7 @@ class Link {
 		this.id			= ComponentId.NONE;	// ComponentId.
 		this.bid_src	= ComponentId.NONE;	// ComponentId		ID of child-block containing cell, or THIS_BLOCK if cell is in same block as this link.
 		this.cid_src	= ComponentId.NONE;	// ComponentId		ID of the source cell.
+		this.tgt_src	= Cell.LINK_TARGET.OUTPUT;
 		this.bid_dst	= ComponentId.NONE;	// ComponentId		ID of child-block containing cell, or THIS_BLOCK if cell is in same block as this link.
 		this.cid_dst	= ComponentId.NONE;	// ComponentId		ID of the destination cell.
 		this.tgt_dst	= 0x0;				// u32				link-target on the destination cell.
@@ -48,10 +49,6 @@ class Link {
 			this.tgt_dst = tgt_dst;
 			this.clr = clr;
 		}
-	}
-	
-	get tgt_src() {
-		return Cell.LINK_TARGET.OUTPUT;
 	}
 	
 	// ============================================================

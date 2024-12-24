@@ -1,3 +1,6 @@
+#ifndef _SimulationCell
+#define _SimulationCell
+
 #include "../Imports.cpp"
 
 struct SimulationCell {
@@ -24,3 +27,4 @@ struct SimulationCell {
 	}
 };
 
+#endif

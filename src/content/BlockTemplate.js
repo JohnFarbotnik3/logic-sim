@@ -87,9 +87,6 @@ class BlockTemplate {
 		for(const itemobj of blocks) newobj.blocks.push(Block.load(itemobj));
 		return newobj;
 	}
-	clone() {
-		throw("Not implemented");
-	}
 	
 	// ============================================================
 	// Content accessors
@@ -200,7 +197,7 @@ class BlockTemplate {
 		for(const [template, links] of list) {
 			for(const link of links) {
 				template.removeLink(link);
-				simulation.onContentChanged_remLink(link);
+				gameData.onRootContentChanged_remLink(link);
 			}
 		}
 	}
@@ -232,65 +229,30 @@ class BlockTemplate {
 		return this._countUsedTemplates_cache.value;
 	}
 	
-	
 	/*
 		returns true if rootBlock's template occurs anywhere in this BlockTemplate's tree,
 		as that would make it unsafe to add to the root block.
 	*/
 	containsRootBlockTemplate() {
-		const used = this.countUsedTemplates();
-		return used.has(gameData.rootBlock.templateId);
+		return this.countUsedTemplates().has(gameData.rootBlock.templateId);
 	}
 	
-	_totalCellsInTree() {
+	totalCellsInTree() {
 		let used = this.countUsedTemplates();
 		let sum = 0;
 		for(const [tid, count] of used.entries()) { sum += count * gameData.blockTemplates.get(tid).cells.length; }
 		return sum;
 	}
-	_totalLinksInTree() {
+	totalLinksInTree() {
 		let used = this.countUsedTemplates();
 		let sum = 0;
 		for(const [tid, count] of used.entries()) sum += count * gameData.blockTemplates.get(tid).links.length;
 		return sum;
 	}
-	_totalBlocksInTree() {
+	totalBlocksInTree() {
 		let used = this.countUsedTemplates();
 		let sum = 1;// start by counting this block.
 		for(const [tid, count] of used.entries()) sum += count * gameData.blockTemplates.get(tid).blocks.length;
 		return sum;
 	}
-	_totalCellsInTree_cache = new CachedValue_Content(() => this._totalCellsInTree());
-	_totalLinksInTree_cache = new CachedValue_Content(() => this._totalLinksInTree());
-	_totalBlocksInTree_cache = new CachedValue_Content(() => this._totalBlocksInTree());
-	totalCellsInTree() { return this._totalCellsInTree_cache.value; }
-	totalLinksInTree() { return this._totalLinksInTree_cache.value; }
-	totalBlocksInTree() { return this._totalBlocksInTree_cache.value; }
-	
-	// ============================================================
-	// Simulation data-gen helpers.
-	// ------------------------------------------------------------
-	
-	/* Collect all outputting links into maps for generating link data. */
-	_getOutputtingLinks() {
-		const bmap = new Map();// Map<bid_src, Map<cid_src, [bid_dst, cid_dst, tgt_dst][]>>
-		for(const link of this.links) {
-			const {bid_src, bid_dst, cid_src, cid_dst, tgt_src, tgt_dst} = link;
-			if(!bmap.has(bid_src)) bmap.set(bid_src, new Map());
-			const cmap = bmap.get(bid_src);
-			if(!cmap.has(cid_src)) cmap.set(cid_src, []);
-			const arr = cmap.get(cid_src);
-			arr.push([bid_dst, cid_dst, tgt_dst]);
-		}
-		return bmap;
-	}
-	_getOutputtingLinks_cache = new CachedValue_Content(() => this._getOutputtingLinks());
-	getOutputtingLinks(blockId) {
-		const bmap = this._getOutputtingLinks_cache.value;
-		return bmap.has(blockId) ? bmap.get(blockId) : null;
-	}
-	
 };
-
-
-

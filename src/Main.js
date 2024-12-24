@@ -1,4 +1,8 @@
 
+// global structures
+let   gameServer		= null;
+const gameData			= new GameData();
+const gameControls		= new GameControls();
 
 class Main {
 
@@ -6,6 +10,10 @@ class Main {
 	onUpdate = null;
 	
 	async init() {
+		await GameServer_wasm.module_ready_promise.then(() => {
+			gameServer = new GameServer_wasm();
+			console.log("gameServer", gameServer);
+		});
 		GameInit.init();
 		GameUI.init();
 		await this.updateRestart();
@@ -37,7 +45,20 @@ class Main {
 			await gameData.verifyLinksCanFindTargets();
 			gameControls.update();
 			await gameData.verifyLinksCanFindTargets();
-			simulation.update();
+			const rootTemplateId = gameData.rootBlock.templateId;
+			const t_s0 = Date.now();
+			if(gameData.shouldRebuild | gameData.shouldReset) {
+				const keepCellValues = !gameData.shouldReset;
+				gameServer.send_templates(gameData.blockTemplates, rootTemplateId);
+				gameServer.simulation_rebuild(rootTemplateId, keepCellValues);
+				gameData.shouldRebuild = false;
+				gameData.shouldReset = false;
+			}
+			const t_s1 = Date.now();
+			if(gameData.simulationIsRunning) gameServer.simulation_update(gameData.simulationSpeed);
+			const t_s2 = Date.now();
+			Performance.increment_time("sim.rebuild", t_s1-t_s0);
+			Performance.increment_time("sim.update ", t_s2-t_s1);
 			GameRenderer.render();
 			if(_this.doUpdate) requestAnimationFrame(_this.update);
 			else if(_this.onUpdate) _this.onUpdate(true);
@@ -50,12 +71,5 @@ class Main {
 		}
 	}
 };
-
-// static structures
-const gameData			= new GameData();
-const gameControls		= new GameControls();
-const simulation		= new GameSimulation();
-const main				= new Main();
-
-
+const main = new Main();
 

@@ -14,7 +14,7 @@ struct SimulationArrayMap {
 		for(int x=0;x<CELLS_PER_TASK;x++) added[x] = false;
 	}
 	
-	void add(int i) {
+	void add(u32 i) {
 		if(!this->added[i]) {
 			this->added[i] = true;
 			this->stack[this->count++] = i;

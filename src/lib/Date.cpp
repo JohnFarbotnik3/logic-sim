@@ -6,8 +6,8 @@
 
 struct Date {
 	static uint64_t now_ns() {
-		std::timespec ts;
-		std::timespec_get(&ts, TIME_UTC);
+		timespec ts;
+		timespec_get(&ts, TIME_UTC);
 		const uint64_t ns = (uint64_t)(ts.tv_sec) * 1000000000 + ts.tv_nsec;
 		return ns;
 	}

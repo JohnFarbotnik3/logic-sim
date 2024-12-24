@@ -5,8 +5,8 @@
 #include "../lib/Date.cpp"
 
 struct ItemId {
-	static const u64 NONE = 0;
-	static const u64 THIS_BLOCK = 1;
+	static inline const u64 NONE = 0;
+	static inline const u64 THIS_BLOCK = 1;
 
 	u64 value;
 
@@ -15,8 +15,10 @@ struct ItemId {
 		this->value = value;
 	}
 	ItemId(String value) {
+		//printf("<> STR: %s\n",value.c_str());
 		this->value = 0;
 		for(int x=0;x<value.length();x++) this->value = this->value * 10 + (value[x] - '0');
+		//printf("<> OUT: %llu\n",this->value);
 	}
 
 	/*

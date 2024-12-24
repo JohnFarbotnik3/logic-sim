@@ -15,5 +15,9 @@ class MyHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
 
 if __name__ == '__main__':
     #http.server.test(HandlerClass=BaseHTTPRequestHandler, ServerClass=ThreadingHTTPServer, protocol="HTTP/1.0", port=8000, bind=None)
-    http.server.test(HandlerClass=MyHTTPRequestHandler, protocol="HTTP/1.0", port=int(sys.argv[1]))
+    if len(sys.argv) > 1:
+        port = int(sys.argv[1])
+    else:
+        port = 3000
+    http.server.test(HandlerClass=MyHTTPRequestHandler, protocol="HTTP/1.0", port=port)
 

@@ -1,12 +1,19 @@
 
 # Introduction
 
-first, a couple basic notes about how this app works:
+First, a couple basic notes about how this app works:
 
 1. You can place cells, which perform logical (or arithmetic) operations on their inputs, for example NAND, or MULTIPLY.
 2. You can link cell outputs to cell inputs.
 3. You can place "blocks", which are instances of "block-templates". The one you are currently editing is called the "root block-template" or "current template". You can also import and export collections of block-templates as JSON text.
 4. When you place an item, the simulation will automatically rebuild (this is why some cells flicker after placing an item).
+
+
+# Building the App (Optional)
+
+Some parts of this app are implemented in C++, which has been compiled into WebAssembly using Emscripten. The build scripts seen in the root directory of this project (ex: "build-wasm-debug.sh") refer to a local installation of the EmscriptenSDK, but they are not included with this project.
+
+For more information, see: https://emscripten.org/index.html
 
 
 # Cells

@@ -36,6 +36,9 @@ class GameRenderer {
 		this.init_buffers(gl);
 	}
 	
+	static INDEX_NONE_SB = 0xffffffff;
+	static INDEX_ROOT_SB = 0x0;
+
 	static render() {
 		// clear buffers.
 		this.clear_buffers();
@@ -43,9 +46,8 @@ class GameRenderer {
 		const t0 = Date.now();
 		const renblock = gameData.renderBlock;
 		if(!renblock) throw("!renblock");
-		renblock.update();
 		const t1 = Date.now();
-		GameRenderer.drawBlock(renblock, renblock.get_render_data_block(gameData.rootBlock));
+		GameRenderer.drawBlock(renblock, renblock.get_render_data_block(gameData.rootBlock), GameRenderer.INDEX_ROOT_SB);
 		GameRenderer.drawCursor();
 		if(gameControls.cursor_isSelecting) GameRenderer.drawDragArea();
 		if(gameControls.cursor_mode === gameControls.CURSOR_MODE.SELECT) GameRenderer.drawSelection();
@@ -433,9 +435,20 @@ class GameRenderer {
 		);
 	}
 	
-	static drawCell(renderblock, renderData) {
-		const { cell, tran, numTargets, vals, cell_clrs } = renderData;
+	static drawCell(renderblock, renderData, simblock=GameRenderer.INDEX_NONE_SB) {
+		const { cell, tran, numTargets } = renderData;
 		const depth = renderblock.depth;
+		// get cell values from simulation.
+		const vals = [cell.value, 0x0, 0x0];
+		if(simblock !== GameRenderer.INDEX_NONE_SB) {
+			vals[0] = gameServer.simulation_get_cell_value(cell.id, simblock, 0);
+			vals[1] = gameServer.simulation_get_cell_value(cell.id, simblock, 1);
+			vals[2] = gameServer.simulation_get_cell_value(cell.id, simblock, 2);
+		}
+		const cell_clrs	= [0x0, 0x0, 0x0, 0xffeeccff, 0xffeeccff, 0xffeeccff];
+		const clr_on	= cell.clr;
+		const clr_off	= GameRenderer.hexColour_scale(clr_on, 0.5);
+		for(let i=0;i<3;i++) cell_clrs[i] = vals[i] ? clr_on : clr_off;
 		// draw cell areas + link points
 		const N = 3 + numTargets;
 		this.tri_rects_reserve(N);
@@ -517,8 +530,11 @@ class GameRenderer {
 		// draw thumbnail.
 		// ...TODO...
 	}
-	static drawBlock(renderblock, renderData) {
+	static drawBlock(renderblock, renderData, simblock=GameRenderer.INDEX_NONE_SB) {
 		const t0 = Date.now();
+		// update hovered state.
+		renderblock.is_hovered  = gameControls.collectionHovered .blocks.has(renderblock.block);
+		renderblock.is_selected = gameControls.collectionSelected.blocks.has(renderblock.block);
 		// draw background.
 		{
 			const { block, tran } = renderData;
@@ -539,13 +555,14 @@ class GameRenderer {
 		const t1 = Date.now();
 		for(const data of renderblock.render_data_texts) GameRenderer.drawText(renderblock, data);
 		const t2 = Date.now();
-		for(const data of renderblock.render_data_cells) GameRenderer.drawCell(renderblock, data);
+		for(const data of renderblock.render_data_cells) GameRenderer.drawCell(renderblock, data, simblock);
 		const t3 = Date.now();
 		for(const data of renderblock.render_data_links) GameRenderer.drawLink(renderblock, data);
 		const t4 = Date.now();
 		for(const data of renderblock.render_data_blocks) {
 			const childRB = renderblock.children.get(data.block.id);
-			if(childRB) GameRenderer.drawBlock(childRB, data);
+			const childSB = gameServer.simulation_get_child_simblock(data.block.id, simblock);
+			if(childRB) GameRenderer.drawBlock(childRB, data, childSB);
 			else GameRenderer.drawBlockPlaceholder(renderblock, data);
 		}
 		Performance.increment_time("render.gather.block", t1-t0);

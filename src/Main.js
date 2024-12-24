@@ -3,7 +3,6 @@
 let   gameServer		= null;
 const gameData			= new GameData();
 const gameControls		= new GameControls();
-const simulation		= new GameSimulation();
 
 class Main {
 

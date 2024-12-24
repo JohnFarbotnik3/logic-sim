@@ -2,7 +2,10 @@
 
 This web-application is a simple builder and real-time simulator for basic combinational logic-circuits.
 
-To use it, open `index.html` in any browser that supports WebGL2.
+
+# Running the application
+
+Running the app involves serving "index.html" for viewing in a web-browser. Any server will do, but for convenience I've included a script named "serve.py" which runs a simple Python http-server, making the app available at "http://localhost:3000/" (note: you will need Python-v3 installed for this).
 
 
 # Who is this application for?
@@ -14,11 +17,6 @@ Being able to play with logic circuits in real-time is really helpful for unders
 When taking Computer Architecture I & II in university, professors usually drew the circuits on a whiteboard and then explained what they would do, but they werent really *demonstrating* them. I created this app to close the software gap, giving professors a convenient way to visually interact with circuits in real-time, *showing* students what they do.
 
 - It is also for people who just want to play with logic circuits.
-
-
-# Running the application
-
-Running the app requires serving "index.html" for viewing in a web-browser. Any server will do, but for convenience I've included a script named "serve.py" which runs a simple Python http-server, making the app available at "http://localhost:3000/" (note: you will need Python-v3 installed for this).
 
 
 # Documentation

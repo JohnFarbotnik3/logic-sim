@@ -76,6 +76,25 @@ struct GameSimulation {
 			}
 		}
 	}
+
+	void transfer_cell_values(
+		SimulationTree& newtree,
+		SimulationTree& oldtree,
+		Vector<SimulationTask>& oldTasks,
+		Vector<SimulationCell>& newCellbuf,
+		const u32 n_newcells,
+		const u32 n_oldcells
+	) {
+		// gather cell values from old tasks.
+		u32* olddata = new u32[n_oldcells];// use heap to avoid stack overflow on large simulations.
+		for(u32 i=0;i<n_oldcells;i++) {
+			const SimulationTask& task = oldTasks[i / CELLS_PER_TASK];
+			olddata[i] = task.cell_buffer[i - task.cell_ibeg].values[LINK_TARGETS.OUTPUT];
+		}
+		// transfer values to new cell buffer.
+		SimulationTree::transferCellValues(newtree, oldtree, newCellbuf, olddata);
+		delete[] olddata;
+	}
 	
 	void generate_link_data(
 		SimulationTree& simtree,
@@ -146,6 +165,13 @@ struct GameSimulation {
 		Vector<SimulationCell> cell_buffer;
 		cell_buffer.reserve(library.totalCellsInTree(rootTemplateId));
 		this->generate_cell_data(newTree, cell_buffer);
+
+		if(keepCellValues & (newTree.rootTemplateId == oldTree.rootTemplateId)) {
+			printf("checkpoint 1.5\n");
+			const u32 n_newcells = newTree.library.totalCellsInTree(newTree.rootTemplateId);
+			const u32 n_oldcells = oldTree.library.totalCellsInTree(oldTree.rootTemplateId);
+			transfer_cell_values(newTree, oldTree, tasks, cell_buffer, n_newcells, n_oldcells);
+		}
 
 		printf("checkpoint 2\n");
 		Vector<SimulationLink> link_buffer;

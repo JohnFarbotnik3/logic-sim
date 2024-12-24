@@ -101,6 +101,7 @@ struct SimulationTask {
 			this->propagateOutputChange(x, val);
 		} else {
 			this->pushCellUpdate(ind, LINK_TARGETS.OUTPUT, val);
+			this->propagateOutputChange(x, val);
 		}
 	}
 

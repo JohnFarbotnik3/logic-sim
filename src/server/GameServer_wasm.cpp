@@ -85,9 +85,9 @@ struct GameServer_wasm {
 	// ------------------------------------------------------------
 	GameSimulation simulation;
 
-	void simulation_rebuild(String rootTemplateId) {
+	void simulation_rebuild(String rootTemplateId, bool keepCellValues) {
 		try {
-			simulation.rebuild(this->library, rootTemplateId);
+			simulation.rebuild(this->library, rootTemplateId, keepCellValues);
 		} catch(std::exception& err) {
 			printf("%s\n", err.what());
 		}
@@ -107,6 +107,10 @@ struct GameServer_wasm {
 
 	u32 simulation_get_child_simblock(String blockId, u32 sb) {
 		return simulation.getChildSimblock(blockId, sb);
+	}
+
+	void simulation_set_cell_value(String blockId, String cellId, u32 val) {
+		simulation.modifyCellValue(blockId, cellId, val);
 	}
 
 	// ============================================================
@@ -143,6 +147,7 @@ EMSCRIPTEN_BINDINGS() {
 		.function("simulation_update", &GameServer_wasm::simulation_update)
 		.function("simulation_get_cell_value", &GameServer_wasm::simulation_get_cell_value)
 		.function("simulation_get_child_simblock", &GameServer_wasm::simulation_get_child_simblock)
+		.function("simulation_set_cell_value", &GameServer_wasm::simulation_set_cell_value)
 	;
 
 	class_<BlockTemplateLibrary>("BlockTemplateLibrary")

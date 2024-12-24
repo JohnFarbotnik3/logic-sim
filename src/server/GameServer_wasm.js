@@ -58,8 +58,8 @@ class GameServer_wasm {
 	// Simulation
 	// ------------------------------------------------------------
 	
-	simulation_rebuild(rootTemplateId) {
-		this.server.simulation_rebuild(rootTemplateId+"");
+	simulation_rebuild(rootTemplateId, keepCellValues) {
+		this.server.simulation_rebuild(rootTemplateId+"", keepCellValues);
 	}
 
 	simulation_update(rate) {
@@ -72,6 +72,10 @@ class GameServer_wasm {
 
 	simulation_get_child_simblock(blockId, sb) {
 		return this.server.simulation_get_child_simblock(blockId+"", sb);
+	}
+
+	simulation_set_cell_value(blockId, cellId, val) {
+		return this.server.simulation_set_cell_value(blockId+"", cellId+"", val);
 	}
 	
 	// ============================================================

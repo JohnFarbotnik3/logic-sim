@@ -25,10 +25,6 @@ class GameSimulation {
 		this.root_simulation_block	= null;
 		/* Array of task objects. */
 		this.tasks					= null;
-		/* True if tree should rebuild. */
-		this.shouldRebuild			= true;
-		/* True if tree should be reset. (rebuild, but without saving values - NOT YET IMPLEMENTED) */
-		this.shouldReset			= true;
 		/* True if simulation should update. */
 		this.isRunning				= true;
 		/* Amount of accumulated simulation steps, based on elapsed time and simulation-speed. */
@@ -36,6 +32,11 @@ class GameSimulation {
 		this.previousTime			= 0;
 	}
 	
+	get shouldRebuild( ) {throw("udpate me");}
+	set shouldRebuild(v) {throw("udpate me");}
+	get shouldReset( ) {throw("udpate me");}
+	set shouldReset(v) {throw("udpate me");}
+
 	// ============================================================
 	// Helpers.
 	// ------------------------------------------------------------
@@ -166,9 +167,6 @@ class GameSimulation {
 		// create new task objects.
 		this.rebuild_createTasks(cell_buffer, link_buffer);
 		console.log("rebuild_createTasks", this.tasks.length);
-		// finishing touches.
-		this.shouldRebuild = false;
-		this.shouldReset = false;
 		const t1 = Date.now();
 		console.log("simulation.rebuild", t1-t0, numCells, numLinks);
 	}
@@ -220,37 +218,7 @@ class GameSimulation {
 					Performance.increment_count("simulation.task.perf_n_updates", task.perf_n_updates); task.perf_n_updates=0;
 					Performance.increment_count("simulation.task.perf_n_outputs", task.perf_n_outputs); task.perf_n_outputs=0;
 				}
-				Performance.increment_time("simulation.update        ", t2-t0);
 			}
 		}
 	}
-	
-	// ============================================================
-	// Content change handlers.
-	// Note: It is assumed that content is being added to root-block.
-	// ------------------------------------------------------------
-	onContentChanged_addCell(cell) {
-		this.shouldRebuild = true;
-		// TODO: add cell to task and rebuild task only.
-	}
-	onContentChanged_remCell(cell) {
-		this.shouldRebuild = true;
-		// TODO: remove cell to task and rebuild task only.
-	}
-	onContentChanged_addLink(link) {
-		this.shouldRebuild = true;
-		// TODO: add link to task and rebuild task only.
-	}
-	onContentChanged_remLink(link) {
-		this.shouldRebuild = true;
-		// TODO: remove link from task and rebuild task only.
-	}
-	onContentChanged_addBlock() { this.shouldRebuild = true; }
-	onContentChanged_remBlock() { this.shouldRebuild = true; }
-	
 };
-
-
-
-
-

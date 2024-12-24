@@ -13,7 +13,13 @@ class GameData {
 	
 	// simulation speed - steps per second.
 	simulationSpeed = 60;
-	
+	simulationIsRunning = true;
+	// true if simulation should rebuild.
+	shouldRebuild = true;
+	// true if simulation should rebuild and reset cell values.
+	shouldReset = true;
+
+
 	// ============================================================
 	// BlockTemplate Library.
 	// ------------------------------------------------------------
@@ -26,7 +32,7 @@ class GameData {
 		const template = this.blockTemplates.get(templateId);
 		this.rootBlock = new Block(new ComponentDimensions(0, 0, template.width,template.height, 0), template.templateId);
 		CachedValue_Content.onChange();
-		simulation.shouldRebuild = true;
+		gameData.shouldRebuild = true;
 		GameUI.on_major_blocklib_change();
 	}
 	setRootBlockTemplate_minor(templateId) {
@@ -104,11 +110,21 @@ class GameData {
 		}
 		for(const template of templates) {
 			this.blockTemplates.set(template.templateId, template);
-			simulation.shouldRebuild = true;
+			gameData.shouldRebuild = true;
 		}
 		GameUI.on_major_blocklib_change();
 	}
 	
+	// ============================================================
+	// Content change handlers.
+	// ------------------------------------------------------------
+	onRootContentChanged_addCell(cell) { gameData.shouldRebuild = true; }
+	onRootContentChanged_remCell(cell) { gameData.shouldRebuild = true; }
+	onRootContentChanged_addLink(link) { gameData.shouldRebuild = true; }
+	onRootContentChanged_remLink(link) { gameData.shouldRebuild = true; }
+	onRootContentChanged_addBlock(block) { gameData.shouldRebuild = true; }
+	onRootContentChanged_remBlock(block) { gameData.shouldRebuild = true; }
+
 	// ============================================================
 	// Link deletion and verification.
 	// ------------------------------------------------------------

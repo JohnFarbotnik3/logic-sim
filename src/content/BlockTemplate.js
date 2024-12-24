@@ -200,7 +200,7 @@ class BlockTemplate {
 		for(const [template, links] of list) {
 			for(const link of links) {
 				template.removeLink(link);
-				simulation.onContentChanged_remLink(link);
+				gameData.onRootContentChanged_remLink(link);
 			}
 		}
 	}

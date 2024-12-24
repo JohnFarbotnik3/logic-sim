@@ -16,6 +16,11 @@ When taking Computer Architecture I & II in university, professors usually drew 
 - It is also for people who just want to play with logic circuits.
 
 
+# Running the application
+
+Running the app requires serving "index.html" for viewing in a web-browser. Any server will do, but for convenience I've included a script named "serve.py" which runs a simple Python http-server, making the app available at "http://localhost:3000/" (note: you will need Python-v3 installed for this).
+
+
 # Documentation
 
 See [DOCUMENTATION.md](./docs/DOCUMENTATION.md)

@@ -47,15 +47,19 @@ class Main {
 			gameControls.update();
 			await gameData.verifyLinksCanFindTargets();
 			const rootTemplateId = gameData.rootBlock.templateId;
-			if(simulation.shouldRebuild | simulation.shouldReset) {
-				//simulation.rebuild(rootTemplateId);
+			const t_s0 = Date.now();
+			if(gameData.shouldRebuild | gameData.shouldReset) {
+				const keepCellValues = !gameData.shouldReset;
 				gameServer.send_templates(gameData.blockTemplates, rootTemplateId);
-				gameServer.simulation_rebuild(rootTemplateId);
-				simulation.shouldRebuild = false;
-				simulation.shouldReset = false;
+				gameServer.simulation_rebuild(rootTemplateId, keepCellValues);
+				gameData.shouldRebuild = false;
+				gameData.shouldReset = false;
 			}
-			//simulation.update();
-			gameServer.simulation_update(gameData.simulationSpeed);
+			const t_s1 = Date.now();
+			if(gameData.simulationIsRunning) gameServer.simulation_update(gameData.simulationSpeed);
+			const t_s2 = Date.now();
+			Performance.increment_time("sim.rebuild", t_s1-t_s0);
+			Performance.increment_time("sim.update ", t_s2-t_s1);
 			GameRenderer.render();
 			if(_this.doUpdate) requestAnimationFrame(_this.update);
 			else if(_this.onUpdate) _this.onUpdate(true);

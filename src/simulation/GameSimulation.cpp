@@ -16,21 +16,12 @@ struct GameSimulation {
 	SimulationTree simtree;
 	/* List of task objects. */
 	Vector<SimulationTask> tasks;
-	/* True if tree should rebuild. */
-	bool shouldRebuild;
-	/* True if tree should be reset. (i.e. rebuild, but without saving values - NOT YET IMPLEMENTED) */
-	bool shouldReset;
-	/* True if simulation should update. */
-	bool isRunning;
 	/* Amount of accumulated simulation steps, based on elapsed time and simulation-speed. */
 	u64 prev_time_ms;
 	u64 curr_time_ms;
 	u32 accumulated_msteps;
 	
 	GameSimulation() {
-		this->shouldRebuild	= true;
-		this->shouldReset	= true;
-		this->isRunning		= true;
 		this->prev_time_ms			= 0;
 		this->curr_time_ms			= 0;
 		this->accumulated_msteps	= 0;
@@ -48,15 +39,22 @@ struct GameSimulation {
 	}
 
 	u32 getCellValue(String cellId, u32 sb, u32 tgt) {
-		if(sb == SimulationBlock::INDEX_NONE) return 0x0;
+		if(sb == SimulationTree::INDEX_NONE) return 0x0;
 		const u32 ind = this->simtree.simblocks[sb].cmap[cellId];
 		const SimulationTask& task = this->tasks[ind / CELLS_PER_TASK];
 		return task.cell_buffer[task.toLocalIndex(ind)].values[tgt];
 	}
 
 	u32 getChildSimblock(String blockId, u32 sb) {
-		if(sb == SimulationBlock::INDEX_NONE) return SimulationBlock::INDEX_NONE;
+		if(sb == SimulationTree::INDEX_NONE) return SimulationTree::INDEX_NONE;
 		return this->simtree.simblocks[sb].bmap[blockId];
+	}
+
+	/* Call this to initialize cell value in root simblock, or one of its immediate children. */
+	void modifyCellValue(ItemId blockId, ItemId cellId, u32 val) {
+		const SimulationBlock& rootSB = simtree.simblocks[SimulationTree::INDEX_ROOT];
+		const u32 ind = (blockId == ItemId::THIS_BLOCK) ? rootSB.cmap.at(cellId) : simtree.simblocks[rootSB.bmap.at(blockId)].cmap[cellId];
+		this->tasks[ind / CELLS_PER_TASK].modifyCellValue(ind, val);
 	}
 	
 	// ============================================================
@@ -99,7 +97,7 @@ struct GameSimulation {
 				}
 			}
 			// get links in parent which output from a cell in this (child) block.
-			if(simblock.parentIndex != SimulationBlock::INDEX_NONE) {
+			if(simblock.parentIndex != SimulationTree::INDEX_NONE) {
 				const SimulationBlock& parentSB = simtree.getParent(simblock);
 				const auto& map = simtree.library.getOutputtingLinks(parentSB.templateId)[simblock.blockId];
 				auto& supermap = simtree.library.getOutputtingLinks(parentSB.templateId);
@@ -139,7 +137,7 @@ struct GameSimulation {
 	}
 	
 	/* Initialize or rebuild simulation data. */
-	void rebuild(BlockTemplateLibrary& library, ItemId rootTemplateId) {
+	void rebuild(BlockTemplateLibrary& library, ItemId rootTemplateId, bool keepCellValues) {
 		printf("checkpoint 0\n");
 		SimulationTree& oldTree = this->simtree;
 		SimulationTree  newTree = SimulationTree(library, rootTemplateId);
@@ -159,8 +157,6 @@ struct GameSimulation {
 
 		printf("checkpoint 4\n");
 		this->simtree = newTree;
-		this->shouldRebuild = false;
-		this->shouldReset = false;
 	}
 	
 	// ============================================================
@@ -170,25 +166,23 @@ struct GameSimulation {
 		const u64 max_runtime_ms = 1000 / 60;
 		u64 prev = this->prev_time_ms = this->curr_time_ms;
 		u64 curr = this->curr_time_ms = Date::now_ms();
-		if((prev == 0) | !this->isRunning) prev = curr;
+		if(prev == 0) prev = curr;
 		this->accumulated_msteps += (curr - prev) * simulationRate;
-		if(this->isRunning) {
-			while(this->accumulated_msteps > 1000) {
-				// check if time limit reached
-				if(Date::now_ms() - curr < max_runtime_ms) {
-					this->accumulated_msteps -= 1000;
-				} else {
-					this->accumulated_msteps = 0;
-					break;
-				}
-				// perform simulation step.
-				for(SimulationTask& task : this->tasks) {
-					if(task.shouldUpdate()) task.update();
-				}
-				// gather and spread outputs.
-				for(SimulationTask& task : this->tasks) {
-					for(SimulationUpdate& upd : task.out_buffer) this->pushCellUpdate(upd);
-				}
+		while(this->accumulated_msteps > 1000) {
+			// check if time limit reached
+			if(Date::now_ms() - curr < max_runtime_ms) {
+				this->accumulated_msteps -= 1000;
+			} else {
+				this->accumulated_msteps = 0;
+				break;
+			}
+			// perform simulation step.
+			for(SimulationTask& task : this->tasks) {
+				if(task.shouldUpdate()) task.update();
+			}
+			// gather and spread outputs.
+			for(SimulationTask& task : this->tasks) {
+				for(SimulationUpdate& upd : task.out_buffer) this->pushCellUpdate(upd);
 			}
 		}
 	}

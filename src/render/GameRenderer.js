@@ -36,6 +36,9 @@ class GameRenderer {
 		this.init_buffers(gl);
 	}
 	
+	static INDEX_NONE_SB = 0xffffffff;
+	static INDEX_ROOT_SB = 0x0;
+
 	static render() {
 		// clear buffers.
 		this.clear_buffers();
@@ -44,8 +47,7 @@ class GameRenderer {
 		const renblock = gameData.renderBlock;
 		if(!renblock) throw("!renblock");
 		const t1 = Date.now();
-		const INDEX_ROOT = 0x0;
-		GameRenderer.drawBlock(renblock, renblock.get_render_data_block(gameData.rootBlock), INDEX_ROOT);
+		GameRenderer.drawBlock(renblock, renblock.get_render_data_block(gameData.rootBlock), GameRenderer.INDEX_ROOT_SB);
 		GameRenderer.drawCursor();
 		if(gameControls.cursor_isSelecting) GameRenderer.drawDragArea();
 		if(gameControls.cursor_mode === gameControls.CURSOR_MODE.SELECT) GameRenderer.drawSelection();
@@ -433,12 +435,12 @@ class GameRenderer {
 		);
 	}
 	
-	static drawCell(renderblock, renderData, simblock) {
+	static drawCell(renderblock, renderData, simblock=GameRenderer.INDEX_NONE_SB) {
 		const { cell, tran, numTargets } = renderData;
 		const depth = renderblock.depth;
 		// get cell values from simulation.
 		const vals = [cell.value, 0x0, 0x0];
-		if(simblock !== 0xffffffff) {
+		if(simblock !== GameRenderer.INDEX_NONE_SB) {
 			vals[0] = gameServer.simulation_get_cell_value(cell.id, simblock, 0);
 			vals[1] = gameServer.simulation_get_cell_value(cell.id, simblock, 1);
 			vals[2] = gameServer.simulation_get_cell_value(cell.id, simblock, 2);
@@ -528,7 +530,7 @@ class GameRenderer {
 		// draw thumbnail.
 		// ...TODO...
 	}
-	static drawBlock(renderblock, renderData, simblock) {
+	static drawBlock(renderblock, renderData, simblock=GameRenderer.INDEX_NONE_SB) {
 		const t0 = Date.now();
 		// update hovered state.
 		renderblock.is_hovered  = gameControls.collectionHovered .blocks.has(renderblock.block);
@@ -589,8 +591,7 @@ class GameRenderer {
 		const maxDepth	= parent.depth + 2;
 		// TODO: creating a new RenderTreeBlock each frame has a noticable performance penalty.
 		const renblock	= new RenderTreeBlock(parent, block, exttran, depth, maxDepth);
-		const INDEX_NONE = 0xffffffff;
-		GameRenderer.drawBlock(renblock, renblock.get_render_data_block(block), INDEX_NONE);
+		GameRenderer.drawBlock(renblock, renblock.get_render_data_block(block));
 	}
 	
 	static drawNearestLinkPoint() {

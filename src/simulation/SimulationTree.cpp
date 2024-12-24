@@ -22,8 +22,6 @@ struct SimulationBlock {
 	/* Indices of cells in simulation data. */
 	Map<ItemId, u32> cmap;
 
-	static const u32 INDEX_NONE = 0xffffffff;
-
 	SimulationBlock(ItemId templateId, ItemId blockId, u32 parentIndex) {
 		this->templateId	= templateId;
 		this->blockId		= blockId;
@@ -36,6 +34,9 @@ struct SimulationTree {
 	Vector<SimulationBlock> simblocks;
 	/* a copy of the BlockTemplateLibrary this tree is based on. */
 	BlockTemplateLibrary library;
+
+	static const u32 INDEX_NONE = 0xffffffff;
+	static const u32 INDEX_ROOT = 0x0;
 
 	SimulationTree() {}
 	SimulationTree(BlockTemplateLibrary library, ItemId rootTemplateId) {
@@ -60,29 +61,20 @@ struct SimulationTree {
 	void initNode(const u32 index) {
 		// create and push child simblocks.
 		const SimulationBlock& simblock = this->simblocks[index];
-		//printf("<> TEMPLATE ID: %llu\n", simblock.templateId);
-		//printf("<> BLOCK    ID: %llu\n", simblock.blockId);
 		const BlockTemplate& btmp = this->getTemplate(simblock);
 		u32 initIndex = this->simblocks.size();
 		u32 nextIndex = this->simblocks.size();
-		//printf("<> BMAP: %i, %llu, %lu\n", index, simblock.templateId, simblock.bmap.size());
 		for(const Block& block : btmp.blocks) {
-			//printf("<> emplace block(%llu)\n", block.id.value);
 			this->simblocks.push_back(SimulationBlock(block.templateId, block.id, index));
-			//printf("<> map block(%llu)\n", block.id.value);
 			this->simblocks[index].bmap[block.id] = nextIndex++;
 		}
-		//printf("<> TEMPLATE ID: %llu\n", simblock.templateId.value);
-		//printf("<> BLOCK    ID: %llu\n", simblock.blockId.value);
-		//printf("<> BMAP: %i, %llu, %lu\n", index, simblock.templateId.value, simblock.bmap.size());
 		// initialize children.
 		for(u32 x=initIndex;x<nextIndex;x++) this->initNode(x);
 	}
 	void initTree(ItemId rootTemplateId) {
-		printf("<> ROOT TEMPLATE ID: %llu\n", rootTemplateId);
 		this->simblocks.clear();
-		this->simblocks.push_back(SimulationBlock(rootTemplateId, ItemId::NONE, SimulationBlock::INDEX_NONE));
-		this->initNode(0);
+		this->simblocks.push_back(SimulationBlock(rootTemplateId, ItemId::NONE, SimulationTree::INDEX_NONE));
+		this->initNode(SimulationTree::INDEX_ROOT);
 	}
 };
 

@@ -29,7 +29,7 @@ struct Cell {
 	u32					taskOrder;
 
 	void initProperties() {
-		printf("CTYPE: %u\n", this->type);
+		//printf("CTYPE: %u\n", this->type);
 		assert(CELL_TYPES_MAP.contains(this->type));
 		const CellType ctype = CELL_TYPES_MAP.at(this->type);
 		this->tran			= this->dim.getTransformation();

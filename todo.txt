@@ -85,6 +85,8 @@ Near-term.
 ------------------------------------------------------------
 
 
+> User stylesheets
+- allow user to add and remove their own stylesheets for the app.
 
 
 > Multithreading notes:
@@ -172,11 +174,20 @@ may have recursive behaviour.
 - allow saving (and loading) the entire UndoStack struct as JSON
 
 
-> re-arrange functionality found in GameUI, GameControls, and InputUtil,
-as they are kind of spaghetti-like.
+> c++ server
+* most of the update loop can happen in c++
+- the browser sends updated blockTemplates on change.
+- the browser sends request to update simulation by N steps.
+- the browser sends request to get render data for cells, links, etc. (which will get cell data from simulation)
+* first objective: find way to communicate with a local c++ compute server (requires basic networking in c++)
+* the same code that is used to implement the c++ compute server can be used for WASM calls,
+	allowing some parts of javascript implementation to be deprecated.
+	(c++:"GameServer.cpp", wasm:"GameServer.js")
+* to detect if building with emscripten (for example to use different threading model in WASM then C++),
+	the __EMSCRIPTEN__ is defined by emcc/em++, see:
+	https://emscripten.org/docs/compiling/Building-Projects.html
+* WARNING: emscripten is a 32-bit platform, so size_t is also 32-bit!
 
-
-> begin implementing stuff in c++/wasm.
 
 
 > troubleshoot poor performance on older devices with modest processing power
@@ -201,22 +212,10 @@ as they are kind of spaghetti-like.
 - give cells a Colour class for easier value editing (for feature parity with c++).
 
 
-> c++ server
-* most of the update loop can happen in c++
-- the browser sends updated blockTemplates on change.
-- the browser sends request to update simulation by N steps.
-- the browser sends request to get render data for cells, links, etc. (which will get cell data from simulation)
-* first objective: find way to communicate with a local c++ compute server (requires basic networking in c++)
-* the same code that is used to implement the c++ compute server can be used for WASM calls,
-	allowing some parts of javascript implementation to be deprecated.
-	(c++:"GameServer.cpp", wasm:"GameServer.js")
-* to detect if building with emscripten (for example to use different threading model in WASM then C++),
-	the __EMSCRIPTEN__ is defined by emcc/em++, see:
-	https://emscripten.org/docs/compiling/Building-Projects.html
-* WARNING: emscripten is a 32-bit platform, so size_t is also 32-bit!
 
-
-
+> Re-implement UI in Svelte
+* combine functionality found in GameControls, and InputUtil.
+* rework GameUI
 
 
 

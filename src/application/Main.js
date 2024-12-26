@@ -2,12 +2,14 @@ import { GameData } from "./GameData"
 import { GameControls } from "./interface/GameControls"
 import { GameServer_wasm } from "./server/GameServer_wasm"
 import { TEST_BLOCKS_OBJECT } from "./GameInit_json"
-import { GameUI } from "./interface/GameUI";
+//import { GameUI } from "./interface/GameUI";
+import { GameUI } from "./interface/GameUI_v2";
 
 // global structures
 export let   gameServer		= null;
 export const gameData		= new GameData();
 export const gameControls	= new GameControls();
+export const gameUI			= new GameUI();
 
 class Main {
 
@@ -26,8 +28,6 @@ class Main {
 		let templateId = null;
 		for(const tid of gameData.blockTemplates.keys()) { templateId = tid; break; }
 		gameData.setRootBlockTemplate(templateId);
-
-		GameUI.init();
 
 		// restart update cycle.
 		await this.updateRestart();

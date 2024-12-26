@@ -19,7 +19,7 @@ struct CellType {
 		this->clr			= clr;
 		this->numTargets	= numTargets;
 		this->taskOrder		= taskOrder;
-		printf("CREATED CELL TYPE: %u\n", this->type);
+		//printf("CREATED CELL TYPE: %u\n", this->type);
 		assert(taskOrder < 30);
 		// TODO: verify that these typecodes match typecodes in javascript-side.
 	}

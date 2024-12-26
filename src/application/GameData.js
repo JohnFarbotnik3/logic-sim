@@ -1,5 +1,11 @@
 import { CachedValue_Content, CachedValue_Rendering } from "./misc/CachedValue";
-
+import { BlockTemplate } from "./content/BlockTemplate";
+import { Block } from "./content/Block";
+import { ComponentDimensions } from "./content/ComponentDimensions";
+import { VerificationUtil } from "./lib/VerificationUtil";
+import { gameData } from "./Main";
+import { GameUI } from "./interface/GameUI";
+import { alert } from "./environment";
 
 export class GameData {
 	
@@ -105,7 +111,7 @@ export class GameData {
 			const arr = JSON.parse(value.trim());
 			for(const item of arr) templates.push(BlockTemplate.load(item));
 		} catch(error) {
-			alert("failed to parse import text-area:\n\n" + error);
+			alert("failed to parse import text-area:\n\n" + error.stack);
 			if(gameData.blockTemplates.size === 0) this.createNewBlockTemplate(12, 12, "New template", "");
 			return;
 		}

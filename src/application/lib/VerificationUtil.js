@@ -1,5 +1,5 @@
 
-class VerificationUtil {
+export class VerificationUtil {
 	static verifyObjectEntriesDefined(obj) {
 		for(const [k,v] of Object.entries(obj)) if(v===undefined | v===null) throw(`property ${k} is ${v}.`);
 	}

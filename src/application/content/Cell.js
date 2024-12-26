@@ -1,5 +1,8 @@
+import { VerificationUtil } from "../lib/VerificationUtil"
+import { ComponentId } from "./ComponentId"
+import { ComponentDimensions } from "./ComponentDimensions"
 
-class Cell {
+export class Cell {
 	// ============================================================
 	// Structors
 	// ------------------------------------------------------------

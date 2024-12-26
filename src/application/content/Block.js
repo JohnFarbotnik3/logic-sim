@@ -1,3 +1,6 @@
+import { VerificationUtil } from "../lib/VerificationUtil"
+import { ComponentId } from "./ComponentId"
+import { ComponentDimensions } from "./ComponentDimensions"
 
 /*
 	A Block is a placeholder that refers to some BlockTemplate.
@@ -9,7 +12,7 @@
 	blocks actually share the same BlockTemplate object, so they take turns
 	applying their transformation to template contents before drawing or editing.
 */
-class Block {
+export class Block {
 	// ============================================================
 	// Structors
 	// ------------------------------------------------------------

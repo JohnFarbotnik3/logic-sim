@@ -9,7 +9,7 @@
 	may have items with the same Id, so the block's Id is also required
 	when addressing cell targets.
 */
-class ComponentId {
+export class ComponentId {
 	/*
 		Generic default Id.
 	*/
@@ -19,8 +19,6 @@ class ComponentId {
 		Id used to identify the block that owns the link,
 		i.e. when a link targets a cell in the same block.
 	*/
-	// TODO: try to remove this, and instead just use "this->id" style comparisons.
-	// ^ also create getBlock() style functions for cases where "this" block may be requested.
 	static THIS_BLOCK = 1;
 	
 	static _next = Date.now();

@@ -1,3 +1,6 @@
+import { CachedValue_Content } from "../misc/CachedValue"
+import { VerificationUtil } from "../lib/VerificationUtil"
+import { ComponentId } from "./ComponentId"
 
 /*
 	A BlockTemplate stores the actual implementation of a logic block,
@@ -9,7 +12,7 @@
 	
 	Note: to prevent infinite recursion, templates cannot contain themselves.
 */
-class BlockTemplate {
+export class BlockTemplate {
 	// ============================================================
 	// Structors
 	// ------------------------------------------------------------

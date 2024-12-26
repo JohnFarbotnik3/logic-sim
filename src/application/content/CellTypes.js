@@ -20,7 +20,7 @@ class CellProperties {
 	}
 };
 
-const CELL_PROPERTIES = ({
+export const CELL_PROPERTIES = ({
 	CONSTANT	: new CellProperties("CNST"	, 0x4f7f7fff, "constant value"),
 	COPY		: new CellProperties("COPY"	, 0x6f6f6fff, "copy value from input"),
 	// bitwise operators
@@ -41,7 +41,8 @@ const CELL_PROPERTIES = ({
 	GEQ			: new CellProperties(">="	, 0xffffffff, ">= GEQ"),
 	LEQ			: new CellProperties("<="	, 0xffffffff, "<= LEQ"),
 });
-const CELL_PROPERTIES_MAP = new Map();// Map<type, CellProperties>
+
+export const CELL_PROPERTIES_MAP = new Map();// Map<type, CellProperties>
 for(const [k,v] of Object.entries(CELL_PROPERTIES)) {
 	CELL_PROPERTIES_MAP.set(v.type, v);
 }

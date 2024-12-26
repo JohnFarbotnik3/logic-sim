@@ -1,11 +1,13 @@
 import { GameData } from "./GameData"
 import { GameControls } from "./interface/GameControls"
 import { GameServer_wasm } from "./server/GameServer_wasm"
+import { TEST_BLOCKS_OBJECT } from "./GameInit_json"
+import { GameUI } from "./interface/GameUI";
 
 // global structures
-let   gameServer		= null;
-const gameData			= new GameData();
-const gameControls		= new GameControls();
+export let   gameServer		= null;
+export const gameData		= new GameData();
+export const gameControls	= new GameControls();
 
 class Main {
 
@@ -13,13 +15,21 @@ class Main {
 	onUpdate = null;
 	
 	async init() {
+		// load game server.
 		gameServer = new GameServer_wasm();
-		console.log("gameServer", gameServer);
 		await gameServer.isReady;
-		console.log("gameServer.module", gameServer.module);
-		console.log("gameServer.server", gameServer.server);
-		GameInit.init();
+		console.log("gameServer is ready");
+
+		// load block data.
+		gameData.importTemplates(JSON.stringify(TEST_BLOCKS_OBJECT));
+		// set root block.
+		let templateId = null;
+		for(const tid of gameData.blockTemplates.keys()) { templateId = tid; break; }
+		gameData.setRootBlockTemplate(templateId);
+
 		GameUI.init();
+
+		// restart update cycle.
 		await this.updateRestart();
 	}
 

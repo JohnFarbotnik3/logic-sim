@@ -1,3 +1,5 @@
+import { VerificationUtil } from "../lib/VerificationUtil"
+import { ComponentId } from "./ComponentId"
 
 /*
 	Links transfer values from cell outputs to inputs.
@@ -9,7 +11,7 @@
 		however if they were to be added to another template, then some assumptions
 		in the constructor would not hold (for example when assigning target blockIds).
 */
-class Link {
+export class Link {
 	// ============================================================
 	// Structors
 	// ------------------------------------------------------------

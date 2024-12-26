@@ -1,5 +1,7 @@
+import { gameControls } from "../Main"
 
-class GameUI {
+// TODO: migrate this to Svelte
+export class GameUI {
 	static init() {
 		this.panelArea = document.querySelector("#canvasWrapper");
 		this.sidebar = document.querySelector("#toolPanel");

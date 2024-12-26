@@ -1,5 +1,5 @@
 
-class ComponentDimensions {
+export class ComponentDimensions {
 	// ============================================================
 	// Structors
 	// ------------------------------------------------------------

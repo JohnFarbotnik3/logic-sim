@@ -1,6 +1,9 @@
 
 <script>
+	import "../application/styles.css";
 	let { children } = $props();
 </script>
 
-{@render children()}
+{#if children}
+	{@render children()}
+{/if}

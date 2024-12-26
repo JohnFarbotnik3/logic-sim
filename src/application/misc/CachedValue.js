@@ -1,5 +1,5 @@
 
-class CachedValue_Rendering {
+export class CachedValue_Rendering {
 	static counter = 0;
 	static onChange() { this.counter++; }
 	constructor(valueFunc) {
@@ -14,7 +14,7 @@ class CachedValue_Rendering {
 	}
 };
 
-class CachedValue_Content {
+export class CachedValue_Content {
 	static counter = 0;
 	static onChange() { this.counter++; CachedValue_Rendering.onChange(); }// NOTE: update placement as well.
 	constructor(valueFunc) {

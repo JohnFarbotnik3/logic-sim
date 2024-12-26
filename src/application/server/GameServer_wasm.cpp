@@ -6,7 +6,8 @@
 #include "../content/BlockTemplateLibrary.cpp"
 #include "../simulation/GameSimulation.cpp"
 
-
+// NOTE: this function is omitted when compiling with "--no-entry" flag.
+/*
 int main(int argc, char** argv) {
 	for(int x=0;x<argc;x++) printf("%s\n", argv[x]);
 
@@ -16,6 +17,7 @@ int main(int argc, char** argv) {
 	map[66] = 99;
 	for(const auto& [a,b] : map) printf("%llu, %u\n",a.value,b);
 }
+//*/
 
 struct GameServer_wasm {
 	// ============================================================

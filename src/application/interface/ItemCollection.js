@@ -1,6 +1,6 @@
 
 // TODO: rename to ComponentSet
-class ItemCollection {
+export class ItemCollection {
 	constructor() {
 		this.cells  = new Set();
 		this.texts  = new Set();

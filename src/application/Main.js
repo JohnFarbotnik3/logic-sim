@@ -1,3 +1,6 @@
+import { GameData } from "./GameData"
+import { GameControls } from "./interface/GameControls"
+import { GameServer_wasm } from "./server/GameServer_wasm"
 
 // global structures
 let   gameServer		= null;
@@ -10,10 +13,11 @@ class Main {
 	onUpdate = null;
 	
 	async init() {
-		await GameServer_wasm.module_ready_promise.then(() => {
-			gameServer = new GameServer_wasm();
-			console.log("gameServer", gameServer);
-		});
+		gameServer = new GameServer_wasm();
+		console.log("gameServer", gameServer);
+		await gameServer.isReady;
+		console.log("gameServer.module", gameServer.module);
+		console.log("gameServer.server", gameServer.server);
 		GameInit.init();
 		GameUI.init();
 		await this.updateRestart();
@@ -71,5 +75,5 @@ class Main {
 		}
 	}
 };
-const main = new Main();
+export const main = new Main();
 

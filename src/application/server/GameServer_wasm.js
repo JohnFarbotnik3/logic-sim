@@ -1,25 +1,22 @@
+import createEmModule from "./em_index";
 
-Module.onRuntimeInitialized = () => {
-	GameServer_wasm.module_ready_resolve(true);
-};
+const module = await createEmModule();
 
 /* Functions for interacting with c++ implementation. */
-class GameServer_wasm {
+export class GameServer_wasm {
+
+	constructor() {
+		this.module = null;
+		this.server = null;
+		this.isReady = createEmModule().then((module) => {
+			this.module = module;
+			this.server = new module.GameServer();
+		});
+	}
+
 	// ============================================================
 	// BlockTemplate library
 	// ------------------------------------------------------------
-	
-	static module_ready_resolve = null;
-	static module_ready_promise = new Promise((resolve, reject) => {
-		GameServer_wasm.module_ready_resolve = resolve;
-	});
-
-	constructor() {
-		console.log("MODULE", Module);
-		console.log("MODULE", Module.GameServer);
-		this.server = new Module.GameServer();
-	}
-
 	send_templates(library, rootTemplateId) {
 		const server = this.server;
 		for(const [templateId_num, temp] of library) {

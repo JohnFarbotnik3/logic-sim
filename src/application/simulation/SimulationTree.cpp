@@ -90,7 +90,7 @@ struct SimulationTree {
 	) {
 		// generate queue of [new, old] simblock-index pairs.
 		const u32 sz = std::min<u32>(oldtree.simblocks.size(), newtree.simblocks.size()) * 2 + 2;
-		u32 arr[sz];
+		u32* arr = new u32[sz];
 		u32 pos = 0;
 		u32 len = 0;
 		arr[len++] = 0;
@@ -120,6 +120,7 @@ struct SimulationTree {
 				}
 			}
 		}
+		delete[] arr;
 	}
 
 };

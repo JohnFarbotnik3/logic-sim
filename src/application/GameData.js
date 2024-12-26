@@ -1,5 +1,7 @@
+import { CachedValue_Content, CachedValue_Rendering } from "./misc/CachedValue";
 
-class GameData {
+
+export class GameData {
 	
 	// ============================================================
 	// misc
@@ -18,7 +20,6 @@ class GameData {
 	shouldRebuild = true;
 	// true if simulation should rebuild and reset cell values.
 	shouldReset = true;
-
 
 	// ============================================================
 	// BlockTemplate Library.

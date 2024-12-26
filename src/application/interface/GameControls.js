@@ -1,5 +1,7 @@
+import { Vector3D } from "../lib/Vector3D";
+import { ItemCollection } from "./ItemCollection"
 
-class GameControls {
+export class GameControls {
 	update() {
 		// update deltas
 		updateInputDeltas();

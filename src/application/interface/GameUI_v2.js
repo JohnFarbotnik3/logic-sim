@@ -1,4 +1,5 @@
 import { ItemCollection } from "./ItemCollection"
+import { Cell } from "../content/Cell";
 import { InputProps, INPUT_TYPES } from "../../components/Input";
 
 export class GameUI {
@@ -31,6 +32,9 @@ export class GameUI {
 	getElement(id) {
 		return this.elementMap.get(id);
 	}
+	setElement(id, elem) {
+		return this.elementMap.set(id, elem);
+	}
 	setElementValue(id, value) {
 		const elem = this.elementMap.get(id);
 		if(elem) elem.value = value;
@@ -49,8 +53,6 @@ export class GameUI {
 	// ============================================================
 	// Canvas
 	// ------------------------------------------------------------
-	//TODO
-
 
 	// ============================================================
 	// Selection
@@ -89,10 +91,10 @@ export class GameUI {
 		title: "Cells",
 		style: "width: 120px;",
 		inputs: [
-			new InputProps(this, "tselcv", "initial value"	, INPUT_TYPES.u32, 0, this.oninput_select_c_v),
-			new InputProps(this, "tselcw", "cell width"		, INPUT_TYPES.f32, 1, this.oninput_select_c_w),
-			new InputProps(this, "tselch", "cell height"	, INPUT_TYPES.f32, 1, this.oninput_select_c_h),
-			new InputProps(this, "tselcr", "rotation (deg)"	, INPUT_TYPES.f32, 0, this.oninput_select_c_r),
+			new InputProps("tselcv", "initial value"	, INPUT_TYPES.u32, 0, this.oninput_select_c_v),
+			new InputProps("tselcw", "width"			, INPUT_TYPES.dim, 1, this.oninput_select_c_w),
+			new InputProps("tselch", "height"			, INPUT_TYPES.dim, 1, this.oninput_select_c_h),
+			new InputProps("tselcr", "rotation (deg)"	, INPUT_TYPES.f32, 0, this.oninput_select_c_r),
 		]
 	};
 
@@ -100,9 +102,9 @@ export class GameUI {
 		title: "Blocks",
 		style: "width: 120px;",
 		inputs: [
-			new InputProps(this, "tselbw", "cell width"		, INPUT_TYPES.f32, 1, this.oninput_select_b_w),
-			new InputProps(this, "tselbh", "cell height"	, INPUT_TYPES.f32, 1, this.oninput_select_b_h),
-			new InputProps(this, "tselbr", "rotation (deg)"	, INPUT_TYPES.f32, 0, this.oninput_select_b_r),
+			new InputProps("tselbw", "width"			, INPUT_TYPES.dim, 1, this.oninput_select_b_w),
+			new InputProps("tselbh", "height"			, INPUT_TYPES.dim, 1, this.oninput_select_b_h),
+			new InputProps("tselbr", "rotation (deg)"	, INPUT_TYPES.f32, 0, this.oninput_select_b_r),
 		]
 	};
 
@@ -161,11 +163,44 @@ export class GameUI {
 		title: "Set cell values",
 		style: "width: 120px;",
 		inputs: [
-			new InputProps(this, "tsetvl", "value (LMB)", INPUT_TYPES.u32, "0xFFFFFFFF", this.oninput_setval_lmb),
-			new InputProps(this, "tsetvr", "value (RMB)", INPUT_TYPES.u32, "0x00000000", this.oninput_setval_rmb),
-
+			new InputProps("tsetvl", "value (LMB)", INPUT_TYPES.u32, "0xFFFFFFFF", this.oninput_setval_lmb),
+			new InputProps("tsetvr", "value (RMB)", INPUT_TYPES.u32, "0x00000000", this.oninput_setval_rmb),
 		]
 	};
+
+	// ============================================================
+	// Cells
+	// ------------------------------------------------------------
+
+	//setCurrentMode()
+	place_dim_cell		= [1,1,0];// [w,h,r]
+	place_preview_cell	= null;
+
+	onclick_cell_type(cellType) {
+		if(cellType) this.place_preview_cell = new Cell(cellType, 0x0);
+		if(this.place_preview_cell) this.setCurrentMode(this.MODES.PLACE_CELLS);
+		else this.setCurrentMode(null);
+	}
+
+	oninput_cell_w(value) { this.place_dim_cell[0] = value; }
+	oninput_cell_h(value) { this.place_dim_cell[1] = value; }
+	oninput_cell_r(value) { this.place_dim_cell[2] = value / 360; }
+
+	info_place_cells = [
+		"- To place cells, click one of the cell types (ex. XOR), then clicking on canvas.",
+	].join("\n");
+
+	table_place_cells = {
+		title: "Cell properties",
+		style: "width: 120px;",
+		inputs: [
+			new InputProps("tpcw", "width"			, INPUT_TYPES.dim, "1", this.oninput_cell_w),
+			new InputProps("tpch", "height"			, INPUT_TYPES.dim, "1", this.oninput_cell_h),
+			new InputProps("tpcr", "rotation (deg)"	, INPUT_TYPES.f32, "0", this.oninput_cell_r),
+		]
+	};
+
+
 
 
 };

@@ -127,13 +127,6 @@ export class GameUI {
 		}
 	}
 	
-	static packedRGBA(abgr) {
-		const r = ((abgr >> 24) & 0xff) / 2;
-		const g = ((abgr >> 16) & 0xff) / 2;
-		const b = ((abgr >>  8) & 0xff) / 2;
-		const a = ((abgr >>  0) & 0xff);
-		return new Uint32Array([(r<<24)|(g<<16)|(b<<8)|a])[0];
-	}
 	
 	static set_toggled_button_in_map(map, key) {
 		for(const [key, elem] of map.entries()) elem.toggled = false;
@@ -302,43 +295,7 @@ export class GameUI {
 	// ============================================================
 	// Cells
 	// ------------------------------------------------------------
-	
-	static init_cell_panel() {
-		// panel and button.
-		const menu_panel = new PanelColumn({ parent:this.panelArea, id:"cell_panel", style:"" });
-		const menu_button = new Button({ parent:this.sidebar, id:"cell_panel_button", innerText:"Cells", classList:["PanelButton"] })
-		menu_button.onclick = () => {
-			this.set_open_panel(menu_panel);
-			this.set_toggled_panel_button(menu_button);
-			gameControls.set_mode_place_cells();
-		};
-		menu_button.title = [
-			"- To place cells, click one of the cell types (ex. XOR), then clicking on canvas.",
-		].join("\n");
-		this.hotkey_btn_cells = menu_button;
-		// settings.
-		const inputs = new InputTable({ parent:menu_panel, id:"cell_inputs", tablename: "Properties", inputWidth: 50, params: [
-				["cell width"		, "1", this.oninput_cell_w],
-				["cell height"		, "1", this.oninput_cell_h],
-				["rotation (deg)"	, "0", this.oninput_cell_r],
-			],
-		});
-		// cell type buttons.
-		const grid = new Grid({ id: `celltypes_grid`, parent: menu_panel, style: "grid-template-columns: 1fr 1fr;" });
-		for(const [k, v] of Object.entries(CELL_PROPERTIES)) {
-			const btn = new Button({
-				id: `celltypes_btn_${k}`,
-				parent: grid,
-				innerText: v.tstr,
-				onclick: (event) => gameControls.set_mode_place_cells(v.type),
-				style: `margin:2px; height:50px; background:#${GameUI.packedRGBA(v.clr).toString(16)};`,
-			});
-		}
-	}
-	
-	static oninput_cell_w(event) { const [value,valid] = GameUI.parse_f32(event); if(valid) gameControls.place_dim_cell[0] = value; }
-	static oninput_cell_h(event) { const [value,valid] = GameUI.parse_f32(event); if(valid) gameControls.place_dim_cell[1] = value; }
-	static oninput_cell_r(event) { const [value,valid] = GameUI.parse_f32(event); if(valid) gameControls.place_dim_cell[2] = value/360; }
+	// DONE
 	
 	// ============================================================
 	// Links

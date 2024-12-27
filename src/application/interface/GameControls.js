@@ -193,11 +193,6 @@ export class GameControls {
 	set_mode_set_values() {
 		this.cursor_mode = this.CURSOR_MODE.SET_VALUES;
 	}
-	set_mode_place_cells(cellType) {
-		if(cellType) this.place_preview_cell = new Cell(cellType, 0x0);
-		if(this.place_preview_cell) this.cursor_mode = this.CURSOR_MODE.PLACE_CELL;
-		else this.set_mode_none();
-	}
 	set_mode_place_links() {
 		this.cursor_mode = this.CURSOR_MODE.PLACE_LINK;
 	}
@@ -346,9 +341,7 @@ export class GameControls {
 	// ============================================================
 	// item placement.
 	// ------------------------------------------------------------
-	place_dim_cell			= [1,1,0];// [w,h,r]
 	place_dim_block			= [2,2,0];// [w,h,r]
-	place_preview_cell		= null;
 	place_preview_block		= null;
 	get_render_preview_cell () { return (this.cursor_mode === this.CURSOR_MODE.PLACE_CELL ) ? this.place_preview_cell  : null; }
 	get_render_preview_block() { return (this.cursor_mode === this.CURSOR_MODE.PLACE_BLOCK) ? this.place_preview_block : null; }

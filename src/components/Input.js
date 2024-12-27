@@ -1,11 +1,11 @@
 
 export class InputProps {
-	constructor(_this, id, label, type, initial, oninput) {
+	constructor(id, label, type, initial, oninput) {
 		this.id			= id;
 		this.label		= label;
 		this.type		= type;
 		this.initial	= initial;
-		this.oninput	= (value) => oninput.call(_this, value);
+		this.oninput	= oninput;
 	}
 };
 

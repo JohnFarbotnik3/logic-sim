@@ -2,19 +2,20 @@
 <script>
 	import { parse_input } from "./Input";
 	const props = $props();
-	const { id, type, label, initial, oninput } = props;
+	const { type, label, initial, oninput } = props;
 
 	// add to element map.
 	import { gameUI } from "../application/Main.js";
 	let element = $state(null);
-	$effect(() => { gameUI.elementMap.set(id, element); })
+	$effect(() => { gameUI.elementMap.set(props.id, element); });
 
 	let inputValue = $state(initial);
 	let inputValid = $state(true);
 	function oninputFunc() {
 		const [value, valid] = parse_input(inputValue, type);
 		inputValid = valid;
-		if(valid) oninput(value);
+		if(valid) oninput.call(gameUI, value);
+
 	};
 </script>
 

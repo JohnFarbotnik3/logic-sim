@@ -15,13 +15,15 @@
 	});
 
 	const titles = new Map([
-		[gameUI.MODES.SELECT	, gameUI.info_select	],
-		[gameUI.MODES.SET_VALUES, gameUI.info_setval	],
+		[gameUI.MODES.SELECT		, gameUI.info_select],
+		[gameUI.MODES.SET_VALUES	, gameUI.info_setval],
+		[gameUI.MODES.PLACE_CELLS	, gameUI.info_place_cells],
 	]);
 
 	const panels = new Map([
-		[gameUI.MODES.SELECT	, Panels.panel_select		],
-		[gameUI.MODES.SET_VALUES, Panels.panel_cell_values	],
+		[gameUI.MODES.SELECT		, Panels.panel_select],
+		[gameUI.MODES.SET_VALUES	, Panels.panel_cell_values],
+		[gameUI.MODES.PLACE_CELLS	, Panels.panel_place_cells],
 	]);
 
 </script>
@@ -33,9 +35,9 @@
 		<div id="header">
 			abc
 		</div>
-		<div>
-			<Canvas id="canvas" style="position: absolute;"></Canvas>
-			<Grid cols="auto auto" style="position: absolute; width: fit-content;">
+		<Grid cols="1fr">
+			<Canvas class="first_column" id="canvas"></Canvas>
+			<Grid class="first_column" cols="auto auto" style="width: fit-content;">
 				<div id="sidebar">
 					{#each modes as mode}
 					<Button toggled={currentMode === mode} onclick={() => currentMode = mode} title={titles.get(mode)}>{mode}</Button>
@@ -49,7 +51,7 @@
 					{/each}
 				</div>
 			</Grid>
-		</div>
+		</Grid>
 	</Grid>
 </div>
 
@@ -89,6 +91,15 @@
 	height: fit-content;
 	background: #000;
 	position: absolute;
+}
+
+/*
+	IMPORTANT TRICK - REMEBER THIS TRICK!!!!!!!!!!
+	this allows putting multiple elements in the same row.
+*/
+:global(.first_column) {
+	grid-column: 1;
+	grid-row: 1;
 }
 
 </style>

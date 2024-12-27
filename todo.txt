@@ -216,7 +216,7 @@ may have recursive behaviour.
 > Re-implement UI in Svelte
 * combine functionality found in GameControls, and InputUtil.
 * rework GameUI
-
+* add shared mouse-following tooltip component (confined to window area).
 
 
 

@@ -14,16 +14,19 @@
 		gameUI.setCurrentMode(currentMode);
 	});
 
+	const titles = new Map([
+		[gameUI.MODES.SELECT	, gameUI.info_select	],
+		[gameUI.MODES.SET_VALUES, gameUI.info_setval	],
+	]);
+
 	const panels = new Map([
 		[gameUI.MODES.SELECT	, Panels.panel_select		],
 		[gameUI.MODES.SET_VALUES, Panels.panel_cell_values	],
 	]);
-	let currentPanel = $state(null);
-	$effect(() => {
-		currentPanel = panels.get(currentMode);
-	});
 
 </script>
+
+
 
 <div id="page">
 	<Grid rows="auto 1fr">
@@ -35,14 +38,15 @@
 			<Grid cols="auto auto" style="position: absolute; width: fit-content;">
 				<div id="sidebar">
 					{#each modes as mode}
-						<Button
-							toggled={currentMode === mode}
-							onclick={() => currentMode = mode}
-						>{mode}</Button>
+					<Button toggled={currentMode === mode} onclick={() => currentMode = mode} title={titles.get(mode)}>{mode}</Button>
 					{/each}
 				</div>
-				<div class="sidepanel">
-					{@render currentPanel?.()}
+				<div id="panelarea">
+					{#each modes as mode}
+					<div class="sidepanel" style={currentMode === mode ? "" : "display: none;"}>
+						{@render panels.get(mode)?.()}
+					</div>
+					{/each}
 				</div>
 			</Grid>
 		</div>
@@ -60,6 +64,8 @@
 	</div>
 </div>
 {/if}
+
+
 
 <style>
 
@@ -82,6 +88,7 @@
 	width: fit-content;
 	height: fit-content;
 	background: #000;
+	position: absolute;
 }
 
 </style>

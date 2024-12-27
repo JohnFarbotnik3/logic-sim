@@ -2,7 +2,12 @@
 <script>
 	import { parse_input } from "./Input";
 	const props = $props();
-	const { type, label, initial, oninput } = props;
+	const { id, type, label, initial, oninput } = props;
+
+	// add to element map.
+	import { gameUI } from "../application/Main.js";
+	let element = $state(null);
+	$effect(() => { gameUI.elementMap.set(id, element); })
 
 	let inputValue = $state(initial);
 	let inputValid = $state(true);
@@ -35,5 +40,5 @@
 	{#if label}
 		<div>{label}</div>
 	{/if}
-	<input {...props} bind:value={inputValue} class={inputValid ? "valid" : "error"} oninput={oninputFunc} />
+	<input {...props} bind:this={element} bind:value={inputValue} class={inputValid ? "valid" : "error"} oninput={oninputFunc} />
 </div>

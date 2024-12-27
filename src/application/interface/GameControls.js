@@ -1,6 +1,7 @@
 import { Vector3D } from "../lib/Vector3D";
 import { ItemCollection } from "./ItemCollection"
 
+// TODO: move to GameUI_v2
 export class GameControls {
 	update() {
 		// update deltas
@@ -62,7 +63,7 @@ export class GameControls {
 						this.collectionSelected.addFirstComponentFromCollection(this.collectionHovered);
 						this.collectionTranslating.clear();
 						this.collectionTranslating.addFromCollection(this.collectionSelected);
-						GameUI.update_select_inputs();
+						GameUI.on_selection_update();
 					}
 					console.log("this.collectionHovered", this.collectionHovered);
 					console.log("this.collectionSelected", this.collectionSelected);
@@ -81,7 +82,7 @@ export class GameControls {
 			if(dragEnded) {
 				if(this.cursor_isSelecting) {
 					this.selectAllItemsInDragArea();
-					GameUI.update_select_inputs();
+					GameUI.on_selection_update();
 				}
 			}
 			if(!buttonDownL) {
@@ -265,9 +266,6 @@ export class GameControls {
 	translate_start		= new Vector3D();
 	translate_prev		= new Vector3D();
 	translate_curr		= new Vector3D();
-	collectionSelected		= new ItemCollection();
-	collectionHovered		= new ItemCollection();
-	collectionTranslating	= new ItemCollection();
 	isItemInDragArea(item) {
 		const aabb = gameData.renderBlock.get_axis_aligned_bounding_box(item);
 		VerificationUtil.verifyType_throw(aabb, Float32Array);
@@ -336,8 +334,6 @@ export class GameControls {
 	// ============================================================
 	// cell (simulation-)value setting.
 	// ------------------------------------------------------------
-	setval_value_lmb = 0xffffffff;
-	setval_value_rmb = 0x00000000;
 	setval_hovered(val) {
 		for(const item of this.collectionHovered.cells) {
 			gameServer.simulation_set_cell_value(ComponentId.THIS_BLOCK, item.id, val);

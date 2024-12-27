@@ -1,11 +1,8 @@
 <script>
-
+	import InputTable from "../InputTable.svelte";
+	import { gameUI } from "../../application/Main";
 </script>
 
-<style>
-
-</style>
-
 <div>
-	panel_cell_values
+	<InputTable {...gameUI.table_setval} />
 </div>

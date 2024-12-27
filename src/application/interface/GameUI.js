@@ -292,115 +292,13 @@ export class GameUI {
 	// ============================================================
 	// Selection
 	// ------------------------------------------------------------
-	
-	static init_select_panel() {
-		// panel and button.
-		const menu_panel = new PanelColumn({ parent:this.panelArea, id:"select_panel", style:"" });
-		const menu_button = new Button({ parent:this.sidebar, id:"select_panel_button", innerText:"Select", classList:["PanelButton"] });
-		menu_button.onclick = () => {
-			this.set_open_panel(menu_panel);
-			this.set_toggled_panel_button(menu_button);
-			gameControls.set_mode_select();
-		};
-		menu_button.title = [
-			"- Select items by clicking them, or by dragging to select all items in drag-area.",
-			"- Delete selected items by pressing 'DELETE' key.",
-			"- Move selected items by hovering over any selected item, then clicking and dragging cursor.",
-		].join("\n");
-		this.hotkey_btn_select = menu_button;
-		// inputs.
-		this.select_inputs_cell_m = new InputTable({ parent:menu_panel, id:"select_inputs_cell_m", tablename: "Cells", params: [
-				["initial value"	, "0", this.oninput_select_c_v],
-				["cell width"		, "1", this.oninput_select_c_w],
-				["cell height"		, "1", this.oninput_select_c_h],
-				["rotation (deg)"	, "0", this.oninput_select_c_r],
-			],
-		});
-		this.select_inputs_block_m = new InputTable({ parent:menu_panel, id:"select_inputs_block_m", tablename: "Blocks", params: [
-				["block width"		, "1", this.oninput_select_b_w],
-				["block height"		, "1", this.oninput_select_b_h],
-				["rotation (deg)"	, "0", this.oninput_select_b_r],
-			],
-		});
-		this.update_select_inputs();
-	}
-	
-	//static select_inputs_cell_1 = null;
-	static select_inputs_cell_m = null;
-	//static select_inputs_block_1 = null;
-	static select_inputs_block_m = null;
-	static update_select_inputs() {
-		// update visibility.
-		const selected = gameControls.collectionSelected;
-		//this.select_inputs_cell_1.enabled = (selected.cells.size === 1);
-		this.select_inputs_cell_m.enabled = (selected.cells.size >=  1);
-		//this.select_inputs_block_1.enabled = (selected.blocks.size === 1);
-		this.select_inputs_block_m.enabled = (selected.blocks.size >=  1);
-		// get values from first item in list.
-		let first_item;
-		first_item = null;
-		for(const item of selected.cells.values()) { first_item = item; break; }
-		if(first_item) {
-			//this.select_inputs_cell_1.setValue(0, first_item.id, false);
-			this.select_inputs_cell_m.setValue(0, first_item.value, false);
-			this.select_inputs_cell_m.setValue(1, first_item.dimensions.w, false);
-			this.select_inputs_cell_m.setValue(2, first_item.dimensions.h, false);
-			this.select_inputs_cell_m.setValue(3, first_item.dimensions.r * 360, false);
-		}
-		first_item = null;
-		for(const item of selected.blocks.values()) { first_item = item; break; }
-		if(first_item) {
-			//this.select_inputs_block_1.setValue(0, first_item.id, false);
-			this.select_inputs_block_m.setValue(0, first_item.dimensions.w, false);
-			this.select_inputs_block_m.setValue(1, first_item.dimensions.h, false);
-			this.select_inputs_block_m.setValue(2, first_item.dimensions.r * 360, false);
-		}
-	}
-	static get_cells_u32 (event) { const [value, valid] = GameUI.parse_u32(event); return [value, valid ? [...gameControls.collectionSelected.cells.values()] : []]; }
-	static get_cells_f32 (event) { const [value, valid] = GameUI.parse_f32(event); return [value, valid ? [...gameControls.collectionSelected.cells.values()] : []]; }
-	static get_blocks_f32(event) { const [value, valid] = GameUI.parse_f32(event); return [value, valid ? [...gameControls.collectionSelected.blocks.values()] : []]; }
-	static changedContent() { CachedValue_Content.onChange(); }
-	static changedRendering() { CachedValue_Rendering.onChange(); }
-	static items_set_v (items, value) { if(items.length > 0) { GameUI.changedContent(); for(const item of items) item.value = value; } }
-	static items_set_w (items, value) { if(items.length > 0) { GameUI.changedRendering(); for(const item of items) item.dimensions.w = value; } }
-	static items_set_h (items, value) { if(items.length > 0) { GameUI.changedRendering(); for(const item of items) item.dimensions.h = value; } }
-	static items_set_r (items, value) { if(items.length > 0) { GameUI.changedRendering(); for(const item of items) item.dimensions.r = value/360; } }
-	static oninput_select_c_v (event) { const [value, items] = GameUI.get_cells_u32(event); GameUI.items_set_v (items, value); }
-	static oninput_select_c_w (event) { const [value, items] = GameUI.get_cells_f32(event); GameUI.items_set_w (items, value); }
-	static oninput_select_c_h (event) { const [value, items] = GameUI.get_cells_f32(event); GameUI.items_set_h (items, value); }
-	static oninput_select_c_r (event) { const [value, items] = GameUI.get_cells_f32(event); GameUI.items_set_r (items, value); }
-	static oninput_select_b_w (event) { const [value, items] = GameUI.get_blocks_f32(event); GameUI.items_set_w (items, value); }
-	static oninput_select_b_h (event) { const [value, items] = GameUI.get_blocks_f32(event); GameUI.items_set_h (items, value); }
-	static oninput_select_b_r (event) { const [value, items] = GameUI.get_blocks_f32(event); GameUI.items_set_r (items, value); }
-	
+	// DONE
+
 	// ============================================================
 	// Values
 	// ------------------------------------------------------------
-	
-	static init_setval_panel() {
-		// panel and button.
-		const menu_panel = new PanelColumn({ parent:this.panelArea, id:"setval_panel", style:"" });
-		const menu_button = new Button({ parent:this.sidebar, id:"setval_panel_button", innerText:"Values", classList:["PanelButton"] });
-		menu_button.onclick = () => {
-			this.set_open_panel(menu_panel);
-			this.set_toggled_panel_button(menu_button);
-			gameControls.set_mode_set_values();
-		};
-		menu_button.title = [
-			"- Set the output value of cells by hovering over them while the left or right mouse-button is down.",
-		].join("\n");
-		this.hotkey_btn_values = menu_button;
-		// inputs.
-		this.setval_inputs = new InputTable({ parent:menu_panel, id:"setval_inputs_cell_m", tablename: "Set cell values", inputWidth:110, params: [
-				["value (LMB) "	, "ffffffff", this.oninput_setval_lmb],
-				["value (RMB)"	, "00000000", this.oninput_setval_rmb],
-			],
-		});
-	}
-	
-	static oninput_setval_lmb(event) { const [value,valid] = GameUI.parse_u32(event); if(valid) gameControls.setval_value_lmb = value; }
-	static oninput_setval_rmb(event) { const [value,valid] = GameUI.parse_u32(event); if(valid) gameControls.setval_value_rmb = value; }
-	
+	// DONE
+
 	// ============================================================
 	// Cells
 	// ------------------------------------------------------------

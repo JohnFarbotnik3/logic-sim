@@ -3,7 +3,7 @@
 	import Input from "./Input.svelte"
 
 	const props = $props();
-	const { title, enabled, inputs } = props;
+	const { title, inputs } = props;
 </script>
 
 <style>
@@ -22,6 +22,6 @@
 <div class="wrapper outline" {...props}>
 	<div class="title">{title}</div>
 	{#each inputs as input}
-		<Input {...input} disabled={!enabled} />
+		<Input {...input} />
 	{/each}
 </div>

@@ -1,8 +1,8 @@
 <script>
 	import Grid from "../components/Grid.svelte";
-	import Header from "../components/Header.svelte";
 	import Button from "../components/Button.svelte";
 	import Canvas from "../components/Canvas.svelte";
+	import * as Panels from "../components/Panels/Panels.js";
 
 	import { main, gameUI } from "../application/Main.js";
 
@@ -10,57 +10,40 @@
 
 	const modes = [...Object.values(gameUI.MODES)];
 	let currentMode = $state(modes[0]);
-	let currentTime = $state(Date.now());
 	$effect(() => {
 		gameUI.setCurrentMode(currentMode);
 	});
 
+	const panels = new Map([
+		[gameUI.MODES.SELECT	, Panels.panel_select		],
+		[gameUI.MODES.SET_VALUES, Panels.panel_cell_values	],
+	]);
+	let currentPanel = $state(null);
+	$effect(() => {
+		currentPanel = panels.get(currentMode);
+	});
+
 </script>
-
-<style>
-
-#page {
-	background: #000;
-	position: absolute;
-	width: 100vw;
-	height: 100vh;
-	top: 0px;
-	left: 0px;
-	color: #fff;
-}
-
-#sidebar {
-	width: fit-content;
-	height: fit-content;
-}
-
-.sidepanel {
-	width: fit-content;
-}
-
-</style>
 
 <div id="page">
 	<Grid rows="auto 1fr">
-		<Header id="header" class="outline">
+		<div id="header">
 			abc
-		</Header>
+		</div>
 		<div>
-			<Canvas id="canvas" style="position: absolute;" onclick={() => currentTime+=1}></Canvas>
+			<Canvas id="canvas" style="position: absolute;"></Canvas>
 			<Grid cols="auto auto" style="position: absolute; width: fit-content;">
 				<div id="sidebar">
 					{#each modes as mode}
 						<Button
-							class={currentMode === mode ? "outline_1" : "outline_0"}
+							toggled={currentMode === mode}
 							onclick={() => currentMode = mode}
 						>{mode}</Button>
 					{/each}
 				</div>
-				{#each modes as mode}
-					<div class="sidepanel" style={currentMode === mode ? "" : "display: none"}>
-						{mode}
-					</div>
-				{/each}
+				<div class="sidepanel">
+					{@render currentPanel?.()}
+				</div>
 			</Grid>
 		</div>
 	</Grid>
@@ -77,3 +60,28 @@
 	</div>
 </div>
 {/if}
+
+<style>
+
+#page {
+	background: #000;
+	position: absolute;
+	width: 100vw;
+	height: 100vh;
+	top: 0px;
+	left: 0px;
+	color: #fff;
+	font-family: monospace;
+}
+
+#sidebar {
+	width: fit-content;
+	height: fit-content;
+}
+.sidepanel {
+	width: fit-content;
+	height: fit-content;
+	background: #000;
+}
+
+</style>

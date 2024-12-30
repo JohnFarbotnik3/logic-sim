@@ -218,6 +218,8 @@ may have recursive behaviour.
 * rework GameUI
 * add shared mouse-following tooltip component (confined to window area).
 
+> figure out how to exclude WebGL directory from rendering during SSR.
+> exclude some other stuff during SSR as well.
 
 
 

@@ -1,9 +1,11 @@
+import { ShaderConfig } from "../Shader";
+import { GL2 } from "../../environment";
 
-const Shader_test = new ShaderConfig({
+export const Shader_test = new ShaderConfig({
 	attribs: [
-		{ name: "pos", type: GL.FLOAT		, numComponents: 3, normalize: false },
-		{ name: "clr", type: GL.UNSIGNED_INT, numComponents: 1, normalize: false },
-		{ name: "tex", type: GL.FLOAT		, numComponents: 2, normalize: false },
+		{ name: "pos", type: GL2.FLOAT			, numComponents: 3, normalize: false },
+		{ name: "clr", type: GL2.UNSIGNED_INT	, numComponents: 1, normalize: false },
+		{ name: "tex", type: GL2.FLOAT			, numComponents: 2, normalize: false },
 	],
 	uniforms: [
 		{ name: "mvp" },

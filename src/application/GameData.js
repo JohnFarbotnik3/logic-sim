@@ -3,8 +3,7 @@ import { BlockTemplate } from "./content/BlockTemplate";
 import { Block } from "./content/Block";
 import { ComponentDimensions } from "./content/ComponentDimensions";
 import { VerificationUtil } from "./lib/VerificationUtil";
-import { gameData } from "./Main";
-import { GameUI } from "./interface/GameUI";
+import { gameUI } from "./Main";
 import { alert } from "./environment";
 
 export class GameData {
@@ -39,14 +38,14 @@ export class GameData {
 		const template = this.blockTemplates.get(templateId);
 		this.rootBlock = new Block(new ComponentDimensions(0, 0, template.width,template.height, 0), template.templateId);
 		CachedValue_Content.onChange();
-		gameData.shouldRebuild = true;
-		GameUI.on_major_blocklib_change();
+		this.shouldRebuild = true;
+		gameUI.on_major_blocklib_change();
 	}
 	setRootBlockTemplate_minor(templateId) {
 		const template = this.blockTemplates.get(templateId);
 		this.rootBlock = new Block(new ComponentDimensions(0, 0, template.width,template.height, 0), template.templateId);
 		CachedValue_Content.onChange();
-		GameUI.on_minor_blocklib_change();
+		gameUI.on_minor_blocklib_change();
 	}
 	
 	/* Return all templates that contain templateId. */
@@ -69,7 +68,7 @@ export class GameData {
 		newTemplate.name = name;
 		newTemplate.desc = desc;
 		this.blockTemplates.set(newTemplate.templateId, newTemplate);
-		GameUI.on_major_blocklib_change();
+		gameUI.on_major_blocklib_change();
 		this.setRootBlockTemplate(newTemplate.templateId);
 	}
 	
@@ -93,7 +92,7 @@ export class GameData {
 		}
 		console.log("deleting template", templateId);
 		this.blockTemplates.delete(templateId);
-		GameUI.on_major_blocklib_change();
+		gameUI.on_major_blocklib_change();
 	}
 	
 	exportTemplates() {
@@ -112,25 +111,25 @@ export class GameData {
 			for(const item of arr) templates.push(BlockTemplate.load(item));
 		} catch(error) {
 			alert("failed to parse import text-area:\n\n" + error.stack);
-			if(gameData.blockTemplates.size === 0) this.createNewBlockTemplate(12, 12, "New template", "");
+			if(this.blockTemplates.size === 0) this.createNewBlockTemplate(12, 12, "New template", "");
 			return;
 		}
 		for(const template of templates) {
 			this.blockTemplates.set(template.templateId, template);
-			gameData.shouldRebuild = true;
+			this.shouldRebuild = true;
 		}
-		GameUI.on_major_blocklib_change();
+		gameUI.on_major_blocklib_change();
 	}
 	
 	// ============================================================
 	// Content change handlers.
 	// ------------------------------------------------------------
-	onRootContentChanged_addCell(cell) { gameData.shouldRebuild = true; }
-	onRootContentChanged_remCell(cell) { gameData.shouldRebuild = true; }
-	onRootContentChanged_addLink(link) { gameData.shouldRebuild = true; }
-	onRootContentChanged_remLink(link) { gameData.shouldRebuild = true; }
-	onRootContentChanged_addBlock(block) { gameData.shouldRebuild = true; }
-	onRootContentChanged_remBlock(block) { gameData.shouldRebuild = true; }
+	onRootContentChanged_addCell(cell) { this.shouldRebuild = true; }
+	onRootContentChanged_remCell(cell) { this.shouldRebuild = true; }
+	onRootContentChanged_addLink(link) { this.shouldRebuild = true; }
+	onRootContentChanged_remLink(link) { this.shouldRebuild = true; }
+	onRootContentChanged_addBlock(block) { this.shouldRebuild = true; }
+	onRootContentChanged_remBlock(block) { this.shouldRebuild = true; }
 
 	// ============================================================
 	// Link deletion and verification.
@@ -149,7 +148,7 @@ export class GameData {
 				return true;
 			};
 			const text = "WARNING - links in the following templates failed to find targets (delete links?):";
-			if(deletionList.length > 0)	GameUI.showLinkDeletionPopup(deletionList, text, onsubmit, oncancel);
+			if(deletionList.length > 0)	gameUI.showLinkDeletionPopup(deletionList, text, onsubmit, oncancel);
 			else						onsubmit();
 		});
 		return promise;

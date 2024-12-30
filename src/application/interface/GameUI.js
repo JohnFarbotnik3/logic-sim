@@ -1,4 +1,3 @@
-import { gameControls } from "../Main"
 
 // TODO: migrate this to Svelte
 export class GameUI {
@@ -300,46 +299,7 @@ export class GameUI {
 	// ============================================================
 	// Links
 	// ------------------------------------------------------------
-	
-	static init_link_panel() {
-		// panel and button.
-		const menu_panel = new PanelColumn({ parent:this.panelArea, id:"link_panel" });
-		const menu_button = new Button({ parent:this.sidebar, id:"link_panel_button", innerText:"Links", classList:["PanelButton"] }); 
-		menu_button.onclick = () => {
-			this.set_open_panel(menu_panel);
-			this.set_toggled_panel_button(menu_button);
-			gameControls.set_mode_place_links();
-		};
-		menu_button.title = [
-			"- To place links, click near desired input/output of first cell, then click again near desired output/input of second cell.",
-		].join("\n");
-		this.hotkey_btn_links = menu_button;
-		// inputs.
-		const link_inputs = new InputTable({ parent:menu_panel, id:"link_inputs", tablename: "Properties", inputWidth:40, params: [
-				["red"	, "255", this.oninput_link_colour_r],
-				["green", "255", this.oninput_link_colour_g],
-				["blue"	, "255", this.oninput_link_colour_b],
-			],
-		});
-	}
-	
-	static colour_mask(value, component, change) {
-		const shift = [24, 16, 8][component];
-		const mask = 0xff << shift;
-		return (value & ~mask) | (mask & (Math.min(Math.max(Math.round(change), 0), 255) << shift));
-	}
-	static oninput_link_colour_r(event) { const [value, valid] = GameUI.parse_u32(event); if(valid) gameControls.wire_colour = GameUI.colour_mask(gameControls.wire_colour, 0, value); }
-	static oninput_link_colour_g(event) { const [value, valid] = GameUI.parse_u32(event); if(valid) gameControls.wire_colour = GameUI.colour_mask(gameControls.wire_colour, 1, value); }
-	static oninput_link_colour_b(event) { const [value, valid] = GameUI.parse_u32(event); if(valid) gameControls.wire_colour = GameUI.colour_mask(gameControls.wire_colour, 2, value); }
-	
-	// ============================================================
-	// Texts
-	// ------------------------------------------------------------
-	
-	// TODO: implement.
-	
-	// TODO: add EditInputs for placement settings.
-	// ^ x-align, y-align, fg-colour, bg-colour, outline-colour, font-size.
+	//DONE
 	
 	// ============================================================
 	// Blocks
@@ -425,19 +385,7 @@ export class GameUI {
 		this.update_block_buttons_remove();
 	}
 	
-	static onclick_block_edit(templateId) {
-		gameData.setRootBlockTemplate(templateId);
-	}
-	static onclick_block_place(templateId) {
-		gameControls.set_mode_place_blocks(templateId);
-		this.update_block_buttons();
-		const template = gameData.blockTemplates.get(templateId);
-		this.block_inputs.setValue(0, template.placeW, true);
-		this.block_inputs.setValue(1, template.placeH, true);
-	}
-	static onclick_block_remove(templateId) {
-		gameData.deleteBlockTemplate(templateId);
-	}
+
 	
 	static rebuild_block_buttons() {
 		// remove buttons corresponding to templates that don't exist.
@@ -477,40 +425,14 @@ export class GameUI {
 			this.set_toggled_panel_button(menu_button);
 			if(this.current_open_panel === menu_panel) gameControls.set_mode_place_blocks();
 		};
-		menu_button.title = [
-			"- To place blocks, click the block's name in the list of available block-templates.",
-			"- To edit a block, click the 'Edit' button beside the desired block's name.",
-			"- To remove a block-template, click the 'X' button beside the desired block's name.",
-		].join("\n");
 		this.hotkey_btn_blocks = menu_button;
-		// settings.
-		this.block_inputs = new InputTable({ parent:menu_panel, id:"block_inputs", tablename: "Properties", inputWidth: 50, params: [
-				["block width"		, "1", this.oninput_block_w],
-				["block height"		, "1", this.oninput_block_h],
-				["rotation (deg)"	, "0", this.oninput_block_r],
-			],
-		});
+
 		// tooltip.
 		this.block_info_tooltip = new Tooltip({ id: `block_info_tooltip`, parent: document.body });
 		// template buttons.
 		const wrapper = new Div({ id: `block_template_btns_grid_wrapper`, parent: menu_panel, style: "overflow-y:scroll;" });
 		this.block_buttons_grid = new Grid({ id: `block_template_btns_grid`, parent: wrapper, style: "grid-template-columns: 60px 1fr 30px;" });
 		this.rebuild_block_buttons();
-	}
-	
-	static oninput_block_w(event) { try { gameControls.place_dim_block[0] = Number(event.target.value);     } catch(error) { console.error(error); }}
-	static oninput_block_h(event) { try { gameControls.place_dim_block[1] = Number(event.target.value);     } catch(error) { console.error(error); }}
-	static oninput_block_r(event) { try { gameControls.place_dim_block[2] = Number(event.target.value)/360; } catch(error) { console.error(error); }}
-	
-	static on_major_blocklib_change() {
-		gameControls.place_stopBlockPlacement();
-		gameControls.clearCollections();
-		if(this.block_buttons_grid) this.rebuild_block_buttons();
-		if(this.rootbt_panel) this.refresh_rootbt_inputs();
-	}
-	static on_minor_blocklib_change() {
-		if(this.block_buttons_grid) this.rebuild_block_buttons();
-		if(this.rootbt_panel) this.refresh_rootbt_inputs();
 	}
 	
 	// ============================================================

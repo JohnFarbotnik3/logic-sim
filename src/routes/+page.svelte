@@ -6,7 +6,7 @@
 
 	import { main, gameUI } from "../application/Main.js";
 
-	//main.init().then(() => {});
+	main.init().then(() => {});
 
 	const modes = [...Object.values(gameUI.MODES)];
 	let currentMode = $state(modes[0]);
@@ -18,12 +18,16 @@
 		[gameUI.MODES.SELECT		, gameUI.info_select],
 		[gameUI.MODES.SET_VALUES	, gameUI.info_setval],
 		[gameUI.MODES.PLACE_CELLS	, gameUI.info_place_cells],
+		[gameUI.MODES.PLACE_LINKS	, gameUI.info_place_links],
+		[gameUI.MODES.PLACE_BLOCKS	, gameUI.info_place_blocks],
 	]);
 
 	const panels = new Map([
 		[gameUI.MODES.SELECT		, Panels.panel_select],
 		[gameUI.MODES.SET_VALUES	, Panels.panel_cell_values],
 		[gameUI.MODES.PLACE_CELLS	, Panels.panel_place_cells],
+		[gameUI.MODES.PLACE_LINKS	, Panels.panel_place_links],
+		[gameUI.MODES.PLACE_BLOCKS	, Panels.panel_place_blocks],
 	]);
 
 </script>

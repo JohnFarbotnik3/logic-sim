@@ -2,13 +2,12 @@ import { GameData } from "./GameData"
 import { GameControls } from "./interface/GameControls"
 import { GameServer_wasm } from "./server/GameServer_wasm"
 import { TEST_BLOCKS_OBJECT } from "./GameInit_json"
-//import { GameUI } from "./interface/GameUI";
 import { GameUI } from "./interface/GameUI_v2";
+import { GameRenderer } from "./render/GameRenderer";
 
 // global structures
 export let   gameServer		= null;
 export const gameData		= new GameData();
-export const gameControls	= new GameControls();
 export const gameUI			= new GameUI();
 
 class Main {
@@ -24,10 +23,14 @@ class Main {
 
 		// load block data.
 		gameData.importTemplates(JSON.stringify(TEST_BLOCKS_OBJECT));
+		console.log("loaded templates", gameData.blockTemplates);
 		// set root block.
 		let templateId = null;
 		for(const tid of gameData.blockTemplates.keys()) { templateId = tid; break; }
 		gameData.setRootBlockTemplate(templateId);
+
+		// init interface.
+		gameUI.update_template_list();
 
 		// restart update cycle.
 		await this.updateRestart();
@@ -55,9 +58,8 @@ class Main {
 			const _this = main;
 			Performance.reset();
 			gameData.frameCounter++;
-			GameUI.update_hotkeys();
 			await gameData.verifyLinksCanFindTargets();
-			gameControls.update();
+			gameUI.update();
 			await gameData.verifyLinksCanFindTargets();
 			const rootTemplateId = gameData.rootBlock.templateId;
 			const t_s0 = Date.now();

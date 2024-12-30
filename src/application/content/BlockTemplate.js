@@ -1,6 +1,11 @@
 import { CachedValue_Content } from "../misc/CachedValue"
 import { VerificationUtil } from "../lib/VerificationUtil"
 import { ComponentId } from "./ComponentId"
+import { Cell } from "./Cell";
+import { Link } from "./Link";
+import { Text } from "./Text";
+import { Block } from "./Block";
+import { gameData } from "../Main";
 
 /*
 	A BlockTemplate stores the actual implementation of a logic block,
@@ -232,14 +237,14 @@ export class BlockTemplate {
 		return this._countUsedTemplates_cache.value;
 	}
 	
-	/*
-		returns true if rootBlock's template occurs anywhere in this BlockTemplate's tree,
-		as that would make it unsafe to add to the root block.
-	*/
-	containsRootBlockTemplate() {
-		return this.countUsedTemplates().has(gameData.rootBlock.templateId);
+	containsTemplate(tid) {
+		return this.countUsedTemplates().has(tid);
 	}
-	
+	containsTemplateDirectly(tid) {
+		for(const block of this.blocks) if(tid === block.templateId) return true;
+		return false;
+	}
+
 	totalCellsInTree() {
 		let used = this.countUsedTemplates();
 		let sum = 0;

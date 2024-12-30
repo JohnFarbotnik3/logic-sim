@@ -184,34 +184,6 @@ export class GameControls {
 	}
 	cursor_mode = GameControls.CURSOR_MODE.SELECT;
 	
-	set_mode_none() {
-		this.cursor_mode = this.CURSOR_MODE.NONE;
-	}
-	set_mode_select() {
-		this.cursor_mode = this.CURSOR_MODE.SELECT;
-	}
-	set_mode_set_values() {
-		this.cursor_mode = this.CURSOR_MODE.SET_VALUES;
-	}
-	set_mode_place_links() {
-		this.cursor_mode = this.CURSOR_MODE.PLACE_LINK;
-	}
-	set_mode_place_texts() {
-		this.cursor_mode = this.CURSOR_MODE.PLACE_TEXT;
-	}
-	set_mode_place_blocks(templateId) {
-		if(templateId) {
-			const dim = new ComponentDimensions(0,0,1,1,0);
-			this.place_preview_block = new Block(dim, templateId);
-		} else {
-			const tid = this.place_preview_block?.templateId;
-			const safe = tid && !gameData.blockTemplates.get(tid).containsRootBlockTemplate();
-			if(!safe) this.place_preview_block = null;
-		}
-		if(this.place_preview_block) this.cursor_mode = this.CURSOR_MODE.PLACE_BLOCK;
-		else this.set_mode_none();
-	}
-	
 	// ============================================================
 	// basic content modifying functions.
 	// ------------------------------------------------------------
@@ -307,11 +279,7 @@ export class GameControls {
 		for(const item of this.collectionTranslating.texts ) this.translate_item(item,dx,dy);
 		for(const item of this.collectionTranslating.blocks) this.translate_item(item,dx,dy);
 	}
-	clearCollections() {
-		this.collectionSelected.clear();
-		this.collectionHovered.clear();
-		this.collectionTranslating.clear();
-	}
+
 	deleteSelectedItems() {
 		const block = gameData.rootBlock;
 		for(const item of this.collectionSelected.cells ) this.rem_cell(item);
@@ -375,9 +343,6 @@ export class GameControls {
 		item.id = ComponentId.next();// ensure that new component has unique id.
 		this.add_block(item);
 	}
-	place_stopBlockPlacement() {
-		this.set_mode_select();
-	}
 	
 	// ============================================================
 	// wire placement.
@@ -386,7 +351,6 @@ export class GameControls {
 	wire_buttonStep			= 0;
 	wire_allTargets			= [];// Array<[point, bid, cid, tgt]>
 	wire_allTargetsValid	= false;
-	wire_colour				= 0xffffffff;
 	wire_targetNearest		= null;
 	wire_target1			= null;
 	wire_target2			= null;
@@ -473,7 +437,12 @@ export class GameControls {
 		let targetDst = (target1[3] !== OUTPUT) ? target1 : target2;
 		const [point_src, bid_src, cid_src, tgt_src] = targetSrc;
 		const [point_dst, bid_dst, cid_dst, tgt_dst] = targetDst;
-		const item = new Link(bid_src, bid_dst, cid_src, cid_dst, tgt_dst, this.wire_colour);
+		const clr =
+			(this.wire_colour_r << 24) |
+			(this.wire_colour_g << 16) |
+			(this.wire_colour_b <<  8) |
+			255;
+		const item = new Link(bid_src, bid_dst, cid_src, cid_dst, tgt_dst, clr);
 		this.add_link(item);
 		console.log("NEW LINK", item);
 		return true;

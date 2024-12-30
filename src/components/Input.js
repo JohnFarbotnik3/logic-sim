@@ -11,14 +11,16 @@ export class InputProps {
 
 export const INPUT_TYPES = {
 	u32:	1,
-	f32:	2,
-	dim:	3,
-	str:	4,
-	name:	5,
+	u8:		2,
+	f32:	3,
+	dim:	4,
+	str:	5,
+	name:	6,
 };
 
 export function parse_input(str, type) {
 	if(type === INPUT_TYPES.u32)	return parse_u32(str);
+	if(type === INPUT_TYPES.u8)		return parse_u8(str);
 	if(type === INPUT_TYPES.f32)	return parse_f32(str);
 	if(type === INPUT_TYPES.dim)	return parse_dim(str);
 	if(type === INPUT_TYPES.str)	return parse_str(str);
@@ -29,6 +31,13 @@ export function parse_u32(str) {
 	let value = Number(str);
 	let valid = true;
 	if(!Number.isInteger(value) | value < 0 | 0xffffffff < value) valid = false;
+	return [value, valid];
+}
+
+export function parse_u8(str) {
+	let value = Number(str);
+	let valid = true;
+	if(!Number.isInteger(value) | value < 0 | 0xff < value) valid = false;
 	return [value, valid];
 }
 

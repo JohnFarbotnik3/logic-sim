@@ -1,6 +1,7 @@
 import { ItemCollection } from "./ItemCollection"
 import { Cell } from "../content/Cell";
 import { InputProps, INPUT_TYPES } from "../../components/Input";
+import { gameData } from "../Main.js";
 
 export class GameUI {
 	// ============================================================
@@ -51,6 +52,20 @@ export class GameUI {
 	// ------------------------------------------------------------
 
 	// ============================================================
+	// Tooltip
+	// ------------------------------------------------------------
+
+	tooltip_elem = null;//TODO
+	show_tooltip(hoveredElem, htmlContent) {
+		tooltip_elem.style.display = "";
+		tooltip_elem.innerHTML = htmlContent;
+		// TODO - place tooltip near hoveredElem, confined to window space if needed.
+	}
+	hide_tooltip() {
+		tooltip_elem.style.display = "none";
+	}
+
+	// ============================================================
 	// Canvas
 	// ------------------------------------------------------------
 
@@ -61,6 +76,12 @@ export class GameUI {
 	collectionSelected		= new ItemCollection();
 	collectionHovered		= new ItemCollection();
 	collectionTranslating	= new ItemCollection();
+
+	clearCollections() {
+		this.collectionSelected.clear();
+		this.collectionHovered.clear();
+		this.collectionTranslating.clear();
+	}
 
 	changedContent() { CachedValue_Content.onChange(); }
 	changedRendering() { CachedValue_Rendering.onChange(); }
@@ -172,14 +193,21 @@ export class GameUI {
 	// Cells
 	// ------------------------------------------------------------
 
-	//setCurrentMode()
 	place_dim_cell		= [1,1,0];// [w,h,r]
 	place_preview_cell	= null;
 
-	onclick_cell_type(cellType) {
+	onclick_cell_type(event, cellType) {
+		// update mode and preview.
 		if(cellType) this.place_preview_cell = new Cell(cellType, 0x0);
 		if(this.place_preview_cell) this.setCurrentMode(this.MODES.PLACE_CELLS);
 		else this.setCurrentMode(null);
+		// set which button is in toggled state.
+		const key = "panel_cell_btn_toggled";
+		let elem = this.getElement(key);
+		elem?.setAttribute("toggled", false);
+		elem = event.target;
+		elem?.setAttribute("toggled", true);
+		this.setElement(key, elem);
 	}
 
 	oninput_cell_w(value) { this.place_dim_cell[0] = value; }
@@ -200,7 +228,134 @@ export class GameUI {
 		]
 	};
 
+	// ============================================================
+	// Link
+	// ------------------------------------------------------------
 
+	wire_colour_r = 255;
+	wire_colour_g = 255;
+	wire_colour_b = 200;
+
+	oninput_link_colour_r(value) { this.wire_colour_r = value; }
+	oninput_link_colour_g(value) { this.wire_colour_g = value; }
+	oninput_link_colour_b(value) { this.wire_colour_b = value; }
+
+	info_place_links = [
+		"- To place links, click near desired input/output of first cell,",
+		"then click again near desired output/input of second cell.",
+	].join("\n");
+
+	table_place_links = {
+		title: "Link properties",
+		style: "width: 120px;",
+		inputs: [
+			new InputProps("tplr", "red"	, INPUT_TYPES.u8, this.wire_colour_r, this.oninput_link_colour_r),
+			new InputProps("tplg", "green"	, INPUT_TYPES.u8, this.wire_colour_g, this.oninput_link_colour_g),
+			new InputProps("tplb", "blue"	, INPUT_TYPES.u8, this.wire_colour_b, this.oninput_link_colour_b),
+		]
+	};
+
+	// ============================================================
+	// Texts
+	// ------------------------------------------------------------
+
+	// TODO: implement.
+
+	// TODO: add EditInputs for placement settings.
+	// ^ x-align, y-align, fg-colour, bg-colour, outline-colour, font-size.
+
+	// ============================================================
+	// Blocks
+	// ------------------------------------------------------------
+
+	place_dim_block		= [1,1,0];// [w,h,r]
+	place_preview_block	= null;
+
+	onclick_block_type(event, tid) {
+		// update mode and preview.
+		if(tid) {
+			const dim = new ComponentDimensions(0,0,1,1,0);
+			this.place_preview_block = new Block(dim, tid);
+		}
+		else tid = this.place_preview_block?.templateId;
+		const safe = tid && !gameData.blockTemplates.get(tid).containsRootBlockTemplate();
+		if(this.place_preview_block && safe) this.setCurrentMode(this.MODES.PLACE_BLOCK);
+		else this.setCurrentMode(null);
+		// set which button is in toggled state.
+		const key = "panel_block_btn_toggled";
+		let elem = this.getElement(key);
+		elem?.setAttribute("toggled", false);
+		elem = event.target;
+		elem?.setAttribute("toggled", true);
+		this.setElement(key, elem);
+	}
+
+	onclick_block_edit(event, templateId) {
+		gameData.setRootBlockTemplate(templateId);
+	}
+	onclick_block_place(event, templateId) {
+		this.onclick_block_type(event, templateId);
+		const template = gameData.blockTemplates.get(templateId);
+		this.block_inputs.setValue(0, template.placeW, true);
+		this.block_inputs.setValue(1, template.placeH, true);
+	}
+	onclick_block_remove(event, templateId) {
+		gameData.deleteBlockTemplate(templateId);
+	}
+
+	oninput_block_w(value) { this.place_dim_block[0] = value; }
+	oninput_block_h(value) { this.place_dim_block[1] = value; }
+	oninput_block_r(value) { this.place_dim_block[2] = value / 360; }
+
+	info_place_blocks = [
+		"- To place blocks, click the block's name in the list of available block-templates.",
+		"- To edit a block, click the 'Edit' button beside the desired block's name.",
+		"- To remove a block-template, click the 'X' button beside the desired block's name.",
+	].join("\n");
+
+	table_place_blocks = {
+		title: "Block properties",
+		style: "width: 120px;",
+		inputs: [
+			new InputProps("tpbw", "width"			, INPUT_TYPES.dim, "1", this.oninput_block_w),
+			new InputProps("tpbh", "height"			, INPUT_TYPES.dim, "1", this.oninput_block_h),
+			new InputProps("tpbr", "rotation (deg)"	, INPUT_TYPES.f32, "0", this.oninput_block_r),
+		]
+	};
+
+	/* update callback, set by the list element when if loads. */
+	update_template_list_callback = null;
+	update_template_list() {
+		const list = [];
+		for(const [tid, template] of gameData.blockTemplates.entries()) {
+			const rootId = gameData.rootBlock.templateId;
+			const isEditing	= rootId === tid;
+			const canPlace	= !template.containsTemplate(rootId);
+			const canRemove	= gameData.canDeleteBlockTemplate(tid);
+			const info = { templateId:tid, isEditing, canPlace, canRemove };
+			list.push(info);
+		}
+		this.update_template_list_callback(list);
+	}
+
+	/*
+		Generate tooltip with generated html containing info about template usage.
+	*/
+	onmouseenter_block_place(event, templateId) {}// TODO
+	onmouseleave_block_place(event, templateId) { this.hide_tooltip(); }
+	onmouseenter_block_remove(event, templateId) {}// TODO
+	onmouseleave_block_remove(event, templateId) { this.hide_tooltip(); }
+
+	on_major_blocklib_change() {
+		this.setCurrentMode(null);
+		this.clearCollections();
+		if(this.block_buttons_grid) this.update_template_list();
+		if(this.rootbt_panel) this.refresh_rootbt_inputs();
+	}
+	on_minor_blocklib_change() {
+		if(this.block_buttons_grid) this.update_template_list();
+		if(this.rootbt_panel) this.refresh_rootbt_inputs();
+	}
 
 
 };

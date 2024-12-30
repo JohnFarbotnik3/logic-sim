@@ -1,5 +1,8 @@
 import { VerificationUtil } from "../lib/VerificationUtil"
 import { ComponentId } from "./ComponentId"
+import { Cell } from "./Cell";
+import { Block } from "./Block";
+
 
 /*
 	Links transfer values from cell outputs to inputs.

@@ -5,7 +5,7 @@ function throwIfMissingProperty(info) {
 	}
 }
 
-class ShaderConfig {
+export class ShaderConfig {
 	constructor(config) {
 		const { attribs, uniforms, vertSource, fragSource } = config;
 		this.attribs	= new Map();
@@ -46,7 +46,7 @@ class ShaderConfig {
 	}
 };
 
-class ShaderPipeline {
+export class ShaderPipeline {
 	constructor(gl, shaderConfig, attributeBuffers, indexBuffer, drawMode) {
 		const { vertSource, fragSource, attribs, uniforms } = shaderConfig;
 		this.glContext	= gl;

@@ -1,6 +1,7 @@
 import { VerificationUtil } from "../lib/VerificationUtil"
 import { ComponentId } from "./ComponentId"
 import { ComponentDimensions } from "./ComponentDimensions"
+import { gameData } from "../Main";
 
 /*
 	A Block is a placeholder that refers to some BlockTemplate.
@@ -62,12 +63,7 @@ export class Block {
 	// Delegate methods.
 	// ------------------------------------------------------------
 	
-	get template() {
-		const template = gameData.blockTemplates.get(this.templateId);
-		VerificationUtil.verifyType_throw(template, BlockTemplate);
-		return template;
-	}
-	
+	get template() { return gameData.blockTemplates.get(this.templateId); }
 	get templateWidth () { return this.template.width; }
 	get templateHeight() { return this.template.height; }
 	set templateWidth (value) { this.template.width  = value; }

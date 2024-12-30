@@ -8,14 +8,7 @@
 	const ctypes = [...Object.values(CELL_PROPERTIES)];
 
 	function onclick_cell_type(event, ctype) {
-		gameUI.onclick_cell_type(ctype);
-		// set which button is in toggled state.
-		const key = "pane_cells_type_btn_toggled";
-		let elem = gameUI.getElement(key);
-		elem?.setAttribute("toggled", false);
-		elem = event.target;
-		elem?.setAttribute("toggled", true);
-		gameUI.setElement(key, elem);
+		gameUI.onclick_cell_type.call(gameUI, event, ctype);
 	}
 
 	function packedRGBA(clr) {

@@ -1,5 +1,9 @@
+import { RenderTreeBlock } from "./RenderTreeBlock";
+import * as mat4 from "../../3rdparty/toji-gl-matrix-007c2d0/dist/esm/mat4";
+import { Shader_pos_clr } from "../WebGL/shaders/Shader_pos_clr";
+import { Shader_pos_clr_tex } from "../WebGL/shaders/Shader_pos_clr_tex";
 
-class GameRenderer {
+export class GameRenderer {
 	// ============================================================
 	// Main functions
 	// ------------------------------------------------------------

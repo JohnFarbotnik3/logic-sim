@@ -1,9 +1,10 @@
+import { Transformation2D } from "../lib/Transformation2D";
 
 /*
 	This struct stores maps of transformations for the blocks content,
 	as well as a map of child transformation-blocks.
 */
-class RenderTreeBlock {
+export class RenderTreeBlock {
 	
 	// ============================================================
 	// Constants.

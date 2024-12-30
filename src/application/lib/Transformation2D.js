@@ -1,5 +1,5 @@
 
-class Transformation2D extends Array {
+export class Transformation2D extends Array {
 	constructor(...args) {
 		if(args.length === 1) super(...args[0]);
 		if(args.length === 0) super(0,0,  1,0,  0,1);

@@ -4,7 +4,6 @@ import { Block } from "./content/Block";
 import { ComponentDimensions } from "./content/ComponentDimensions";
 import { VerificationUtil } from "./lib/VerificationUtil";
 import { gameUI } from "./Main";
-import { alert } from "./environment";
 
 export class GameData {
 	

@@ -1,5 +1,6 @@
+export const GL = WebGL2RenderingContext;
 
-const BUFFER_TARGET = {
+export const BUFFER_TARGET = {
 	// Buffer containing vertex attributes, such as vertex coordinates,
 	// texture coordinate data, or vertex color data.
 	ARRAY_BUFFER:	GL.ARRAY_BUFFER,
@@ -7,7 +8,7 @@ const BUFFER_TARGET = {
 	INDEX_BUFFER:	GL.ELEMENT_ARRAY_BUFFER,
 };
 
-const BUFFER_USAGE = {
+export const BUFFER_USAGE = {
 	// The contents are intended to be specified once by the application,
 	// and used many times as the source for WebGL drawing and image specification commands.
 	STATIC_DRAW:	GL.STATIC_DRAW,
@@ -19,12 +20,12 @@ const BUFFER_USAGE = {
 	STREAM_DRAW:	GL.STREAM_DRAW,
 };
 
-const BUFFER_PARAM = {
+export const BUFFER_PARAM = {
 	BUFFER_SIZE:	GL.BUFFER_SIZE,
 	BUFFER_USAGE:	GL.BUFFER_USAGE,
 };
 
-class BufferUtil {
+export class BufferUtil {
 	static getBufferParam(gl, target, buffer, param) {
 		gl.bindBuffer(target, buffer);
 		return gl.getBufferParameter(target, param);
@@ -39,7 +40,7 @@ class BufferUtil {
 	}
 };
 
-class Buffer {
+export class Buffer {
 	constructor(glContext, arrayType, arrayLength, target, usage) {
 		this.glContext		= glContext;
 		this.target			= target;
@@ -98,7 +99,7 @@ class Buffer {
 	}
 };
 
-class AttributeBuffer extends Buffer {
+export class AttributeBuffer extends Buffer {
 	constructor(glContext, arrayType, arrayLength, usage, shaderConfig, attributeNames) {
 		super(glContext, arrayType, arrayLength, BUFFER_TARGET.ARRAY_BUFFER, usage);
 		this.attributeNames	= attributeNames;
@@ -110,7 +111,7 @@ class AttributeBuffer extends Buffer {
 	}
 };
 
-class IndexBuffer extends Buffer {
+export class IndexBuffer extends Buffer {
 	constructor(glContext, arrayType, arrayLength, usage) {
 		super(glContext, arrayType, arrayLength, BUFFER_TARGET.INDEX_BUFFER, usage);
 	}

@@ -1,9 +1,7 @@
+// why am I not allowed to define it in this file instead!?
+import { GL } from "./Buffer";
 
-const GL = WebGL2RenderingContext;
-
-const GL_MAX_DRAW_INDEX_ELEMENTS = 30000000;
-
-const GL_SIZEOF = (type) => {
+export const GL_SIZEOF = (type) => {
 	if(type === GL.FLOAT)			return Float32Array.BYTES_PER_ELEMENT;
 	if(type === GL.UNSIGNED_INT)	return  Uint32Array.BYTES_PER_ELEMENT;
 	if(type === GL.UNSIGNED_SHORT)	return  Uint16Array.BYTES_PER_ELEMENT;
@@ -14,7 +12,7 @@ const GL_SIZEOF = (type) => {
 	return 0;
 };
 
-const GL_ARRAY_ENUM_TYPE = (type) => {
+export const GL_ARRAY_ENUM_TYPE = (type) => {
 	if(type === Float32Array)	return GL.FLOAT;
 	if(type ===  Uint32Array)	return GL.UNSIGNED_INT;
 	if(type ===  Uint16Array)	return GL.UNSIGNED_SHORT;
@@ -25,13 +23,13 @@ const GL_ARRAY_ENUM_TYPE = (type) => {
 	return GL.NONE;
 };
 
-const GL_IS_FLOAT_TYPE = (type) => {
+export const GL_IS_FLOAT_TYPE = (type) => {
 	return [
 		GL.FLOAT,
 	].includes(type);
 };
 
-const GL_IS_INTEGER_TYPE = (type) => {
+export const GL_IS_INTEGER_TYPE = (type) => {
 	return [
 		GL.UNSIGNED_INT,
 		GL.UNSIGNED_SHORT,
@@ -42,7 +40,7 @@ const GL_IS_INTEGER_TYPE = (type) => {
 	].includes(type);
 };
 
-const GL_DRAW_MODE = {
+export const GL_DRAW_MODE = {
 	TRIANGLES		: GL.TRIANGLES,
 	TRIANGLE_STRIP	: GL.TRIANGLE_STRIP,
 	TRIANGLE_FAN	: GL.TRIANGLE_FAN,
@@ -57,8 +55,20 @@ const GL_DRAW_MODE = {
 //   so it seems to be a driver problem where u32 data isnt handled correctly.
 // WARNING: if interleaved data is getting mangled, or anything involving integer-
 //   data in general, it may be the weird driver problem!
-const BROKEN_DRIVER_MYSTERY_OFFSET_U32 = 1;
+export const BROKEN_DRIVER_MYSTERY_OFFSET_U32 = 1;
 
-const mat4 = glMatrix.mat4;
-const vec3 = glMatrix.vec3;
+export const GL_MAX_DRAW_INDEX_ELEMENTS = 30000000;
+
+
+
+export * as mat4 from "../../3rdparty/toji-gl-matrix-007c2d0/dist/esm/mat4";
+export * as vec3 from "../../3rdparty/toji-gl-matrix-007c2d0/dist/esm/vec3";
+export * from "./Buffer";
+export * from "./Texture";
+export * from "./Camera";
+export * from "./Shader";
+export * from "./ShaderPackingUtil";
+export * from "./shaders/Shader_pos_clr";
+export * from "./shaders/Shader_pos_clr_tex";
+export * from "./FontEngine";
 

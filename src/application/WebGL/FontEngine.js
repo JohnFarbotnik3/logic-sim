@@ -1,5 +1,10 @@
+import {
+	TextureBuffer,
+	TEXTURE_FORMAT,
+	TEXTURE_TYPE,
+} from "./exports";
 
-var FONT_FAMILY = {
+export const FONT_FAMILY = {
 	CURSIVE		: "cursive",
 	COURIER		: "courier",
 	FANTASY		: "fantasy",
@@ -11,14 +16,14 @@ var FONT_FAMILY = {
 	SYSTEM_UI	: "system-ui",
 };
 
-var FONT_STYLE = {
+export const FONT_STYLE = {
 	NONE	: "",
 	BOLD	: "bold",
 	ITALIC	: "italic",
 	CAPS	: "small-caps",
 };
 
-var FONT_BASELINE = {
+export const FONT_BASELINE = {
 	ALPHABETIC	: "alphabetic",
 	IDEAGRAPHIC	: "ideagraphic",
 	HANGING		: "hanging",
@@ -27,7 +32,7 @@ var FONT_BASELINE = {
 	TOP			: "top",
 };
 
-var CanvasWrapper = class {
+class CanvasWrapper {
 	constructor(w, h, id) {
 		const canvas = document.createElement("canvas");
 		const context = canvas.getContext("2d");
@@ -134,7 +139,7 @@ var CanvasWrapper = class {
 	
 };
 
-var FontGlyphData = class {
+export class FontGlyphData {
 	constructor() {
 		this.texCoords		= new Float32Array(6);// [x,y,w,h,texHeight,texAspectRatio]
 	}
@@ -146,7 +151,7 @@ var FontGlyphData = class {
 	}
 };
 
-var FontRenderer = class {
+export class FontRenderer {
 	constructor(glContext, charset, height, family, style) {
 		this.glContext	= glContext;
 		this.glyphmap	= new Map();// Map<char, FontGlyphData>

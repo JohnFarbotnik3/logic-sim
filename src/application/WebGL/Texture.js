@@ -1,5 +1,6 @@
+import { GL } from "./exports";
 
-const TEXTURE_FORMAT = {
+export const TEXTURE_FORMAT = {
 	RGB			: GL.RGB,
 	RGBA		: GL.RGBA,
 	ALPHA		: GL.ALPHA,
@@ -7,14 +8,14 @@ const TEXTURE_FORMAT = {
 	LUM_ALPHA	: GL.LUMINANCE_ALPHA,
 };
 
-const TEXTURE_TYPE = {
+export const TEXTURE_TYPE = {
 	UNSIGNED_BYTE	: GL.UNSIGNED_BYTE,
 	U_SHORT_4444	: GL.UNSIGNED_SHORT_4_4_4_4,
 	U_SHORT_5551	: GL.UNSIGNED_SHORT_5_5_5_1,
 	U_SHORT_565		: GL.UNSIGNED_SHORT_5_6_5,
 };
 
-class TextureBuffer {
+export class TextureBuffer {
 	constructor(gl) {
 		this.glContext = gl;
 		this.texture = gl.createTexture();

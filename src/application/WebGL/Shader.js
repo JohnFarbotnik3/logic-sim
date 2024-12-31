@@ -1,3 +1,4 @@
+import { GL, GL_SIZEOF } from "./exports";
 
 function throwIfMissingProperty(info) {
 	for(const key of Object.keys(info)) {

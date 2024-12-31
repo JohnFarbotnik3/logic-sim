@@ -4,17 +4,15 @@ import { GameServer_wasm } from "./server/GameServer_wasm"
 import { TEST_BLOCKS_OBJECT } from "./GameInit_json"
 import { GameUI } from "./interface/GameUI_v2";
 import { GameRenderer } from "./render/GameRenderer";
+import { Performance } from "./misc/Performance";
 
 // global structures
 export let   gameServer		= null;
 export const gameData		= new GameData();
 export const gameUI			= new GameUI();
+export let   gameRenderer	= null;
 
 class Main {
-
-	doUpdate = false;
-	onUpdate = null;
-	
 	async init() {
 		// load game server.
 		gameServer = new GameServer_wasm();
@@ -24,6 +22,7 @@ class Main {
 		// load block data.
 		gameData.importTemplates(JSON.stringify(TEST_BLOCKS_OBJECT));
 		console.log("loaded templates", gameData.blockTemplates);
+
 		// set root block.
 		let templateId = null;
 		for(const tid of gameData.blockTemplates.keys()) { templateId = tid; break; }
@@ -32,31 +31,14 @@ class Main {
 		// init interface.
 		gameUI.update_template_list();
 
-		// restart update cycle.
-		await this.updateRestart();
-	}
-
-	async updateRestart() {
-		GameRenderer.init();
-		let prom = null;
-		if(this.doUpdate) {
-			prom = new Promise((res, rej) => { this.onUpdate = res; });
-			this.doUpdate = false;
-		}
-		if(prom) {
-			console.debug("[restart] waiting for rendering to exit");
-			await prom;
-		}
-		console.debug("[restart] restarting");
-		this.doUpdate = true;
+		// start update cycle.
 		requestAnimationFrame(this.update);
 	}
 
 	async update(currentTime) {
 		try {
-			const t0 = Date.now();
-			const _this = main;
 			Performance.reset();
+			const t0 = Date.now();
 			gameData.frameCounter++;
 			await gameData.verifyLinksCanFindTargets();
 			gameUI.update();
@@ -73,16 +55,15 @@ class Main {
 			const t_s1 = Date.now();
 			if(gameData.simulationIsRunning) gameServer.simulation_update(gameData.simulationSpeed);
 			const t_s2 = Date.now();
+			gameRenderer.render();
+			const t1 = Date.now();
 			Performance.increment_time("sim.rebuild", t_s1-t_s0);
 			Performance.increment_time("sim.update ", t_s2-t_s1);
-			GameRenderer.render();
-			if(_this.doUpdate) requestAnimationFrame(_this.update);
-			else if(_this.onUpdate) _this.onUpdate(true);
-			const t1 = Date.now();
 			Performance.increment_time("main.update", t1-t0);
 			Performance.log_all();
+			requestAnimationFrame((t) => this.update.call(this, t));
 		} catch(error) {
-			GameUI.showCrashPopup(error, "application crashed during Main.update()");
+			gameUI.showCrashPopup(error, "application crashed during Main.update()");
 			throw(error);
 		}
 	}

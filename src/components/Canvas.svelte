@@ -1,10 +1,16 @@
-
 <script>
+	import { gameUI } from "../application/Main";
+
 	const props = $props();
+
+	let element = $state(null);
+	$effect(() => { gameUI.canvas = element; });
 
 	function onresize(event) {
 		console.log("resize", event);
 	}
+
+
 </script>
 
 <style>
@@ -15,5 +21,5 @@
 	}
 </style>
 
-<canvas onresize={onresize} {...props}>
+<canvas bind:this={element} onresize={onresize} {...props}>
 </canvas>

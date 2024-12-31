@@ -3,10 +3,9 @@
 	import Button from "../components/Button.svelte";
 	import Canvas from "../components/Canvas.svelte";
 	import * as Panels from "../components/Panels/Panels.js";
-
 	import { main, gameUI } from "../application/Main.js";
 
-	main.init().then(() => {});
+	main.init();
 
 	const modes = [...Object.values(gameUI.MODES)];
 	let currentMode = $state(modes[0]);

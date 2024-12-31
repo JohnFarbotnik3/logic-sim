@@ -1,5 +1,5 @@
 
-class ShaderPackingUtil {
+export class ShaderPackingUtil {
 
 	// packs an RGBA colour (range: [0, 255]) into 4 8-bit components.
 	static packed_rgba_8bit(r,g,b,a) {

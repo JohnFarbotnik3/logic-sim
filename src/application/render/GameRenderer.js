@@ -1,49 +1,108 @@
 import { RenderTreeBlock } from "./RenderTreeBlock";
-import * as mat4 from "../../3rdparty/toji-gl-matrix-007c2d0/dist/esm/mat4";
-import { Shader_pos_clr } from "../WebGL/shaders/Shader_pos_clr";
-import { Shader_pos_clr_tex } from "../WebGL/shaders/Shader_pos_clr_tex";
+import { gameUI } from "../Main";
+import {
+	mat4,
+	Camera,
+	BUFFER_USAGE,
+	AttributeBuffer,
+	IndexBuffer,
+	GL_DRAW_MODE,
+	ShaderPipeline,
+	FontRenderer,
+	FONT_FAMILY,
+	FONT_STYLE,
+	Shader_pos_clr,
+	Shader_pos_clr_tex,
+} from "../WebGL/exports";
+
+const INDEX_NONE_SB = 0xffffffff;
+const INDEX_ROOT_SB = 0x0;
+const DEPTH_ON_TOP = 33;
 
 export class GameRenderer {
 	// ============================================================
-	// Main functions
+	// structors
 	// ------------------------------------------------------------
-	
-	static init() {
+
+	constructor(canvas) {
 		// get WebGL instance.
-		const canvas = GameUI.getCanvas();
 		const gl = canvas.getContext("webgl2", { alpha: true, antialias: true });
 		if (gl === null) {
 			alert("Unable to initialize WebGL2. Your browser or machine may not support it.");
 			return;
 		}
-		
+
+		this.canvas = canvas;
+		this.gl = gl;
+
 		gl.viewport(0, 0, canvas.width, canvas.height);
 		gl.clearColor(0.0, 0.0, 0.0, 1.0);
-		
+
 		// enable depth testing.
 		gl.enable(gl.DEPTH_TEST);
 		gl.depthFunc(gl.LEQUAL);	// near things obscure far things
 		gl.clearDepth(1.0);
-		
+
 		// enable alpha-blending.
 		gl.enable(gl.BLEND);
 		gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-		
+
 		// remove canvas background, since clearing with a coloured
 		// fragment-shader can make gl colour data transparent.
 		canvas.style.background = "unset";
-		
-		initializeCamera();
-		const { width, height } = canvas.getClientRects()[0];
-		updateCameraAspectRatio(width, height);
-		
-		this.init_buffers(gl);
-	}
-	
-	static INDEX_NONE_SB = 0xffffffff;
-	static INDEX_ROOT_SB = 0x0;
 
-	static render() {
+		const camera = this.camera = new Camera();
+		const { width, height } = canvas.getClientRects()[0];
+		camera.setAspectRatio(width, height);
+
+		// init buffers.
+		// TODO: have seperate MVP matrices, and a combined matrix to send to shader-uniform.
+		this.matrixMVP = mat4.create();
+		{
+			const config = this.triangles_config = Shader_pos_clr;
+			const usage = BUFFER_USAGE.DYNAMIC_DRAW;
+			const buf_ind = new     IndexBuffer(gl,  Uint32Array, 0, usage);
+			const buf_pos = new AttributeBuffer(gl, Float32Array, 0, usage, config, ["pos"]);
+			const buf_clr = new AttributeBuffer(gl,  Uint32Array, 0, usage, config, ["clr"]);
+			this.triangles_shader = new ShaderPipeline(gl, config, [buf_pos, buf_clr], buf_ind, GL_DRAW_MODE.TRIANGLES);
+			this.triangles_buffer_ind = buf_ind;
+			this.triangles_buffer_pos = buf_pos;
+			this.triangles_buffer_clr = buf_clr;
+		}
+		{
+			const config = this.lines_config = Shader_pos_clr;
+			const usage = BUFFER_USAGE.DYNAMIC_DRAW;
+			const buf_ind = new     IndexBuffer(gl,  Uint32Array, 0, usage);
+			const buf_pos = new AttributeBuffer(gl, Float32Array, 0, usage, config, ["pos"]);
+			const buf_clr = new AttributeBuffer(gl,  Uint32Array, 0, usage, config, ["clr"]);
+			this.lines_shader = new ShaderPipeline(gl, config, [buf_pos, buf_clr], buf_ind, GL_DRAW_MODE.LINES);
+			this.lines_buffer_ind = buf_ind;
+			this.lines_buffer_pos = buf_pos;
+			this.lines_buffer_clr = buf_clr;
+		}
+		{
+			const config = this.font_config = Shader_pos_clr_tex;
+			const usage = BUFFER_USAGE.DYNAMIC_DRAW;
+			const buf_ind = new     IndexBuffer(gl,  Uint32Array, 0, usage);
+			const buf_pos = new AttributeBuffer(gl, Float32Array, 0, usage, config, ["pos"]);
+			const buf_clr = new AttributeBuffer(gl,  Uint32Array, 0, usage, config, ["clr"]);
+			const buf_tex = new AttributeBuffer(gl, Float32Array, 0, usage, config, ["tex"]);
+			this.font_shader	= new ShaderPipeline(gl, config, [buf_pos, buf_clr, buf_tex], buf_ind, GL_DRAW_MODE.TRIANGLES);
+			this.font_buffer_ind = buf_ind;
+			this.font_buffer_pos = buf_pos;
+			this.font_buffer_clr = buf_clr;
+			this.font_buffer_tex = buf_tex;
+			const charstr = "";
+			const charset = new Set(charstr);
+			this.fontRenderer_0 = new FontRenderer(gl, charset, 60, FONT_FAMILY.SERIF, FONT_STYLE.NONE);
+		}
+	}
+
+	// ============================================================
+	// Main functions
+	// ------------------------------------------------------------
+	
+	render() {
 		// clear buffers.
 		this.clear_buffers();
 		// create draw data.
@@ -66,12 +125,12 @@ export class GameRenderer {
 		const gl = this.triangles_shader.glContext;
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 		// update uniforms
-		const matrix_model = this.matrix_model;
-		mat4.identity(matrix_model);
-		applyCameraMatrix(matrix_model);
-		this.triangles_shader.setUniform_mat4fv(gl, "mvp", matrix_model);
-		this.lines_shader    .setUniform_mat4fv(gl, "mvp", matrix_model);
-		this.font_shader     .setUniform_mat4fv(gl, "mvp", matrix_model);
+		const matrixMVP = this.matrixMVP;
+		mat4.identity(matrixMVP);
+		this.camera.applyCameraMatrix(matrixMVP);
+		this.triangles_shader.setUniform_mat4fv(gl, "mvp", matrixMVP);
+		this.lines_shader    .setUniform_mat4fv(gl, "mvp", matrixMVP);
+		this.font_shader     .setUniform_mat4fv(gl, "mvp", matrixMVP);
 		this.font_shader     .setUniform_texbuf(gl, "texsampler", this.fontRenderer_0.texBuffer);
 		// draw to canvas.
 		this.triangles_shader.drawElements();
@@ -88,67 +147,7 @@ export class GameRenderer {
 	// Buffers
 	// ------------------------------------------------------------
 	
-	// TODO: have seperate MVP matrices, and a combined matrix to send to shader-uniform.
-	static matrix_model	= mat4.create();
-
-	static triangles_config	= Shader_pos_clr;
-	static triangles_shader	= null;
-	static triangles_buffer_ind	= null;
-	static triangles_buffer_pos	= null;
-	static triangles_buffer_clr	= null;
-
-	static lines_config	= Shader_pos_clr;
-	static lines_shader	= null;
-	static lines_buffer_ind	= null;
-	static lines_buffer_pos	= null;
-	static lines_buffer_clr	= null;
-
-	static font_config		= Shader_pos_clr_tex;
-	static font_shader		= null;
-	static fontRenderer_0	= null;
-	
-	static init_buffers(gl) {
-		{
-			const config = this.triangles_config;
-			const usage = BUFFER_USAGE.DYNAMIC_DRAW;
-			const buf_ind = new     IndexBuffer(gl,  Uint32Array, 0, usage);
-			const buf_pos = new AttributeBuffer(gl, Float32Array, 0, usage, config, ["pos"]);
-			const buf_clr = new AttributeBuffer(gl,  Uint32Array, 0, usage, config, ["clr"]);
-			this.triangles_shader = new ShaderPipeline(gl, config, [buf_pos, buf_clr], buf_ind, GL_DRAW_MODE.TRIANGLES);
-			this.triangles_buffer_ind = buf_ind;
-			this.triangles_buffer_pos = buf_pos;
-			this.triangles_buffer_clr = buf_clr;
-		}
-		{
-			const config = this.lines_config;
-			const usage = BUFFER_USAGE.DYNAMIC_DRAW;
-			const buf_ind = new     IndexBuffer(gl,  Uint32Array, 0, usage);
-			const buf_pos = new AttributeBuffer(gl, Float32Array, 0, usage, config, ["pos"]);
-			const buf_clr = new AttributeBuffer(gl,  Uint32Array, 0, usage, config, ["clr"]);
-			this.lines_shader = new ShaderPipeline(gl, config, [buf_pos, buf_clr], buf_ind, GL_DRAW_MODE.LINES);
-			this.lines_buffer_ind = buf_ind;
-			this.lines_buffer_pos = buf_pos;
-			this.lines_buffer_clr = buf_clr;
-		}
-		{
-			const config = this.font_config;
-			const usage = BUFFER_USAGE.DYNAMIC_DRAW;
-			const buf_ind = new     IndexBuffer(gl,  Uint32Array, 0, usage);
-			const buf_pos = new AttributeBuffer(gl, Float32Array, 0, usage, config, ["pos"]);
-			const buf_clr = new AttributeBuffer(gl,  Uint32Array, 0, usage, config, ["clr"]);
-			const buf_tex = new AttributeBuffer(gl, Float32Array, 0, usage, config, ["tex"]);
-			this.font_shader	= new ShaderPipeline(gl, config, [buf_pos, buf_clr, buf_tex], buf_ind, GL_DRAW_MODE.TRIANGLES);
-			this.font_buffer_ind = buf_ind;
-			this.font_buffer_pos = buf_pos;
-			this.font_buffer_clr = buf_clr;
-			this.font_buffer_tex = buf_tex;
-			const charstr = "";
-			const charset = new Set(charstr);
-			this.fontRenderer_0 = new FontRenderer(gl, charset, 60, FONT_FAMILY.SERIF, FONT_STYLE.NONE);
-		}
-	}
-	
-	static clear_buffers() {
+	clear_buffers() {
 		// clear buffers.
 		this.triangles_buffer_ind.clear();
 		this.triangles_buffer_pos.clear();
@@ -168,7 +167,7 @@ export class GameRenderer {
 		buf = this.font_buffer_clr;			ofs = Q * buf.vertexLength;	buf.reserveAndPushData(new Uint32Array(ofs), 0, ofs);
 	}
 	
-	static commit_buffers() {
+	commit_buffers() {
 		this.triangles_buffer_ind.commitNewDataToBuffer();
 		this.triangles_buffer_pos.commitNewDataToBuffer();
 		this.triangles_buffer_clr.commitNewDataToBuffer();
@@ -181,41 +180,40 @@ export class GameRenderer {
 		this.font_buffer_tex.commitNewDataToBuffer();
 	}
 	
-	static DEPTH_ON_TOP = 33;
-	static transform_vdata(tran, depth, vdata, beg, end) {
+	transform_vdata(tran, depth, vdata, beg, end) {
 		if(tran) tran.apply(vdata, beg, end, 3);
 		const zofs = depth * -0.01;
 		for(let i=beg+2;i<end;i+=3) vdata[i] += zofs;
 	}
 	
-	static triangles_reserve(ilen, vlen, clen) {
+	triangles_reserve(ilen, vlen, clen) {
 		this.triangles_buffer_ind.reserve(ilen);
 		this.triangles_buffer_pos.reserve(vlen);
 		this.triangles_buffer_clr.reserve(clen);
 	}
-	static triangles_push(idata, vdata, cdata) {
+	triangles_push(idata, vdata, cdata) {
 		this.triangles_buffer_ind.pushData(idata, 0, idata.length, this.triangles_buffer_pos.vertexCount);
 		this.triangles_buffer_pos.pushData(vdata, 0, vdata.length);
 		this.triangles_buffer_clr.pushData(cdata, 0, cdata.length);
 	}
-	static triangles_transform(tran, depth, length) {
+	triangles_transform(tran, depth, length) {
 		const buf	= this.triangles_buffer_pos;
 		const beg	= buf.writePos - length;
 		const end	= buf.writePos;
 		this.transform_vdata(tran, depth, buf.data, beg, end);
 	}
 	
-	static lines_reserve(ilen, vlen, clen) {
+	lines_reserve(ilen, vlen, clen) {
 		this.lines_buffer_ind.reserve(ilen);
 		this.lines_buffer_pos.reserve(vlen);
 		this.lines_buffer_clr.reserve(clen);
 	}
-	static lines_push(idata, vdata, cdata) {
+	lines_push(idata, vdata, cdata) {
 		this.lines_buffer_ind.pushData(idata, 0, idata.length, this.lines_buffer_pos.vertexCount);
 		this.lines_buffer_pos.pushData(vdata, 0, vdata.length);
 		this.lines_buffer_clr.pushData(cdata, 0, cdata.length);
 	}
-	static lines_transform(tran, depth, length) {
+	lines_transform(tran, depth, length) {
 		const buf	= this.lines_buffer_pos;
 		const beg	= buf.writePos - length;
 		const end	= buf.writePos;
@@ -225,15 +223,15 @@ export class GameRenderer {
 	// ============================================================
 	// Shape generators
 	// ------------------------------------------------------------
-	
+
 	// triangle-rectangles.
-	static tri_rects_reserve(N) {
+	tri_rects_reserve(N) {
 		const ilen = N*6;
 		const vlen = N*4*3;
 		const clen = N*4;
 		this.triangles_reserve(ilen, vlen, clen);
 	}
-	static tri_rects_write(rect, clr) {
+	tri_rects_write(rect, clr) {
 		const [x,y,w,h]	= rect;
 		const idata = [0,1,2,2,3,0];
 		const vdata = [
@@ -245,23 +243,23 @@ export class GameRenderer {
 		const cdata = [clr, clr, clr, clr];
 		this.triangles_push(idata, vdata, cdata);
 	}
-	static tri_rects_transform(N, tran, depth) {
+	tri_rects_transform(N, tran, depth) {
 		this.triangles_transform(tran, depth, N*4*3);
 	}
-	static tri_rects_push(tran, depth, rect, clr) {
+	tri_rects_push(tran, depth, rect, clr) {
 		this.tri_rects_reserve(1);
 		this.tri_rects_write(rect, clr);
 		this.tri_rects_transform(1, tran, depth);
 	}
 	
 	// line-rectangles
-	static line_rects_reserve(N) {
+	line_rects_reserve(N) {
 		const ilen = N*8;
 		const vlen = N*4*3;
 		const clen = N*4;
 		this.lines_reserve(ilen, vlen, clen);
 	}
-	static line_rects_write(rect, clr) {
+	line_rects_write(rect, clr) {
 		const [x,y,w,h]	= rect;
 		const idata = [0,1,1,2,2,3,3,0];
 		const vdata = [
@@ -273,17 +271,17 @@ export class GameRenderer {
 		const cdata = [clr, clr, clr, clr];
 		this.lines_push(idata, vdata, cdata);
 	}
-	static line_rects_transform(N, tran, depth) {
+	line_rects_transform(N, tran, depth) {
 		this.lines_transform(tran, depth, N*4*3);
 	}
-	static line_rects_push(tran, depth, rect, clr) {
+	line_rects_push(tran, depth, rect, clr) {
 		this.line_rects_reserve(1);
 		this.line_rects_write(rect, clr);
 		this.line_rects_transform(1, tran, depth);
 	}
 	
 	// TODO: replace
-	static transform_and_push_lines(tran, depth, idata, vdata, cdata) {
+	transform_and_push_lines(tran, depth, idata, vdata, cdata) {
 		this.transform_vdata(tran, depth, vdata, 0, vdata.length);
 		const voffset = this.lines_buffer_pos.vertexCount;
 		this.lines_buffer_ind.reserveAndPushData(idata, 0, idata.length, voffset);
@@ -292,7 +290,7 @@ export class GameRenderer {
 	}
 	
 	// TODO: replace
-	static transform_and_push_font(tran, depth, idata, vdata, cdata, tdata) {
+	transform_and_push_font(tran, depth, idata, vdata, cdata, tdata) {
 		this.transform_vdata(tran, depth, vdata, 0, vdata.length);
 		const voffset = this.font_buffer_pos.vertexCount;
 		this.font_buffer_ind.reserveAndPushData(idata, 0, idata.length, voffset);
@@ -302,7 +300,7 @@ export class GameRenderer {
 	}
 	
 	// lines
-	static push_content_line(tran, depth, p0, p1, clr) {
+	push_content_line(tran, depth, p0, p1, clr) {
 		// generate data.
 		const idata = [0,1];
 		const vdata = [
@@ -315,7 +313,7 @@ export class GameRenderer {
 	}
 	
 	// line grid
-	static push_content_line_grid(tran, depth, rect, clr, nx, ny) {
+	push_content_line_grid(tran, depth, rect, clr, nx, ny) {
 		// generate data.
 		const [x,y,w,h] = rect;
 		const count = 2*(nx+1) + 2*(ny+1);
@@ -345,7 +343,7 @@ export class GameRenderer {
 	}
 	
 	// line circle
-	static push_content_line_circle(tran, depth, x, y, r, n, clr) {
+	push_content_line_circle(tran, depth, x, y, r, n, clr) {
 		const idata = new Array(n*2);
 		const vdata = new Array(n*3);
 		const cdata = new Array(n).fill(clr);
@@ -366,7 +364,7 @@ export class GameRenderer {
 		this.transform_and_push_lines(tran, depth, idata, vdata, cdata);
 	}
 	
-	static push_content_text_box(tran, depth, str, fontHeight, fontColour, boundingRect, textAlign, rectOrigin, wrap) {
+	push_content_text_box(tran, depth, str, fontHeight, fontColour, boundingRect, textAlign, rectOrigin, wrap) {
 		// add required characters.
 		const fontRenderer = this.fontRenderer_0;
 		const req = new Set();
@@ -387,7 +385,7 @@ export class GameRenderer {
 		this.transform_and_push_font(tran, depth, idata, vdata, cdata, tdata);
 	}
 	
-	static push_content_text_box_against_circle(tran, depth, str, fontHeight, fontColour, unitRectPoint, dist) {
+	push_content_text_box_against_circle(tran, depth, str, fontHeight, fontColour, unitRectPoint, dist) {
 		// add required characters.
 		const fontRenderer = this.fontRenderer_0;
 		const req = new Set();
@@ -424,13 +422,13 @@ export class GameRenderer {
 	// Components
 	// ------------------------------------------------------------
 	
-	static valueToHex_u32(value, len) {
+	valueToHex_u32(value, len) {
 		const hex = value.toString(16).toUpperCase();
 		let pad = "0x";
 		for(let x=hex.length;x<len;x++) pad += "0";
 		return pad + hex;
 	}
-	static hexColour_scale(hex,m) {
+	hexColour_scale(hex,m) {
 		return (
 			((((hex >> 24) & 0xff) * m) << 24) |
 			((((hex >> 16) & 0xff) * m) << 16) |
@@ -439,7 +437,7 @@ export class GameRenderer {
 		);
 	}
 	
-	static drawCell(renderblock, renderData, simblock=GameRenderer.INDEX_NONE_SB) {
+	drawCell(renderblock, renderData, simblock=GameRenderer.INDEX_NONE_SB) {
 		const { cell, tran, numTargets } = renderData;
 		const depth = renderblock.depth;
 		// get cell values from simulation.
@@ -491,18 +489,18 @@ export class GameRenderer {
 		}
 	}
 	
-	static drawLink(renderblock, renderData) {
+	drawLink(renderblock, renderData) {
 		const { link, p0, p1 } = renderData;
 		const depth = renderblock.depth;
 		const tran = null;
 		this.push_content_line(tran, depth+1, p0, p1, link.clr);
 	}
-	static drawLink_alt(p0, p1, clr, depth=0) {
+	drawLink_alt(p0, p1, clr, depth=0) {
 		const tran = null;
 		this.push_content_line(tran, depth+1, p0, p1, clr);
 	}
 	
-	static drawText(renderblock, renderData) {
+	drawText(renderblock, renderData) {
 		const { text, tran } = renderData;
 		const depth = renderblock.depth;
 		// draw background.
@@ -524,7 +522,7 @@ export class GameRenderer {
 		}
 	}
 	
-	static drawBlockPlaceholder(renderblock, renderData) {
+	drawBlockPlaceholder(renderblock, renderData) {
 		const { block, tran } = renderData;
 		const depth = renderblock.depth;
 		// draw background.
@@ -534,7 +532,7 @@ export class GameRenderer {
 		// draw thumbnail.
 		// ...TODO...
 	}
-	static drawBlock(renderblock, renderData, simblock=GameRenderer.INDEX_NONE_SB) {
+	drawBlock(renderblock, renderData, simblock=GameRenderer.INDEX_NONE_SB) {
 		const t0 = Date.now();
 		// update hovered state.
 		renderblock.is_hovered  = gameControls.collectionHovered .blocks.has(renderblock.block);
@@ -579,14 +577,14 @@ export class GameRenderer {
 	// Placement previews
 	// ------------------------------------------------------------
 	
-	static drawPreviewCell() {
+	drawPreviewCell() {
 		const cell = gameControls.get_render_preview_cell();
 		if(!cell) return;
 		const renblock = gameData.renderBlock;
 		GameRenderer.drawCell(renblock, renblock.get_render_data_cell(cell));
 	}
 	
-	static drawPreviewBlock() {
+	drawPreviewBlock() {
 		const block = gameControls.get_render_preview_block();
 		if(!block) return;
 		const parent	= gameData.renderBlock;
@@ -598,7 +596,7 @@ export class GameRenderer {
 		GameRenderer.drawBlock(renblock, renblock.get_render_data_block(block));
 	}
 	
-	static drawNearestLinkPoint() {
+	drawNearestLinkPoint() {
 		if(!gameControls.wire_nearestValid) return;
 		const pointList = gameControls.wire_getTargetDrawPoints();
 		// draw circles.
@@ -616,7 +614,7 @@ export class GameRenderer {
 	// Selection and hover
 	// ------------------------------------------------------------
 	
-	static drawCursor() {
+	drawCursor() {
 		const tran = null;
 		const depth = GameRenderer.DEPTH_ON_TOP;
 		const clr = ShaderPackingUtil.packed_rgba_8bit(255,255,111,255);
@@ -625,7 +623,7 @@ export class GameRenderer {
 		this.push_content_line_circle(tran, depth, pos[0], pos[1], radius, 30, clr);
 	}
 
-	static drawDragArea() {
+	drawDragArea() {
 		const [x1,y1,x2,y2] = gameControls.cursor_dragAABB;
 		const tran = null;
 		const depth = GameRenderer.DEPTH_ON_TOP;
@@ -634,7 +632,7 @@ export class GameRenderer {
 		GameRenderer.tri_rects_push(tran, depth, rect, clr);
 	}
 	
-	static pushSelectionRectangles(collection, rect, clr) {
+	pushSelectionRectangles(collection, rect, clr) {
 		const renblock = gameData.renderBlock;
 		const depth = GameRenderer.DEPTH_ON_TOP;
 		for(const item of collection.cells ) { const tran=renblock.item_trans.get(item.id); GameRenderer.line_rects_push(tran, depth, rect, clr); }
@@ -642,14 +640,14 @@ export class GameRenderer {
 		for(const item of collection.blocks) { const tran=renblock.item_trans.get(item.id); GameRenderer.line_rects_push(tran, depth, rect, clr); }
 	}
 	
-	static drawSelection() {
+	drawSelection() {
 		const s = 0.03;
 		const unit_rect = [0.0-s, 0.0-s, 1.0+s*2, 1+s*2];
 		const clr = 0xffff55ff;
 		GameRenderer.pushSelectionRectangles(gameControls.collectionSelected, unit_rect, clr);
 	}
 	
-	static drawHovered() {
+	drawHovered() {
 		const s = 0.00;
 		const unit_rect = [0.0-s, 0.0-s, 1.0+s*2, 1+s*2];
 		const clr = 0xaaccffff;

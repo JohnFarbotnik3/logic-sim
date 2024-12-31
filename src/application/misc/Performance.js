@@ -1,5 +1,5 @@
 
-class Performance {
+export class Performance {
 
 	// TODO: use weighted sums for timings.
 

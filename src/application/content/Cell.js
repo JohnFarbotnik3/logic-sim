@@ -1,6 +1,10 @@
 import { VerificationUtil } from "../lib/VerificationUtil"
-import { ComponentId } from "./ComponentId"
-import { ComponentDimensions } from "./ComponentDimensions"
+import {
+	ComponentId,
+	ComponentDimensions,
+	CELL_PROPERTIES,
+	CELL_PROPERTIES_MAP,
+} from "./exports";
 
 export class Cell {
 	// ============================================================

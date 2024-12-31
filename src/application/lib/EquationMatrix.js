@@ -1,5 +1,8 @@
+import {
+	ArrayUtil,
+} from "./exports";
 
-class EquationMatrix {
+export class EquationMatrix {
 	constructor(type, w, h) {
 		this.type = type;
 		this.data = new type(w*h);

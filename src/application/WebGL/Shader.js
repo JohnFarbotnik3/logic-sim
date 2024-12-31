@@ -1,4 +1,9 @@
-import { GL, GL_SIZEOF } from "./exports";
+import {
+	GL,
+	GL_SIZEOF,
+	GL_IS_INTEGER_TYPE,
+	GL_MAX_DRAW_INDEX_ELEMENTS,
+} from "./exports";
 
 function throwIfMissingProperty(info) {
 	for(const key of Object.keys(info)) {

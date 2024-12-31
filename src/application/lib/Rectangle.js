@@ -1,5 +1,5 @@
 
-class Rectangle extends Float32Array {
+export class Rectangle extends Float32Array {
 	constructor(x, y, w, h) {
 		super(4);
 		this[0] = x;

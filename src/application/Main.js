@@ -1,5 +1,4 @@
 import { GameData } from "./GameData"
-import { GameControls } from "./interface/GameControls"
 import { GameServer_wasm } from "./server/GameServer_wasm"
 import { TEST_BLOCKS_OBJECT } from "./GameInit_json"
 import { GameUI } from "./interface/GameUI_v2";
@@ -29,10 +28,14 @@ class Main {
 		gameData.setRootBlockTemplate(templateId);
 
 		// init interface.
-		gameUI.update_template_list();
+		gameUI.init();
 
 		// start update cycle.
-		requestAnimationFrame(this.update);
+		requestAnimationFrame((t) => this.update.call(this, t));
+	}
+
+	recreateRenderer(canvas) {
+		gameRenderer = new GameRenderer(canvas);
 	}
 
 	async update(currentTime) {
@@ -46,6 +49,7 @@ class Main {
 			const rootTemplateId = gameData.rootBlock.templateId;
 			const t_s0 = Date.now();
 			if(gameData.shouldRebuild | gameData.shouldReset) {
+				console.log("REBUILDING SIMULATION");
 				const keepCellValues = !gameData.shouldReset;
 				gameServer.send_templates(gameData.blockTemplates, rootTemplateId);
 				gameServer.simulation_rebuild(rootTemplateId, keepCellValues);

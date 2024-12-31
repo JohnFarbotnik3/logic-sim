@@ -1,5 +1,5 @@
 
-class Vector2D extends Float32Array {
+export class Vector2D extends Float32Array {
 	constructor(...args) {
 		if(args.length > 0) super(...args); else super([0.0, 0.0]);
 	}

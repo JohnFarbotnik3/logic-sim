@@ -2,8 +2,13 @@ import { CachedValue_Content, CachedValue_Rendering } from "./misc/CachedValue";
 import { BlockTemplate } from "./content/BlockTemplate";
 import { Block } from "./content/Block";
 import { ComponentDimensions } from "./content/ComponentDimensions";
-import { VerificationUtil } from "./lib/VerificationUtil";
 import { gameUI } from "./Main";
+import {
+	VerificationUtil,
+	Transformation2D,
+} from "./lib/exports";
+import { RenderTreeBlock } from "./render/RenderTreeBlock";
+
 
 export class GameData {
 	

@@ -1,4 +1,13 @@
-import { Transformation2D } from "../lib/Transformation2D";
+import {
+	VerificationUtil,
+	Transformation2D,
+	VectorUtil,
+} from "../lib/exports";
+import {
+	ComponentId,
+	Block,
+	BlockTemplate,
+} from "../content/exports";
 
 /*
 	This struct stores maps of transformations for the blocks content,

@@ -53,7 +53,7 @@ export class InputHandlerSet {
 			this.cursor_delta[i] = this.cursor_curr[i] - this.cursor_prev[i];
 			this.cursor_prev [i] = this.cursor_curr[i];
 		}
-		for(let i=0;i<wheel_curr.length;i++) {
+		for(let i=0;i<this.wheel_curr.length;i++) {
 			this.wheel_delta[i] = this.wheel_curr[i] - this.wheel_prev[i];
 			this.wheel_prev [i] = this.wheel_curr[i];
 		}
@@ -67,14 +67,24 @@ export class InputHandlerSet {
 		this.keydown_event	= null;
 		this.button_event	= null;
 		this.cursor_event	= null;
-		this.wheel_event		= null;
+		this.wheel_event	= null;
 		this.dragbeg_event	= null;
 		this.dragend_event	= null;
 	}
 
+	// get map value (case insensitive)
+	getKeydown(key) {
+		const map = this.keydown_curr;
+		return map.get(key) || map.get(key.toLowerCase()) || map.get(key.toUpperCase());
+	}
+	getKeydownDelta(key) {
+		const map = this.keydown_delta;
+		return map.get(key) || map.get(key.toLowerCase()) || map.get(key.toUpperCase());
+	}
+
 	addInputHandler(type, name, func) {
 		// TODO: simplify this by making handlers a single-level map.
-		console.debug("addInputHandler(type, name, func)", type, name, func)
+		//console.debug("addInputHandler(type, name, func)", type, name, func)
 		if(!this.handlers.has(type)) this.handlers.set(type, new Map());
 		const map = this.handlers.get(type);
 		if(map.has(name)) this.removeInputHandler(type, name);
@@ -96,16 +106,6 @@ export class InputHandlerSet {
 
 	defaultHandler_mousemove	(event) {
 		const { clientX, clientY } = event;
-		// TODO: move this code to external source.
-		/*
-		const { x, y, width, height } = GameUI.getCanvas().getClientRects()[0];
-		let mx = Math.min(Math.max((clientX - x) / width , 0.0), 1.0);
-		let my = Math.min(Math.max((clientY - y) / height, 0.0), 1.0);
-		mx = (mx * 2.0 - 1.0) * +1.0 * cameraAspectRatio;
-		my = (my * 2.0 - 1.0) * -1.0;
-		cursor_curr[0] = mx;
-		cursor_curr[1] = my;
-		*/
 		this.cursor_curr[0] = clientX;
 		this.cursor_curr[1] = clientY;
 	}

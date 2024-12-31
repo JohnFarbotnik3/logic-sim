@@ -18,6 +18,7 @@ export class Camera {
 
 	setAspectRatio(w, h) {
 		this.aspectRatio = w / h;
+		this.updateProjection();
 	}
 
 	updateProjection() {
@@ -52,8 +53,8 @@ export class Camera {
 
 	zoom(mag) {
 		// zoom should slow down as FOV approaches 180deg (i.e. 0.5 revolutions)
-		const mult = (mag - 1.0) * Math.cos((cameraFOV * 2) * (2.0 * Math.PI / 4));
-		cameraFOV = Math.min(cameraFOV * (mult + 1.0), 0.49);
+		const mult = (mag - 1.0) * Math.cos((this.FOV * 2) * (2.0 * Math.PI / 4));
+		this.FOV = Math.min(this.FOV * (mult + 1.0), 0.49);
 		this.updateProjection();
 	}
 
@@ -109,10 +110,19 @@ export class Camera {
 		const vx = new Float32Array([...this.dirX]);
 		const vy = new Float32Array([...this.dirY]);
 		const vz = new Float32Array([...this.dirZ]);
-		const ax = x * (cameraFOV/2) * (2.0 * Math.PI);
-		const ay = y * (cameraFOV/2) * (2.0 * Math.PI);
-		VectorUtil.bivector_rotation_inplace(vz, vx, Math.sin(ax), Math.cos(ax));
-		VectorUtil.bivector_rotation_inplace(vz, vy, Math.sin(ay), Math.cos(ay));
+		const ax = x * (this.FOV/2) * (2.0 * Math.PI);
+		const ay = y * (this.FOV/2) * (2.0 * Math.PI);
+		this.bivector_rotation_inplace(vz, vx, Math.sin(ax), Math.cos(ax));
+		this.bivector_rotation_inplace(vz, vy, Math.sin(ay), Math.cos(ay));
 		return vz;
+	}
+
+	bivector_rotation_inplace(vecA, vecB, s/*sin*/, c/*cosine*/) {
+		for(let i=0;i<3;i++) {
+			const a = vecA[i];
+			const b = vecB[i];
+			vecA[i] = a*c + b*s;
+			vecB[i] = b*c - a*s;
+		}
 	}
 };

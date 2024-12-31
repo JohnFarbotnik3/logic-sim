@@ -1,4 +1,9 @@
+import { ArrayUtil } from "../lib/exports";
+import { GL_ARRAY_ENUM_TYPE } from "./exports";
+
 export const GL = WebGL2RenderingContext;
+
+
 
 export const BUFFER_TARGET = {
 	// Buffer containing vertex attributes, such as vertex coordinates,

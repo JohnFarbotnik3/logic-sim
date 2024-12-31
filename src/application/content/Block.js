@@ -1,7 +1,14 @@
 import { VerificationUtil } from "../lib/VerificationUtil"
-import { ComponentId } from "./ComponentId"
-import { ComponentDimensions } from "./ComponentDimensions"
 import { gameData } from "../Main";
+import {
+	ComponentId,
+	ComponentDimensions,
+	Cell,
+	Link,
+	Text,
+	BlockTemplate,
+} from "./exports";
+import { CachedValue_Content } from "../misc/CachedValue";
 
 /*
 	A Block is a placeholder that refers to some BlockTemplate.

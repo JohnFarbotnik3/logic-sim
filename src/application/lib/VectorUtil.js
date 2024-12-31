@@ -1,5 +1,11 @@
+import {
+	EquationMatrix,
+	EquationUtil,
+	Vector2D,
+	Vector3D,
+} from "./exports";
 
-class VectorUtil {
+export class VectorUtil {
 	
 	static bivector_rotation_inplace(vecA, vecB, s/*sin*/, c/*cosine*/) {
 		for(let i=0;i<3;i++) {

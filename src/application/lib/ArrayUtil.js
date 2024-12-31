@@ -4,7 +4,7 @@
 	i.e. the beginning-index is "to the left" of the first array element,
 	and the ending-index is "to the right" of the last array element.
 */
-class ArrayUtil {
+export class ArrayUtil {
 	// ============================================================
 	// memory manipulation
 	// ------------------------------------------------------------

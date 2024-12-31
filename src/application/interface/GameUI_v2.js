@@ -1,36 +1,45 @@
 import { ItemCollection } from "./ItemCollection"
-import { Cell } from "../content/Cell";
+import {
+	Cell,
+	Link,
+	Block,
+	ComponentId,
+	CELL_PROPERTIES,
+} from "../content/exports";
 import { InputProps, INPUT_TYPES } from "../../components/Input";
-import { gameData } from "../Main.js";
+import { main, gameData, gameRenderer, gameServer } from "../Main.js";
 import { InputHandlerSet } from "./InputHandlerSet";
+import {
+	Vector3D,
+	Vector2D,
+	VectorUtil,
+	VerificationUtil,
+} from "../lib/exports";
+import { CachedValue_Content, CachedValue_Rendering } from "../misc/CachedValue";
 
 export class GameUI {
 	// ============================================================
 	// Init
 	// ------------------------------------------------------------
 
-	void init() {
+	init() {
 		// add event listeners.
-		window.addEventListener("resize", this.resizeCanvas);
-		window.addEventListener("load", () => {
-			this.resizeCanvas();
-			setTimeout(() => this.resizeCanvas(), 0);
-		});
+		const canvas = this.getCanvas();
 		this.resizeCanvas();
-		this.getCanvasPromise().then(canvas => {
-			canvas.addEventListener("mouseenter", this.canvas_onEnter);
-			canvas.addEventListener("mouseleave", this.canvas_onLeave);
-			canvas.addEventListener("contextmenu", (e) => e.preventDefault());
-		});
+		window.addEventListener("resize"		, (ev) => this.resizeCanvas.call(this));
+		canvas.addEventListener("mouseenter"	, (ev) => this.canvas_onEnter.call(this));
+		canvas.addEventListener("mouseleave"	, (ev) => this.canvas_onLeave.call(this));
+		canvas.addEventListener("contextmenu"	, (ev) => ev.preventDefault());
 		// create input handler.
 		this.input = new InputHandlerSet();
+
+		this.update_template_list();
 	}
 
 	// ============================================================
 	// Update
 	// ------------------------------------------------------------
 
-	currentMode = null;
 	MODES = {
 		// content editing modes.
 		SELECT:			"Select",
@@ -42,41 +51,46 @@ export class GameUI {
 		ROOT_BLOCK:		"Template",
 		FILE:			"File",
 	};
+	currentMode = this.MODES.SELECT;
 	setCurrentMode(mode) {
-		console.log("GameUI.setCurrentMode(mode)", mode);
+		console.log("GameUI_v2.setCurrentMode(mode)", mode);
 		this.currentMode = mode;
 	}
 
-	// TODO: move controls update here...
-	update() {
-		this.input.updateInputDeltas();
+	get buttonDownL() { return this.input.button_prev.get(0); }
+	get buttonDownR() { return this.input.button_prev.get(2); }
+	get clickDeltaL() { return this.input.button_delta.get(0); }
+	get clickDeltaR() { return this.input.button_delta.get(2); }
+	get dragBegan() { return (this.clickDeltaL === +1) && this.isCanvasHovered && this.isCanvasActive; }
+	get dragEnded() { return (this.clickDeltaL === -1) && this.isCanvasHovered && this.isCanvasActive; }
 
-		const isCanvasActive = this.isCanvasActive;
-		const isCanvasHovered = this.isCanvasHovered;
+	update() {
+		const camera = gameRenderer.camera;
+		const input = this.input;
+		input.updateInputDeltas();
+
+		// get canvas normalized cursor position.
+		const [clientX, clientY] = input.cursor_curr;
+		const { x, y, width, height } = this.getCanvas().getClientRects()[0];
+		let mx = Math.min(Math.max((clientX - x) / width , 0.0), 1.0);
+		let my = Math.min(Math.max((clientY - y) / height, 0.0), 1.0);
+		mx = (mx * 2.0 - 1.0) * +1.0 * camera.aspectRatio;
+		my = (my * 2.0 - 1.0) * -1.0;
+		const canvas_xy = [mx, my];
 
 		// update cursor position (compute z-intersect)
-		const linePos   = new Vector3D(cameraPos.slice());
-		const lineVec   = new Vector3D(getCameraRayDirection(cursor_curr));
+		const linePos   = new Vector3D(camera.pos.slice());
+		const lineVec   = new Vector3D(camera.getRayDirection(canvas_xy));
 		const planePos  = new Vector3D([0,0,0]);
 		const planeVecA = new Vector3D([1,0,0]);
 		const planeVecB = new Vector3D([0,1,0]);
 		const [success, position] = VectorUtil.collision_line_plane_3d(linePos, lineVec, planePos, planeVecA, planeVecB);
 		this.cursor_pos.set(position, 0);
 
-		// useful state abbreviations. - TODO: move these to InputHandlerSet.
-		const mousePos = this.cursor_pos;
-		const mouseMoved = (cursor_delta[0] != 0.0) | (cursor_delta[1] != 0.0);
-		const buttonDownL = button_prev.get(0);
-		const buttonDownR = button_prev.get(2);
-		const clickDeltaL = button_delta.get(0);
-		const clickDeltaR = button_delta.get(2);
-		const dragBegan  = (clickDeltaL === +1) /*Boolean(dragbeg_event_prev)*/ && isCanvasHovered;
-		const dragEnded  = (clickDeltaL === -1) /*Boolean(dragend_event_prev)*/ && isCanvasHovered;
-
 		// update cursor drag area
-		if(dragBegan  ) this.cursor_dragBeg.set(mousePos, 0);
-		if(buttonDownL) {
-			this.cursor_dragEnd.set(mousePos, 0);
+		if(this.dragBegan  ) this.cursor_dragBeg.set(this.cursor_pos, 0);
+		if(this.buttonDownL) {
+			this.cursor_dragEnd.set(this.cursor_pos, 0);
 			const drag_points = new Float32Array([
 				...this.cursor_dragBeg,
 				...this.cursor_dragEnd,
@@ -87,12 +101,16 @@ export class GameUI {
 		// update hovered items.
 		this.updateHoveredItems();
 
+		console.log("this.currentMode", this.currentMode);
+
 		// select, translate, or delete items.
 		if(this.currentMode === this.MODES.SELECT) {
 			this.update_mode_select();
 		} else {
 			this.collectionSelected.clear();
 			this.collectionTranslating.clear();
+			this.cursor_isSelecting = false;
+			this.cursor_isTranslating = false;
 		}
 
 		// set cell values.
@@ -101,21 +119,23 @@ export class GameUI {
 		}
 
 		// place cells.
-		if(this.currentMode === this.MODES.PLACE_CELL) {
+		if(this.currentMode === this.MODES.PLACE_CELLS) {
 			this.update_mode_place_cells();
 		}
 
 		// place links.
-		if(this.currentMode === this.MODES.PLACE_LINK) {
+		if(this.currentMode === this.MODES.PLACE_LINKS) {
 			this.update_mode_place_links();
 		} else {
 			this.wire_buttonStep = 0;
 		}
 
 		// place blocks.
-		if(this.currentMode === this.MODES.PLACE_BLOCK) {
+		if(this.currentMode === this.MODES.PLACE_BLOCKS) {
 			this.update_mode_place_blocks();
 		}
+
+		this.update_hotkeys();
 
 		// clear input events
 		this.input.clearInputEvents();
@@ -123,31 +143,33 @@ export class GameUI {
 
 	update_hotkeys() {
 		const active = !this.isInputElementActive;
+		const input = this.input;
+		const camera = gameRenderer.camera;
 		/*
-		if(active & gameControls.getKeydownDelta("p") === +1) GameUI.clickButton(this.hotkey_btn_play);
-		if(active & gameControls.getKeydownDelta("x") === +1) GameUI.clickButton(this.hotkey_btn_select);
-		if(active & gameControls.getKeydownDelta("v") === +1) GameUI.clickButton(this.hotkey_btn_values);
-		if(active & gameControls.getKeydownDelta("c") === +1) GameUI.clickButton(this.hotkey_btn_cells);
-		if(active & gameControls.getKeydownDelta("l") === +1) GameUI.clickButton(this.hotkey_btn_links);
-		if(active & gameControls.getKeydownDelta("b") === +1) GameUI.clickButton(this.hotkey_btn_blocks);
+		if(active & input.getKeydownDelta("p") === +1) GameUI.clickButton(this.hotkey_btn_play);
+		if(active & input.getKeydownDelta("x") === +1) GameUI.clickButton(this.hotkey_btn_select);
+		if(active & input.getKeydownDelta("v") === +1) GameUI.clickButton(this.hotkey_btn_values);
+		if(active & input.getKeydownDelta("c") === +1) GameUI.clickButton(this.hotkey_btn_cells);
+		if(active & input.getKeydownDelta("l") === +1) GameUI.clickButton(this.hotkey_btn_links);
+		if(active & input.getKeydownDelta("b") === +1) GameUI.clickButton(this.hotkey_btn_blocks);
 		*/
 		if(active) {
-			const moveU = gameControls.getKeydown("w") | gameControls.getKeydown("ArrowUp");
-			const moveL = gameControls.getKeydown("a") | gameControls.getKeydown("ArrowLeft");
-			const moveD = gameControls.getKeydown("s") | gameControls.getKeydown("ArrowDown");
-			const moveR = gameControls.getKeydown("d") | gameControls.getKeydown("ArrowRight");
-			const moveSpeed = (gameControls.getKeydown("shift") ? 0.5 : 5.0) * cameraFOV;
-			if(moveU) cameraMove(0,+moveSpeed,0);
-			if(moveD) cameraMove(0,-moveSpeed,0);
-			if(moveL) cameraMove(-moveSpeed,0,0);
-			if(moveR) cameraMove(+moveSpeed,0,0);
+			const moveU = input.getKeydown("w") | input.getKeydown("ArrowUp");
+			const moveL = input.getKeydown("a") | input.getKeydown("ArrowLeft");
+			const moveD = input.getKeydown("s") | input.getKeydown("ArrowDown");
+			const moveR = input.getKeydown("d") | input.getKeydown("ArrowRight");
+			const moveSpeed = (input.getKeydown("shift") ? 0.5 : 5.0) * camera.FOV;
+			if(moveU) camera.move(0,+moveSpeed,0);
+			if(moveD) camera.move(0,-moveSpeed,0);
+			if(moveL) camera.move(-moveSpeed,0,0);
+			if(moveR) camera.move(+moveSpeed,0,0);
 			const zoomSpeed = 0.025;
-			if(gameControls.getKeydown("e")) cameraZoom(1 - zoomSpeed);
-			if(gameControls.getKeydown("q")) cameraZoom(1 + zoomSpeed);
+			if(input.getKeydown("e")) camera.zoom(1 - zoomSpeed);
+			if(input.getKeydown("q")) camera.zoom(1 + zoomSpeed);
 		}
 		if(this.isCanvasHovered) {
 			// apply mouse input
-			if(wheel_event) cameraZoom(1 + wheel_curr[1]*0.001);
+			if(input.wheel_event) camera.zoom(1 + input.wheel_curr[1]*0.001);
 		}
 	}
 
@@ -173,17 +195,6 @@ export class GameUI {
 			elem.click();
 			elem.blur();
 		}
-	}
-
-	// TODO: move to InputHandlerSet.
-	// get map value (case insensitive)
-	getKeydown(key) {
-		const map = keydown_curr;
-		return map.get(key) || map.get(key.toLowerCase()) || map.get(key.toUpperCase());
-	}
-	getKeydownDelta(key) {
-		const map = keydown_delta;
-		return map.get(key) || map.get(key.toLowerCase()) || map.get(key.toUpperCase());
 	}
 
 	// ============================================================
@@ -217,11 +228,11 @@ export class GameUI {
 		return this.canvas;
 	}
 
-	get isCanvasActive() { return !GameUI.isInputElementActive; }
+	get isCanvasActive() { return !this.isInputElementActive; }
 
 	isCanvasHovered = true;
-	canvas_onEnter(event) { GameUI.isCanvasHovered = true; }
-	canvas_onLeave(event) { GameUI.isCanvasHovered = false; }
+	canvas_onEnter(event) { this.isCanvasHovered = true; console.log("canvas_onEnter", this.isCanvasHovered, this); }
+	canvas_onLeave(event) { this.isCanvasHovered = false; console.log("canvas_onLeave", this.isCanvasHovered, this); }
 
 	resizeCanvas(event) {
 		console.log(`resizing canvas`);
@@ -232,7 +243,7 @@ export class GameUI {
 		const ratio = Math.min(rect.width / cw, rect.height / ch);
 		canvas.width  = Math.floor(rect.width);
 		canvas.height = Math.floor(rect.height);
-		gameRenderer = new GameRenderer(canvas);
+		main.recreateRenderer(canvas);
 	}
 
 	// ============================================================
@@ -278,11 +289,11 @@ export class GameUI {
 
 	add_cell (item) { gameData.rootBlock.insertCell (item); }
 	add_link (item) { gameData.rootBlock.insertLink (item); }
-	add_block(item) { gameData.rootBlock.insertBlock(item); GameUI.on_minor_blocklib_change(); }
+	add_block(item) { gameData.rootBlock.insertBlock(item); this.on_minor_blocklib_change(); }
 	add_text (item) { gameData.rootBlock.insertText (item); }
 	rem_cell (item) { gameData.rootBlock.deleteCell (item); }
 	rem_link (item) { gameData.rootBlock.deleteLink (item); }
-	rem_block(item) { gameData.rootBlock.deleteBlock(item); GameUI.on_minor_blocklib_change(); }
+	rem_block(item) { gameData.rootBlock.deleteBlock(item); this.on_minor_blocklib_change(); }
 	rem_text (item) { gameData.rootBlock.deleteText (item); }
 	move_item(item,x,y,w,h,r) {
 		const dim = item.dimensions;
@@ -298,13 +309,79 @@ export class GameUI {
 		dim.w = w;
 		dim.h = h;
 		dim.r = r;
-		CachedValue_Rendering.onChange();
+		this.changedRendering();
 	}
 	translate_item(item,dx,dy) {
 		if(dx === 0 & dy === 0) return;
 		item.dimensions.x += dx;
 		item.dimensions.y += dy;
-		CachedValue_Rendering.onChange();
+		this.changedRendering();
+	}
+
+	// ============================================================
+	// Item placement.
+	// ------------------------------------------------------------
+
+	place_dim_cell		= [1,1,0];// [w,h,r]
+	place_dim_block		= [1,1,0];// [w,h,r]
+	place_preview_cell	= null;
+	place_preview_block	= null;
+
+	get_render_preview_cell() {
+		if(this.currentMode === this.MODES.PLACE_CELLS) return this.place_preview_cell;
+		else return null;
+	}
+	get_render_preview_block() {
+		if(this.currentMode === this.MODES.PLACE_BLOCKS) return this.place_preview_block;
+		else return null;
+	}
+
+	place_cursor_xy() {
+		const mult = this.cursor_snap;
+		const minv = 1.0 / mult;
+		const pos = this.cursor_pos.slice();
+		const ofs = [0, 0];
+		gameData.renderBlock.contentTran.applyOffset(ofs, 0, 2, 2);
+		const x = Math.round((pos[0] - ofs[0]) * minv) * mult;
+		const y = Math.round((pos[1] - ofs[1]) * minv) * mult;
+		return [x,y];
+	}
+	place_placementUpdate_cell() {
+		const [x,y] = this.place_cursor_xy();
+		const [w,h,r] = this.place_dim_cell;
+		this.move_item(this.place_preview_cell, x,y,w,h,r);
+	}
+	place_placementUpdate_block() {
+		const preview = this.place_preview_block;
+		if(!preview) return;
+		const [x,y] = this.place_cursor_xy();
+		const [w,h,r] = this.place_dim_block;
+		this.move_item(this.place_preview_block, x,y,w,h,r);
+	}
+	place_placementPlace_cell() {
+		const item = this.place_preview_cell.clone();
+		item.id = ComponentId.next();// ensure that new component has unique id.
+		this.add_cell(item);
+	}
+	place_placementPlace_block() {
+		const item = this.place_preview_block.clone();
+		item.id = ComponentId.next();// ensure that new component has unique id.
+		this.add_block(item);
+	}
+
+	update_mode_place_cells() {
+		if(!this.place_preview_cell) return;
+		// update preview item.
+		this.place_placementUpdate_cell();
+		// create new item and add it to root block template.
+		if(this.isCanvasHovered && (this.clickDeltaL == +1)) this.place_placementPlace_cell();
+	}
+	update_mode_place_blocks() {
+		if(!this.place_preview_block) return;
+		// update preview item.
+		this.place_placementUpdate_block();
+		// create new item and add it to root block template.
+		if(this.isCanvasHovered && (this.clickDeltaL == +1)) this.place_placementPlace_block();
 	}
 
 	// ============================================================
@@ -330,10 +407,10 @@ export class GameUI {
 
 	update_mode_select() {
 		// update state and selection.
-		if(!buttonDownL) this.collectionTranslating.clear();
-		if(dragBegan) {
+		if(!this.buttonDownL) this.collectionTranslating.clear();
+		if(this.dragBegan) {
 			let isTranslating = false;
-			let holdingShift = this.getKeydown("Shift");
+			let holdingShift = this.input.getKeydown("Shift");
 			if(!holdingShift) {
 				const hoveredAndSelected = this.collectionHovered.intersection(this.collectionSelected);
 				console.log("hoveredAndSelected.count()", hoveredAndSelected.count());
@@ -346,7 +423,7 @@ export class GameUI {
 					this.collectionSelected.addFirstComponentFromCollection(this.collectionHovered);
 					this.collectionTranslating.clear();
 					this.collectionTranslating.addFromCollection(this.collectionSelected);
-					GameUI.on_selection_update();
+					this.on_selection_update();
 				}
 				console.log("this.collectionHovered", this.collectionHovered);
 				console.log("this.collectionSelected", this.collectionSelected);
@@ -362,18 +439,18 @@ export class GameUI {
 			this.cursor_isSelecting		= !isTranslating;
 			if(!holdingShift && !isTranslating) this.collectionSelected.clear();
 		}
-		if(dragEnded) {
+		if(this.dragEnded) {
 			if(this.cursor_isSelecting) {
 				this.selectAllItemsInDragArea();
-				GameUI.on_selection_update();
+				this.on_selection_update();
 			}
 		}
-		if(!buttonDownL) {
+		if(!this.buttonDownL) {
 			this.cursor_isSelecting = false;
 			this.cursor_isTranslating = false;
 		}
 		if(this.cursor_isTranslating) this.translateAllSelectedItems();
-		if(this.getKeydownDelta("Delete") === +1) this.deleteSelectedItems();
+		if(this.input.getKeydownDelta("Delete") === +1) this.deleteSelectedItems();
 	}
 
 	clearCollections() {
@@ -522,18 +599,15 @@ export class GameUI {
 	setval_value_rmb = 0x00000000;
 
 	update_mode_setval() {
-		if(isCanvasHovered && buttonDownL) this.setval_hovered_lmb();
-		if(isCanvasHovered && buttonDownR) this.setval_hovered_rmb();
+		if(this.isCanvasHovered && this.buttonDownL) this.setval_hovered(this.setval_value_lmb);
+		if(this.isCanvasHovered && this.buttonDownR) this.setval_hovered(this.setval_value_rmb);
 	}
-
 	setval_hovered(val) {
 		for(const item of this.collectionHovered.cells) {
 			gameServer.simulation_set_cell_value(ComponentId.THIS_BLOCK, item.id, val);
 			if(item.type === CELL_PROPERTIES.CONSTANT.type) item.value = val;
 		}
 	}
-	setval_hovered_lmb() { this.setval_hovered(this.setval_value_lmb); }
-	setval_hovered_rmb() { this.setval_hovered(this.setval_value_rmb); }
 
 	oninput_setval_lmb(value) { this.setval_value_lmb = value; }
 	oninput_setval_rmb(value) { this.setval_value_rmb = value; }
@@ -551,56 +625,9 @@ export class GameUI {
 		]
 	};
 
-
-	// ============================================================
-	// Item placement.
-	// ------------------------------------------------------------
-
-	place_dim_cell		= [1,1,0];// [w,h,r]
-	place_dim_block		= [1,1,0];// [w,h,r]
-	place_preview_cell	= null;
-	place_preview_block	= null;
-
-	place_cursor_xy() {
-		const mult = this.cursor_snap;
-		const minv = 1.0 / mult;
-		const x = Math.round((this.cursor_pos[0]) * minv) * mult;
-		const y = Math.round((this.cursor_pos[1]) * minv) * mult;
-		return [x,y];
-	}
-	place_placementUpdate_cell() {
-		const [x,y] = this.place_cursor_xy();
-		const [w,h,r] = this.place_dim_cell;
-		this.move_item(this.place_preview_cell, x,y,w,h,r);
-	}
-	place_placementUpdate_block() {
-		const preview = this.place_preview_block;
-		if(!preview) return;
-		const [x,y] = this.place_cursor_xy();
-		const [w,h,r] = this.place_dim_block;
-		this.move_item(this.place_preview_block, x,y,w,h,r);
-	}
-	place_placementPlace_cell() {
-		const item = this.place_preview_cell.clone();
-		item.id = ComponentId.next();// ensure that new component has unique id.
-		this.add_cell(item);
-	}
-	place_placementPlace_block() {
-		const item = this.place_preview_block.clone();
-		item.id = ComponentId.next();// ensure that new component has unique id.
-		this.add_block(item);
-	}
-
 	// ============================================================
 	// Cells
 	// ------------------------------------------------------------
-
-	update_mode_place_cells() {
-		// update preview item.
-		this.place_placementUpdate_cell();
-		// create new item and add it to root block template.
-		if(isCanvasHovered && (clickDeltaL == +1)) this.place_placementPlace_cell();
-	}
 
 	onclick_cell_type(event, cellType) {
 		// update mode and preview.
@@ -647,15 +674,21 @@ export class GameUI {
 	wire_colour_g = 255;
 	wire_colour_b = 200;
 
+	get_wire_colour() {
+		return	(this.wire_colour_r << 24) |
+				(this.wire_colour_g << 16) |
+				(this.wire_colour_b <<  8) | 255;
+	}
+
 	update_mode_place_links() {
 		// highlight nearest link-point.
 		this.wire_updateNearestTarget();
 		// bind nearest cell link-point.
-		if(this.wire_buttonStep === 0 && dragBegan) {
+		if(this.wire_buttonStep === 0 && this.dragBegan) {
 			if(this.wire_bindTarget1()) this.wire_buttonStep = 1;
 		}
 		// bind nearest cell link-point if compatible with the first.
-		if(this.wire_buttonStep === 1 && dragBegan) {
+		if(this.wire_buttonStep === 1 && this.dragBegan) {
 			if(this.wire_bindTarget2()) this.wire_buttonStep = 2;
 		}
 		// add new link, or replace an already existing one if it has same input.
@@ -663,7 +696,7 @@ export class GameUI {
 			if(this.wire_addNewLink()) this.wire_buttonStep = 0;
 		}
 		// erase any hovered wires.
-		if(buttonDownR) this.deleteHoveredLinks();
+		if(this.buttonDownR) this.deleteHoveredLinks();
 	}
 
 	get wire_nearestValid() { return this.wire_targetNearest !== null; }
@@ -744,11 +777,7 @@ export class GameUI {
 		let targetDst = (target1[3] !== OUTPUT) ? target1 : target2;
 		const [point_src, bid_src, cid_src, tgt_src] = targetSrc;
 		const [point_dst, bid_dst, cid_dst, tgt_dst] = targetDst;
-		const clr =
-			(this.wire_colour_r << 24) |
-			(this.wire_colour_g << 16) |
-			(this.wire_colour_b <<  8) |
-			255;
+		const clr = this.get_wire_colour();
 		const item = new Link(bid_src, bid_dst, cid_src, cid_dst, tgt_dst, clr);
 		this.add_link(item);
 		console.log("NEW LINK", item);
@@ -786,13 +815,6 @@ export class GameUI {
 	// ============================================================
 	// Blocks
 	// ------------------------------------------------------------
-
-	update_mode_place_blocks() {
-		// update preview item.
-		this.place_placementUpdate_block();
-		// create new item and add it to root block template.
-		if(isCanvasHovered && (clickDeltaL == +1)) this.place_placementPlace_block();
-	}
 
 	onclick_block_type(event, tid) {
 		// update mode and preview.
@@ -869,7 +891,6 @@ export class GameUI {
 	onmouseleave_block_remove(event, templateId) { this.hide_tooltip(); }
 
 	on_major_blocklib_change() {
-		this.setCurrentMode(null);
 		this.clearCollections();
 		if(this.block_buttons_grid) this.update_template_list();
 		if(this.rootbt_panel) this.refresh_rootbt_inputs();

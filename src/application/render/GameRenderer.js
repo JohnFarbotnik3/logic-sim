@@ -1,5 +1,5 @@
 import { RenderTreeBlock } from "./RenderTreeBlock";
-import { gameUI } from "../Main";
+import { gameUI, gameData, gameServer } from "../Main";
 import {
 	mat4,
 	Camera,
@@ -13,11 +13,15 @@ import {
 	FONT_STYLE,
 	Shader_pos_clr,
 	Shader_pos_clr_tex,
+	ShaderPackingUtil,
+	BROKEN_DRIVER_MYSTERY_OFFSET_U32,
 } from "../WebGL/exports";
+import { Rectangle } from "../lib/exports";
+import { Performance } from "../misc/Performance";
+
 
 const INDEX_NONE_SB = 0xffffffff;
 const INDEX_ROOT_SB = 0x0;
-const DEPTH_ON_TOP = 33;
 
 export class GameRenderer {
 	// ============================================================
@@ -110,14 +114,14 @@ export class GameRenderer {
 		const renblock = gameData.renderBlock;
 		if(!renblock) throw("!renblock");
 		const t1 = Date.now();
-		GameRenderer.drawBlock(renblock, renblock.get_render_data_block(gameData.rootBlock), GameRenderer.INDEX_ROOT_SB);
-		GameRenderer.drawCursor();
-		if(gameControls.cursor_isSelecting) GameRenderer.drawDragArea();
-		if(gameControls.cursor_mode === gameControls.CURSOR_MODE.SELECT) GameRenderer.drawSelection();
-		if(gameControls.cursor_mode === gameControls.CURSOR_MODE.PLACE_CELL ) GameRenderer.drawPreviewCell();
-		if(gameControls.cursor_mode === gameControls.CURSOR_MODE.PLACE_LINK ) GameRenderer.drawNearestLinkPoint();
-		if(gameControls.cursor_mode === gameControls.CURSOR_MODE.PLACE_BLOCK) GameRenderer.drawPreviewBlock();
-		GameRenderer.drawHovered();
+		this.drawBlock(renblock, renblock.get_render_data_block(gameData.rootBlock), INDEX_ROOT_SB);
+		this.drawCursor();
+		if(gameUI.cursor_isSelecting) this.drawDragArea();
+		this.drawSelection();
+		this.drawPreviewCell();
+		this.drawPreviewLink();
+		this.drawPreviewBlock();
+		this.drawHovered();
 		// commit data to buffers.
 		const t2 = Date.now();
 		this.commit_buffers();
@@ -223,6 +227,9 @@ export class GameRenderer {
 	// ============================================================
 	// Shape generators
 	// ------------------------------------------------------------
+
+	static DEPTH_ON_TOP = 33;
+	DEPTH_ON_TOP = 33;
 
 	// triangle-rectangles.
 	tri_rects_reserve(N) {
@@ -437,19 +444,19 @@ export class GameRenderer {
 		);
 	}
 	
-	drawCell(renderblock, renderData, simblock=GameRenderer.INDEX_NONE_SB) {
+	drawCell(renderblock, renderData, simblock=INDEX_NONE_SB) {
 		const { cell, tran, numTargets } = renderData;
 		const depth = renderblock.depth;
 		// get cell values from simulation.
 		const vals = [cell.value, 0x0, 0x0];
-		if(simblock !== GameRenderer.INDEX_NONE_SB) {
+		if(simblock !== INDEX_NONE_SB) {
 			vals[0] = gameServer.simulation_get_cell_value(cell.id, simblock, 0);
 			vals[1] = gameServer.simulation_get_cell_value(cell.id, simblock, 1);
 			vals[2] = gameServer.simulation_get_cell_value(cell.id, simblock, 2);
 		}
 		const cell_clrs	= [0x0, 0x0, 0x0, 0xffeeccff, 0xffeeccff, 0xffeeccff];
 		const clr_on	= cell.clr;
-		const clr_off	= GameRenderer.hexColour_scale(clr_on, 0.5);
+		const clr_off	= this.hexColour_scale(clr_on, 0.5);
 		for(let i=0;i<3;i++) cell_clrs[i] = vals[i] ? clr_on : clr_off;
 		// draw cell areas + link points
 		const N = 3 + numTargets;
@@ -461,8 +468,8 @@ export class GameRenderer {
 			- go back to using average scale factor of containing block instead of applying basis vectors.
 		*/
 		if(depth >= 2) return;// skip rendering text beyond depth 2.
-		const isSelected = gameControls.collectionSelected.cells.has(cell) | renderblock.is_selected;
-		const isHovered  = gameControls.collectionHovered .cells.has(cell) | renderblock.is_hovered;
+		const isSelected = gameUI.collectionSelected.cells.has(cell) | renderblock.is_selected;
+		const isHovered  = gameUI.collectionHovered .cells.has(cell) | renderblock.is_hovered;
 		if(isSelected | isHovered | renderblock.is_selected | renderblock.is_hovered) {
 			const fontHeight = 0.30;
 			const fontColour = 0xffffffff;
@@ -478,7 +485,7 @@ export class GameRenderer {
 			// draw values.
 			const labels = ["OUT:", "A:", "B:"];
 			for(let i=0;i<numTargets;i++) {
-				const str = labels[i] + GameRenderer.valueToHex_u32(vals[i], 8);
+				const str = labels[i] + this.valueToHex_u32(vals[i], 8);
 				const clr = fontColour & (vals[i] === 0 ? 0x777777ff : 0xffffffff);
 				const unitRectPoint = [
 					RenderTreeBlock.LINK_POINTS_F32[i*3+0],
@@ -532,11 +539,11 @@ export class GameRenderer {
 		// draw thumbnail.
 		// ...TODO...
 	}
-	drawBlock(renderblock, renderData, simblock=GameRenderer.INDEX_NONE_SB) {
+	drawBlock(renderblock, renderData, simblock=INDEX_NONE_SB) {
 		const t0 = Date.now();
 		// update hovered state.
-		renderblock.is_hovered  = gameControls.collectionHovered .blocks.has(renderblock.block);
-		renderblock.is_selected = gameControls.collectionSelected.blocks.has(renderblock.block);
+		renderblock.is_hovered  = gameUI.collectionHovered .blocks.has(renderblock.block);
+		renderblock.is_selected = gameUI.collectionSelected.blocks.has(renderblock.block);
 		// draw background.
 		{
 			const { block, tran } = renderData;
@@ -555,17 +562,17 @@ export class GameRenderer {
 		}
 		// draw contents.
 		const t1 = Date.now();
-		for(const data of renderblock.render_data_texts) GameRenderer.drawText(renderblock, data);
+		for(const data of renderblock.render_data_texts) this.drawText(renderblock, data);
 		const t2 = Date.now();
-		for(const data of renderblock.render_data_cells) GameRenderer.drawCell(renderblock, data, simblock);
+		for(const data of renderblock.render_data_cells) this.drawCell(renderblock, data, simblock);
 		const t3 = Date.now();
-		for(const data of renderblock.render_data_links) GameRenderer.drawLink(renderblock, data);
+		for(const data of renderblock.render_data_links) this.drawLink(renderblock, data);
 		const t4 = Date.now();
 		for(const data of renderblock.render_data_blocks) {
 			const childRB = renderblock.children.get(data.block.id);
 			const childSB = gameServer.simulation_get_child_simblock(data.block.id, simblock);
-			if(childRB) GameRenderer.drawBlock(childRB, data, childSB);
-			else GameRenderer.drawBlockPlaceholder(renderblock, data);
+			if(childRB) this.drawBlock(childRB, data, childSB);
+			else this.drawBlockPlaceholder(renderblock, data);
 		}
 		Performance.increment_time("render.gather.block", t1-t0);
 		Performance.increment_time("render.gather.texts", t2-t1);
@@ -578,14 +585,14 @@ export class GameRenderer {
 	// ------------------------------------------------------------
 	
 	drawPreviewCell() {
-		const cell = gameControls.get_render_preview_cell();
+		const cell = gameUI.get_render_preview_cell();
 		if(!cell) return;
 		const renblock = gameData.renderBlock;
-		GameRenderer.drawCell(renblock, renblock.get_render_data_cell(cell));
+		this.drawCell(renblock, renblock.get_render_data_cell(cell));
 	}
 	
 	drawPreviewBlock() {
-		const block = gameControls.get_render_preview_block();
+		const block = gameUI.get_render_preview_block();
 		if(!block) return;
 		const parent	= gameData.renderBlock;
 		const exttran	= parent.contentTran;
@@ -593,21 +600,22 @@ export class GameRenderer {
 		const maxDepth	= parent.depth + 2;
 		// TODO: creating a new RenderTreeBlock each frame has a noticable performance penalty.
 		const renblock	= new RenderTreeBlock(parent, block, exttran, depth, maxDepth);
-		GameRenderer.drawBlock(renblock, renblock.get_render_data_block(block));
+		this.drawBlock(renblock, renblock.get_render_data_block(block));
 	}
 	
-	drawNearestLinkPoint() {
-		if(!gameControls.wire_nearestValid) return;
-		const pointList = gameControls.wire_getTargetDrawPoints();
+	drawPreviewLink() {
+		if(!gameUI.wire_nearestValid) return;
+		if(gameUI.currentMode !== gameUI.MODES.PLACE_LINKS) return;
+		const pointList = gameUI.wire_getTargetDrawPoints();
 		// draw circles.
-		const clr = gameControls.wire_colour;
+		const clr = gameUI.get_wire_colour();
 		for(const point of pointList) {
 			const tran = null;
-			const depth = GameRenderer.DEPTH_ON_TOP;
+			const depth = this.DEPTH_ON_TOP;
 			this.push_content_line_circle(tran, depth, point[0], point[1], 0.2, 20, clr);
 		}
 		// draw link preview
-		if(pointList.length >= 2) GameRenderer.drawLink_alt(pointList[0], pointList[1], clr, 0);
+		if(pointList.length >= 2) this.drawLink_alt(pointList[0], pointList[1], clr, 0);
 	}
 	
 	// ============================================================
@@ -616,42 +624,42 @@ export class GameRenderer {
 	
 	drawCursor() {
 		const tran = null;
-		const depth = GameRenderer.DEPTH_ON_TOP;
+		const depth = this.DEPTH_ON_TOP;
 		const clr = ShaderPackingUtil.packed_rgba_8bit(255,255,111,255);
-		const pos = gameControls.cursor_pos;
-		const radius = gameControls.cursor_radius;
+		const pos = gameUI.cursor_pos;
+		const radius = gameUI.cursor_radius;
 		this.push_content_line_circle(tran, depth, pos[0], pos[1], radius, 30, clr);
 	}
 
 	drawDragArea() {
-		const [x1,y1,x2,y2] = gameControls.cursor_dragAABB;
+		const [x1,y1,x2,y2] = gameUI.cursor_dragAABB;
 		const tran = null;
-		const depth = GameRenderer.DEPTH_ON_TOP;
+		const depth = this.DEPTH_ON_TOP;
 		const rect = [x1,y1,(x2-x1),(y2-y1)];
 		const clr = 0xffffff55;
-		GameRenderer.tri_rects_push(tran, depth, rect, clr);
+		this.tri_rects_push(tran, depth, rect, clr);
 	}
 	
 	pushSelectionRectangles(collection, rect, clr) {
 		const renblock = gameData.renderBlock;
-		const depth = GameRenderer.DEPTH_ON_TOP;
-		for(const item of collection.cells ) { const tran=renblock.item_trans.get(item.id); GameRenderer.line_rects_push(tran, depth, rect, clr); }
-		for(const item of collection.texts ) { const tran=renblock.item_trans.get(item.id); GameRenderer.line_rects_push(tran, depth, rect, clr); }
-		for(const item of collection.blocks) { const tran=renblock.item_trans.get(item.id); GameRenderer.line_rects_push(tran, depth, rect, clr); }
+		const depth = this.DEPTH_ON_TOP;
+		for(const item of collection.cells ) { const tran=renblock.item_trans.get(item.id); this.line_rects_push(tran, depth, rect, clr); }
+		for(const item of collection.texts ) { const tran=renblock.item_trans.get(item.id); this.line_rects_push(tran, depth, rect, clr); }
+		for(const item of collection.blocks) { const tran=renblock.item_trans.get(item.id); this.line_rects_push(tran, depth, rect, clr); }
 	}
 	
 	drawSelection() {
 		const s = 0.03;
 		const unit_rect = [0.0-s, 0.0-s, 1.0+s*2, 1+s*2];
 		const clr = 0xffff55ff;
-		GameRenderer.pushSelectionRectangles(gameControls.collectionSelected, unit_rect, clr);
+		this.pushSelectionRectangles(gameUI.collectionSelected, unit_rect, clr);
 	}
 	
 	drawHovered() {
 		const s = 0.00;
 		const unit_rect = [0.0-s, 0.0-s, 1.0+s*2, 1+s*2];
 		const clr = 0xaaccffff;
-		GameRenderer.pushSelectionRectangles(gameControls.collectionHovered, unit_rect, clr);
+		this.pushSelectionRectangles(gameUI.collectionHovered, unit_rect, clr);
 	}
 	
 };

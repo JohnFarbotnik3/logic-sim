@@ -32,8 +32,4 @@ export class VerificationUtil {
 		for(const arg of args) constructors.push(arg?.constructor.name);
 		throw(`no constructor overload found for arguments: ${JSON.stringify({args, constructors})}`);
 	}
-	
-	
-	
 };
-

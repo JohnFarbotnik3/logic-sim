@@ -145,14 +145,12 @@ export class GameUI {
 		const active = !this.isInputElementActive;
 		const input = this.input;
 		const camera = gameRenderer.camera;
-		/*
-		if(active & input.getKeydownDelta("p") === +1) GameUI.clickButton(this.hotkey_btn_play);
-		if(active & input.getKeydownDelta("x") === +1) GameUI.clickButton(this.hotkey_btn_select);
-		if(active & input.getKeydownDelta("v") === +1) GameUI.clickButton(this.hotkey_btn_values);
-		if(active & input.getKeydownDelta("c") === +1) GameUI.clickButton(this.hotkey_btn_cells);
-		if(active & input.getKeydownDelta("l") === +1) GameUI.clickButton(this.hotkey_btn_links);
-		if(active & input.getKeydownDelta("b") === +1) GameUI.clickButton(this.hotkey_btn_blocks);
-		*/
+		//if(active & input.getKeydownDelta("p") === +1) GameUI.clickButton(this.hotkey_btn_play);
+		if(active & input.getKeydownDelta("x") === +1) this.setCurrentMode(this.MODES.SELECT);
+		if(active & input.getKeydownDelta("v") === +1) this.setCurrentMode(this.MODES.SET_VALUES);
+		if(active & input.getKeydownDelta("c") === +1) this.setCurrentMode(this.MODES.PLACE_CELLS);
+		if(active & input.getKeydownDelta("l") === +1) this.setCurrentMode(this.MODES.PLACE_LINKS);
+		if(active & input.getKeydownDelta("b") === +1) this.setCurrentMode(this.MODES.PLACE_BLOCKS);
 		if(active) {
 			const moveU = input.getKeydown("w") | input.getKeydown("ArrowUp");
 			const moveL = input.getKeydown("a") | input.getKeydown("ArrowLeft");
@@ -501,22 +499,6 @@ export class GameUI {
 		for(const item of this.collectionSelected.blocks) this.rem_block(item);
 		this.clearCollections();
 	}
-	isLinkHovered(link) {
-		const points = gameData.renderBlock.l_points.get(link.id);
-		const pointC = new Vector2D(this.cursor_pos.slice(0,2));
-		const pointA = new Vector2D(points.slice(0,2));
-		const pointB = new Vector2D(points.slice(3,5));
-		const nearest = VectorUtil.nearestPoint_point_line_segment_2d(pointC, pointA, pointB);
-		const nearest3d = new Vector3D([nearest[0], nearest[1], 0.0]);
-		const distance = nearest3d.add(this.cursor_pos, -1.0).hypot();
-		return distance <= this.cursor_radius;
-	}
-	deleteHoveredLinks() {
-		const block = gameData.rootBlock;
-		const del = new Set();
-		for(const item of block.links) if(this.isLinkHovered(item)) del.add(item);
-		for(const item of del.keys()) this.rem_link(item);
-	}
 
 	info_select = [
 		"- Select items by clicking them, or by dragging to select all items in drag-area.",
@@ -666,8 +648,8 @@ export class GameUI {
 	// ------------------------------------------------------------
 
 	wire_buttonStep			= 0;
-	wire_allTargets			= [];// Array<[point, bid, cid, tgt]>
-	wire_targetNearest		= null;
+	wire_cell_targets		= [];// Array<[point, bid, cid, tgt]>
+	wire_cell_target_nearest= null;
 	wire_target1			= null;
 	wire_target2			= null;
 	wire_colour_r = 255;
@@ -682,106 +664,75 @@ export class GameUI {
 
 	update_mode_place_links() {
 		// highlight nearest link-point.
-		this.wire_updateNearestTarget();
+		const blocklib = gameData.blockLibrary;
+		const targets = blocklib.get_all_cell_targets();
+		this.wire_cell_targets = targets;
+		const first_target = (this.wire_buttonStep > 0) ? this.wire_target1[3] : Cell.LINK_TARGET.NONE;
+		this.wire_cell_target_nearest = blocklib.get_nearst_cell_target(targets, this.cursor_pos, first_target);
 		// bind nearest cell link-point.
 		if(this.wire_buttonStep === 0 && this.dragBegan) {
-			if(this.wire_bindTarget1()) this.wire_buttonStep = 1;
+			this.wire_target1 = this.wire_cell_target_nearest;
+			const success = this.wire_target1 !== null;
+			if(success) this.wire_buttonStep = 1;
 		}
 		// bind nearest cell link-point if compatible with the first.
 		if(this.wire_buttonStep === 1 && this.dragBegan) {
-			if(this.wire_bindTarget2()) this.wire_buttonStep = 2;
+			this.wire_target2 = this.wire_cell_target_nearest;
+			const tgt1 = this.wire_target1[3];
+			const tgt2 = this.wire_target2[3];
+			const OUTPUT = Cell.LINK_TARGET.OUTPUT;
+			const success = (tgt1 != tgt2) & ((tgt1 == OUTPUT) | (tgt2 == OUTPUT));
+			if(success) this.wire_buttonStep = 2;
 		}
 		// add new link, or replace an already existing one if it has same input.
 		if(this.wire_buttonStep === 2) {
-			if(this.wire_addNewLink()) this.wire_buttonStep = 0;
+			const OUTPUT = Cell.LINK_TARGET.OUTPUT;
+			const target1 = this.wire_target1;
+			const target2 = this.wire_target2;
+			let targetSrc = (target1[3] === OUTPUT) ? target1 : target2;
+			let targetDst = (target1[3] !== OUTPUT) ? target1 : target2;
+			const [point_src, bid_src, cid_src, tgt_src] = targetSrc;
+			const [point_dst, bid_dst, cid_dst, tgt_dst] = targetDst;
+			const clr = this.get_wire_colour();
+			const item = new Link(bid_src, bid_dst, cid_src, cid_dst, tgt_dst, clr);
+			this.add_link(item);
+			console.log("NEW LINK", item);
+			const success = true;
+			if(success) this.wire_buttonStep = 0;
 		}
 		// erase any hovered wires.
-		if(this.buttonDownR) this.deleteHoveredLinks();
+		if(this.buttonDownR) {
+			this.wire_buttonStep = 0;
+			this.deleteHoveredLinks();
+		}
 	}
 
-	get wire_nearestValid() { return this.wire_targetNearest !== null; }
-	get_link_point(blockId, cell, tgt) {
-		VerificationUtil.verifyType_throw(cell, Cell);
-		let renblock = gameData.renderBlock;
-		if(blockId !== ComponentId.THIS_BLOCK && blockId !== gameData.rootBlock.id) renblock = renblock.children.get(blockId);
-		if(!renblock) console.error(blockId, gameData.renderBlock.children);
-		const points = renblock.c_points.get(cell.id);
-		VerificationUtil.verifyType_throw(points, Float32Array);
-		return points.slice(tgt*3, tgt*3+3);
+	isLinkHovered(link) {
+		const points = gameData.renderBlock.l_points.get(link.id);
+		const pointC = new Vector2D(this.cursor_pos.slice(0,2));
+		const pointA = new Vector2D(points.slice(0,2));
+		const pointB = new Vector2D(points.slice(3,5));
+		const nearest = VectorUtil.nearestPoint_point_line_segment_2d(pointC, pointA, pointB);
+		const nearest3d = new Vector3D([nearest[0], nearest[1], 0.0]);
+		const distance = nearest3d.add(this.cursor_pos, -1.0).hypot();
+		return distance <= this.cursor_radius;
 	}
-	wire_updateNearestTarget() {
-		// update targets list.
-		this.wire_allTargets = [];
-		const OUT = Cell.LINK_TARGET.OUTPUT;
-		const INA = Cell.LINK_TARGET.INPUT_A;
-		const INB = Cell.LINK_TARGET.INPUT_B;
-		// cell targets in rootBlock can be modified (all targets are valid).
-		{
-			const block = gameData.rootBlock;
-			const {out, ina, inb} = block.template.getValidCellTargets(true);
-			const blockId = block.id;// NOTE: new link insertion code checks this.
-			let tgt;
-			tgt=OUT; for(const cell of out.keys()) this.wire_allTargets.push([this.get_link_point(blockId,cell,tgt), blockId, cell.id, tgt]);
-			tgt=INA; for(const cell of ina.keys()) this.wire_allTargets.push([this.get_link_point(blockId,cell,tgt), blockId, cell.id, tgt]);
-			tgt=INB; for(const cell of inb.keys()) this.wire_allTargets.push([this.get_link_point(blockId,cell,tgt), blockId, cell.id, tgt]);
-		}
-		// used cell inputs in child-blocks are immutable.
-		for(const block of gameData.rootBlock.blocks) {
-			const {out, ina, inb} = block.template.getValidCellTargets(false);
-			const blockId = block.id;
-			let tgt;
-			tgt=OUT; for(const cell of out.keys()) this.wire_allTargets.push([this.get_link_point(blockId,cell,tgt), blockId, cell.id, tgt]);
-			tgt=INA; for(const cell of ina.keys()) this.wire_allTargets.push([this.get_link_point(blockId,cell,tgt), blockId, cell.id, tgt]);
-			tgt=INB; for(const cell of inb.keys()) this.wire_allTargets.push([this.get_link_point(blockId,cell,tgt), blockId, cell.id, tgt]);
-		}
-		// find nearest target.
-		const TGT = (this.wire_buttonStep > 0) ? this.wire_target1[3] : Cell.LINK_TARGET.NONE;
-		if(this.wire_allTargets.length <= 0) { this.wire_targetNearest = null; return; }
-		const pos	= this.cursor_pos;
-		let ind		= 0;
-		let dist	= -1;
-		let valid	= false;
-		for(let i=0;i<this.wire_allTargets.length;i++) {
-			const [point, bid, cid, tgt] = this.wire_allTargets[i];
-			if(TGT === Cell.LINK_TARGET.NONE || Cell.canLinkTargets(TGT, tgt)) {
-				const d = pos.add(point, -1.0).hypotSquared();
-				if(d < dist | !valid) { ind=i; dist=d; valid=true; }
-			}
-		}
-		this.wire_targetNearest = this.wire_allTargets[ind];
+	deleteHoveredLinks() {
+		const block = gameData.rootBlock;
+		const del = new Set();
+		for(const item of block.links) if(this.isLinkHovered(item)) del.add(item);
+		for(const item of del.keys()) this.rem_link(item);
 	}
-	wire_getTargetDrawPoints() {
+
+	get_link_draw_points() {
+		if(this.currentMode !== this.MODES.PLACE_LINKS) return [];
+		if(!this.wire_cell_target_nearest) return [];
 		const points = [];
-		const [point0, bid, cid, tgt] = this.wire_targetNearest;
-		points.push(this.wire_targetNearest[0]);
+		const [point0, bid, cid, tgt] = this.wire_cell_target_nearest;
+		points.push(this.wire_cell_target_nearest[0]);
 		if(this.wire_buttonStep >= 1) points.push(this.wire_target1[0]);
 		if(this.wire_buttonStep >= 2) points.push(this.wire_target2[0]);
 		return points;
-	}
-	wire_bindTarget1() {
-		this.wire_target1 = this.wire_targetNearest;
-		return this.wire_target1 !== null;
-	}
-	wire_bindTarget2() {
-		this.wire_target2 = this.wire_targetNearest;
-		const tgt1 = this.wire_target1[3];
-		const tgt2 = this.wire_target2[3];
-		const OUTPUT = Cell.LINK_TARGET.OUTPUT;
-		return (tgt1 != tgt2) & ((tgt1 == OUTPUT) | (tgt2 == OUTPUT));
-	}
-	wire_addNewLink() {
-		const OUTPUT = Cell.LINK_TARGET.OUTPUT;
-		const target1 = this.wire_target1;
-		const target2 = this.wire_target2;
-		let targetSrc = (target1[3] === OUTPUT) ? target1 : target2;
-		let targetDst = (target1[3] !== OUTPUT) ? target1 : target2;
-		const [point_src, bid_src, cid_src, tgt_src] = targetSrc;
-		const [point_dst, bid_dst, cid_dst, tgt_dst] = targetDst;
-		const clr = this.get_wire_colour();
-		const item = new Link(bid_src, bid_dst, cid_src, cid_dst, tgt_dst, clr);
-		this.add_link(item);
-		console.log("NEW LINK", item);
-		return true;
 	}
 
 	oninput_link_colour_r(value) { this.wire_colour_r = value; }

@@ -1,5 +1,5 @@
 import { VerificationUtil } from "../lib/VerificationUtil"
-import { gameData } from "../Main";
+import { gameData, gameUI } from "../Main";
 import {
 	ComponentId,
 	ComponentDimensions,
@@ -141,7 +141,7 @@ export class Block {
 				resolve(false);
 			};
 			const text = "WARNING - links in the following templates will also be deleted:";
-			if(deletionList.length > 0)	GameUI.showLinkDeletionPopup(deletionList, text, onsubmit, oncancel);
+			if(deletionList.length > 0)	gameUI.showLinkDeletionPopup(deletionList, text, onsubmit, oncancel);
 			else						onsubmit();
 		});
 		return promise;

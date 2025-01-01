@@ -1,12 +1,15 @@
 import { CachedValue_Content, CachedValue_Rendering } from "./misc/CachedValue";
-import { BlockTemplate } from "./content/BlockTemplate";
-import { Block } from "./content/Block";
-import { ComponentDimensions } from "./content/ComponentDimensions";
 import { gameUI } from "./Main";
 import {
 	VerificationUtil,
 	Transformation2D,
 } from "./lib/exports";
+import {
+	ComponentDimensions,
+	Block,
+	BlockTemplate,
+	BlockTemplateLibrary,
+} from "./content/exports";
 import { RenderTreeBlock } from "./render/RenderTreeBlock";
 
 
@@ -33,6 +36,8 @@ export class GameData {
 	// ============================================================
 	// BlockTemplate Library.
 	// ------------------------------------------------------------
+
+	blockLibrary = new BlockTemplateLibrary();
 	// TODO: bundle this stuff into a BTLibrary class.
 
 	// list of loaded block templates.

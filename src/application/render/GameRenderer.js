@@ -604,10 +604,8 @@ export class GameRenderer {
 	}
 	
 	drawPreviewLink() {
-		if(!gameUI.wire_nearestValid) return;
-		if(gameUI.currentMode !== gameUI.MODES.PLACE_LINKS) return;
-		const pointList = gameUI.wire_getTargetDrawPoints();
 		// draw circles.
+		const pointList = gameUI.get_link_draw_points();
 		const clr = gameUI.get_wire_colour();
 		for(const point of pointList) {
 			const tran = null;

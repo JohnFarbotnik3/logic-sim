@@ -91,7 +91,7 @@ export class GameUI {
 		}
 		if(errors.length > 0) alert("failed to submit some or all of given inputs:\n"+errors.join("\n"));
 		GameUI.refresh_rootbt_inputs();
-		gameData.setRootBlockTemplate_minor(template.templateId);
+		gameData.refresh_root_block_template(template.templateId);
 	}
 	
 	

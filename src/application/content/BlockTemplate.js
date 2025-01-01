@@ -5,7 +5,6 @@ import { Cell } from "./Cell";
 import { Link } from "./Link";
 import { Text } from "./Text";
 import { Block } from "./Block";
-import { gameData } from "../Main";
 
 /*
 	A BlockTemplate stores the actual implementation of a logic block,
@@ -100,9 +99,6 @@ export class BlockTemplate {
 	// Content accessors
 	// ------------------------------------------------------------
 	
-	getCellById (id) { return this.cells .find(item => item.id == id); }
-	getBlockById(id) { return this.blocks.find(item => item.id == id); }
-	
 	insertItem(list, item) { list.push(item); }
 	removeItem(list, item) {
 		for(let i=0;i<list.length;i++) if(list[i].id === item.id) {
@@ -154,113 +150,5 @@ export class BlockTemplate {
 			}
 		}
 		return {out, ina, inb};
-	}
-	
-	getTemplateIdOfBlock(bid) {
-		return (bid === ComponentId.THIS_BLOCK) ? this.templateId : this.getBlockById(bid).templateId;
-	}
-	
-	getLinksThatPointToCellInTemplate(tid, cid) {
-		const arr = [];
-		for(const link of this.links) {
-			const {bid_src, bid_dst, cid_src, cid_dst, tgt_src, tgt_dst} = link;
-			const tid_src = this.getTemplateIdOfBlock(bid_src);
-			const tid_dst = this.getTemplateIdOfBlock(bid_dst);
-			if((tid_src === tid & cid_src === cid) | (tid_dst === tid & cid_dst === cid)) arr.push(link);
-		}
-		return arr;
-	}
-	static getLinksThatPointToCellInTemplate(tid, cid, includeSelf) {
-		const list = [];// [template, link[]][]
-		for(const [templateId, template] of gameData.blockTemplates.entries()) {
-			if(templateId === tid && !includeSelf) continue;// skip same template.
-			const arr = template.getLinksThatPointToCellInTemplate(tid, cid);
-			if(arr.length > 0) list.push([template, arr]);
-		}
-		return list;
-	}
-	
-	getLinksThatCantFindTargets() {
-		const arr = [];
-		for(const link of this.links) {
-			const {bid_src, bid_dst, cid_src, cid_dst, tgt_src, tgt_dst} = link;
-			const tid_src = this.getTemplateIdOfBlock(bid_src);
-			const tid_dst = this.getTemplateIdOfBlock(bid_dst);
-			const tmp_src = gameData.blockTemplates.get(tid_src);
-			const tmp_dst = gameData.blockTemplates.get(tid_dst);
-			if(!tmp_src.getCellById(cid_src) | !tmp_dst.getCellById(cid_dst)) arr.push(link);
-		}
-		return arr;
-	}
-	static getLinksThatCantFindTargets() {
-		const list = [];// [template, link[]][]
-		for(const [templateId, template] of gameData.blockTemplates.entries()) {
-			const arr = template.getLinksThatCantFindTargets();
-			if(arr.length > 0) list.push([template, arr]);
-		}
-		return list;
-	}
-	
-	static deleteLinksInTemplateLinkList(list) {
-		for(const [template, links] of list) {
-			for(const link of links) {
-				template.removeLink(link);
-				gameData.onRootContentChanged_remLink(link);
-			}
-		}
-	}
-	
-	// ============================================================
-	// Template helpers
-	// ------------------------------------------------------------
-	
-	/*
-		returns a map with the number of instances of all templates that appear
-		in this BlockTemplate's tree (including itself).
-	*/
-	_countUsedTemplates() {
-		// add self to use-count.
-		const used = new Map();// Map<templateId, count>
-		used.set(this.templateId, 1);
-		// sum child template use-counts.
-		for(const block of this.blocks) {
-			const childUsed = block.template.countUsedTemplates();
-			for(const [tid,num] of childUsed.entries()) {
-				const sum = used.has(tid) ? used.get(tid) : 0;
-				used.set(tid, sum+num);
-			}
-		}
-		return used;
-	}
-	_countUsedTemplates_cache = new CachedValue_Content(() => this._countUsedTemplates());
-	countUsedTemplates() {
-		return this._countUsedTemplates_cache.value;
-	}
-	
-	containsTemplate(tid) {
-		return this.countUsedTemplates().has(tid);
-	}
-	containsTemplateDirectly(tid) {
-		for(const block of this.blocks) if(tid === block.templateId) return true;
-		return false;
-	}
-
-	totalCellsInTree() {
-		let used = this.countUsedTemplates();
-		let sum = 0;
-		for(const [tid, count] of used.entries()) { sum += count * gameData.blockTemplates.get(tid).cells.length; }
-		return sum;
-	}
-	totalLinksInTree() {
-		let used = this.countUsedTemplates();
-		let sum = 0;
-		for(const [tid, count] of used.entries()) sum += count * gameData.blockTemplates.get(tid).links.length;
-		return sum;
-	}
-	totalBlocksInTree() {
-		let used = this.countUsedTemplates();
-		let sum = 1;// start by counting this block.
-		for(const [tid, count] of used.entries()) sum += count * gameData.blockTemplates.get(tid).blocks.length;
-		return sum;
 	}
 };

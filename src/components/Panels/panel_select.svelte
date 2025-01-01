@@ -1,9 +1,14 @@
 <script>
 	import InputTable from "../InputTable.svelte";
-	import { gameUI } from "../../application/Main";
+	import { main } from "../../application/Main";
+
+	// TODO: figure out how to do this onMount instead, this may be a race condition.
+	$effect(() => {
+		main.gameUI.on_selection_update();
+	})
 </script>
 
 <div>
-	<InputTable {...gameUI.table_select_cells} />
-	<InputTable {...gameUI.table_select_blocks} />
+	<InputTable {...main.gameUI.table_select_cells} />
+	<InputTable {...main.gameUI.table_select_blocks} />
 </div>

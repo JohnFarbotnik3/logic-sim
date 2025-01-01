@@ -1,16 +1,14 @@
 <script>
-	import { gameUI } from "../application/Main";
+	import { main } from "../application/Main";
 
 	const props = $props();
 
 	let element = $state(null);
-	$effect(() => { gameUI.canvas = element; });
+	$effect(() => { main.gameUI.setCanvas(element); });
 
 	function onresize(event) {
 		console.log("resize", event);
 	}
-
-
 </script>
 
 <style>

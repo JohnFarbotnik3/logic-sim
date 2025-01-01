@@ -1,5 +1,5 @@
 import { RenderTreeBlock } from "./RenderTreeBlock";
-import { gameUI, gameData, gameServer } from "../Main";
+import { main } from "../Main";
 import {
 	mat4,
 	Camera,
@@ -16,8 +16,12 @@ import {
 	ShaderPackingUtil,
 	BROKEN_DRIVER_MYSTERY_OFFSET_U32,
 } from "../WebGL/exports";
-import { Rectangle } from "../lib/exports";
+import {
+	Rectangle,
+	Transformation2D,
+} from "../lib/exports";
 import { Performance } from "../misc/Performance";
+import { CachedValue_Rendering } from "../misc/CachedValue";
 
 
 const INDEX_NONE_SB = 0xffffffff;
@@ -111,12 +115,12 @@ export class GameRenderer {
 		this.clear_buffers();
 		// create draw data.
 		const t0 = Date.now();
-		const renblock = gameData.renderBlock;
+		const renblock = this.renderBlock;
 		if(!renblock) throw("!renblock");
 		const t1 = Date.now();
-		this.drawBlock(renblock, renblock.get_render_data_block(gameData.rootBlock), INDEX_ROOT_SB);
+		this.drawBlock(renblock, renblock.get_render_data_block(main.blockLibrary.rootBlock), INDEX_ROOT_SB);
 		this.drawCursor();
-		if(gameUI.cursor_isSelecting) this.drawDragArea();
+		if(main.gameUI.cursor_isSelecting) this.drawDragArea();
 		this.drawSelection();
 		this.drawPreviewCell();
 		this.drawPreviewLink();
@@ -224,6 +228,22 @@ export class GameRenderer {
 		this.transform_vdata(tran, depth, buf.data, beg, end);
 	}
 	
+
+	// ============================================================
+	// Render Tree
+	// ------------------------------------------------------------
+
+	_renderBlock() {
+		const block = main.blockLibrary.rootBlock;
+		const etran = new Transformation2D();
+		const ctran = RenderTreeBlock.get_content_transformation(block, etran);
+		const depth = 0;
+		const renblock = new RenderTreeBlock(null, block, etran, depth, main.maxDrawDepth);
+		return renblock;
+	}
+	_renderBlock_cache = new CachedValue_Rendering(() => this._renderBlock());
+	get renderBlock() { return this._renderBlock_cache.value; }
+
 	// ============================================================
 	// Shape generators
 	// ------------------------------------------------------------
@@ -450,9 +470,9 @@ export class GameRenderer {
 		// get cell values from simulation.
 		const vals = [cell.value, 0x0, 0x0];
 		if(simblock !== INDEX_NONE_SB) {
-			vals[0] = gameServer.simulation_get_cell_value(cell.id, simblock, 0);
-			vals[1] = gameServer.simulation_get_cell_value(cell.id, simblock, 1);
-			vals[2] = gameServer.simulation_get_cell_value(cell.id, simblock, 2);
+			vals[0] = main.gameServer.simulation_get_cell_value(cell.id, simblock, 0);
+			vals[1] = main.gameServer.simulation_get_cell_value(cell.id, simblock, 1);
+			vals[2] = main.gameServer.simulation_get_cell_value(cell.id, simblock, 2);
 		}
 		const cell_clrs	= [0x0, 0x0, 0x0, 0xffeeccff, 0xffeeccff, 0xffeeccff];
 		const clr_on	= cell.clr;
@@ -468,8 +488,8 @@ export class GameRenderer {
 			- go back to using average scale factor of containing block instead of applying basis vectors.
 		*/
 		if(depth >= 2) return;// skip rendering text beyond depth 2.
-		const isSelected = gameUI.collectionSelected.cells.has(cell) | renderblock.is_selected;
-		const isHovered  = gameUI.collectionHovered .cells.has(cell) | renderblock.is_hovered;
+		const isSelected = main.gameUI.collectionSelected.cells.has(cell) | renderblock.is_selected;
+		const isHovered  = main.gameUI.collectionHovered .cells.has(cell) | renderblock.is_hovered;
 		if(isSelected | isHovered | renderblock.is_selected | renderblock.is_hovered) {
 			const fontHeight = 0.30;
 			const fontColour = 0xffffffff;
@@ -542,8 +562,8 @@ export class GameRenderer {
 	drawBlock(renderblock, renderData, simblock=INDEX_NONE_SB) {
 		const t0 = Date.now();
 		// update hovered state.
-		renderblock.is_hovered  = gameUI.collectionHovered .blocks.has(renderblock.block);
-		renderblock.is_selected = gameUI.collectionSelected.blocks.has(renderblock.block);
+		renderblock.is_hovered  = main.gameUI.collectionHovered .blocks.has(renderblock.block);
+		renderblock.is_selected = main.gameUI.collectionSelected.blocks.has(renderblock.block);
 		// draw background.
 		{
 			const { block, tran } = renderData;
@@ -570,7 +590,7 @@ export class GameRenderer {
 		const t4 = Date.now();
 		for(const data of renderblock.render_data_blocks) {
 			const childRB = renderblock.children.get(data.block.id);
-			const childSB = gameServer.simulation_get_child_simblock(data.block.id, simblock);
+			const childSB = main.gameServer.simulation_get_child_simblock(data.block.id, simblock);
 			if(childRB) this.drawBlock(childRB, data, childSB);
 			else this.drawBlockPlaceholder(renderblock, data);
 		}
@@ -585,16 +605,16 @@ export class GameRenderer {
 	// ------------------------------------------------------------
 	
 	drawPreviewCell() {
-		const cell = gameUI.get_render_preview_cell();
+		const cell = main.gameUI.get_render_preview_cell();
 		if(!cell) return;
-		const renblock = gameData.renderBlock;
+		const renblock = this.renderBlock;
 		this.drawCell(renblock, renblock.get_render_data_cell(cell));
 	}
 	
 	drawPreviewBlock() {
-		const block = gameUI.get_render_preview_block();
+		const block = main.gameUI.get_render_preview_block();
 		if(!block) return;
-		const parent	= gameData.renderBlock;
+		const parent	= this.renderBlock;
 		const exttran	= parent.contentTran;
 		const depth		= parent.depth + 1;
 		const maxDepth	= parent.depth + 2;
@@ -605,8 +625,8 @@ export class GameRenderer {
 	
 	drawPreviewLink() {
 		// draw circles.
-		const pointList = gameUI.get_link_draw_points();
-		const clr = gameUI.get_wire_colour();
+		const pointList = main.gameUI.get_link_draw_points();
+		const clr = main.gameUI.get_wire_colour();
 		for(const point of pointList) {
 			const tran = null;
 			const depth = this.DEPTH_ON_TOP;
@@ -624,13 +644,13 @@ export class GameRenderer {
 		const tran = null;
 		const depth = this.DEPTH_ON_TOP;
 		const clr = ShaderPackingUtil.packed_rgba_8bit(255,255,111,255);
-		const pos = gameUI.cursor_pos;
-		const radius = gameUI.cursor_radius;
+		const pos = main.gameUI.cursor_pos;
+		const radius = main.gameUI.cursor_radius;
 		this.push_content_line_circle(tran, depth, pos[0], pos[1], radius, 30, clr);
 	}
 
 	drawDragArea() {
-		const [x1,y1,x2,y2] = gameUI.cursor_dragAABB;
+		const [x1,y1,x2,y2] = main.gameUI.cursor_dragAABB;
 		const tran = null;
 		const depth = this.DEPTH_ON_TOP;
 		const rect = [x1,y1,(x2-x1),(y2-y1)];
@@ -639,7 +659,7 @@ export class GameRenderer {
 	}
 	
 	pushSelectionRectangles(collection, rect, clr) {
-		const renblock = gameData.renderBlock;
+		const renblock = this.renderBlock;
 		const depth = this.DEPTH_ON_TOP;
 		for(const item of collection.cells ) { const tran=renblock.item_trans.get(item.id); this.line_rects_push(tran, depth, rect, clr); }
 		for(const item of collection.texts ) { const tran=renblock.item_trans.get(item.id); this.line_rects_push(tran, depth, rect, clr); }
@@ -650,14 +670,14 @@ export class GameRenderer {
 		const s = 0.03;
 		const unit_rect = [0.0-s, 0.0-s, 1.0+s*2, 1+s*2];
 		const clr = 0xffff55ff;
-		this.pushSelectionRectangles(gameUI.collectionSelected, unit_rect, clr);
+		this.pushSelectionRectangles(main.gameUI.collectionSelected, unit_rect, clr);
 	}
 	
 	drawHovered() {
 		const s = 0.00;
 		const unit_rect = [0.0-s, 0.0-s, 1.0+s*2, 1+s*2];
 		const clr = 0xaaccffff;
-		this.pushSelectionRectangles(gameUI.collectionHovered, unit_rect, clr);
+		this.pushSelectionRectangles(main.gameUI.collectionHovered, unit_rect, clr);
 	}
 	
 };

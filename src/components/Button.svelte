@@ -3,9 +3,9 @@
 	const props = $props();
 
 	// add to element map.
-	import { gameUI } from "../application/Main.js";
+	import { main } from "../application/Main.js";
 	let element = $state(null);
-	$effect(() => { gameUI.elementMap.set(props.id, element); });
+	$effect(() => { main.gameUI.elementMap.set(props.id, element); });
 </script>
 
 <style>

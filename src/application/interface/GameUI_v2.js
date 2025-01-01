@@ -7,7 +7,7 @@ import {
 	CELL_PROPERTIES,
 } from "../content/exports";
 import { InputProps, INPUT_TYPES } from "../../components/Input";
-import { main, gameData, gameRenderer, gameServer } from "../Main.js";
+import { main } from "../Main.js";
 import { InputHandlerSet } from "./InputHandlerSet";
 import {
 	Vector3D,
@@ -23,17 +23,8 @@ export class GameUI {
 	// ------------------------------------------------------------
 
 	init() {
-		// add event listeners.
-		const canvas = this.getCanvas();
-		this.resizeCanvas();
-		window.addEventListener("resize"		, (ev) => this.resizeCanvas.call(this));
-		canvas.addEventListener("mouseenter"	, (ev) => this.canvas_onEnter.call(this));
-		canvas.addEventListener("mouseleave"	, (ev) => this.canvas_onLeave.call(this));
-		canvas.addEventListener("contextmenu"	, (ev) => ev.preventDefault());
 		// create input handler.
 		this.input = new InputHandlerSet();
-
-		this.update_template_list();
 	}
 
 	// ============================================================
@@ -52,9 +43,11 @@ export class GameUI {
 		FILE:			"File",
 	};
 	currentMode = this.MODES.SELECT;
+	setCurrentMode_callback = null;
 	setCurrentMode(mode) {
 		console.log("GameUI_v2.setCurrentMode(mode)", mode);
 		this.currentMode = mode;
+		if(this.setCurrentMode_callback) this.setCurrentMode_callback(mode);
 	}
 
 	get buttonDownL() { return this.input.button_prev.get(0); }
@@ -65,7 +58,8 @@ export class GameUI {
 	get dragEnded() { return (this.clickDeltaL === -1) && this.isCanvasHovered && this.isCanvasActive; }
 
 	update() {
-		const camera = gameRenderer.camera;
+		console.log("main.gameRenderer", main.gameRenderer);
+		const camera = main.gameRenderer.camera;
 		const input = this.input;
 		input.updateInputDeltas();
 
@@ -144,7 +138,7 @@ export class GameUI {
 	update_hotkeys() {
 		const active = !this.isInputElementActive;
 		const input = this.input;
-		const camera = gameRenderer.camera;
+		const camera = main.gameRenderer.camera;
 		//if(active & input.getKeydownDelta("p") === +1) GameUI.clickButton(this.hotkey_btn_play);
 		if(active & input.getKeydownDelta("x") === +1) this.setCurrentMode(this.MODES.SELECT);
 		if(active & input.getKeydownDelta("v") === +1) this.setCurrentMode(this.MODES.SET_VALUES);
@@ -221,18 +215,12 @@ export class GameUI {
 	// Canvas
 	// ------------------------------------------------------------
 
-	canvas = null;
-	getCanvas() {
-		return this.canvas;
-	}
-
 	get isCanvasActive() { return !this.isInputElementActive; }
 
 	isCanvasHovered = true;
-	canvas_onEnter(event) { this.isCanvasHovered = true; console.log("canvas_onEnter", this.isCanvasHovered, this); }
-	canvas_onLeave(event) { this.isCanvasHovered = false; console.log("canvas_onLeave", this.isCanvasHovered, this); }
-
-	resizeCanvas(event) {
+	canvas_onmouseenter() { this.isCanvasHovered = true; }
+	canvas_onmouseleave() { this.isCanvasHovered = false; }
+	window_onresize() {
 		console.log(`resizing canvas`);
 		const canvas = this.getCanvas();
 		const cw = canvas.width;
@@ -242,6 +230,35 @@ export class GameUI {
 		canvas.width  = Math.floor(rect.width);
 		canvas.height = Math.floor(rect.height);
 		main.recreateRenderer(canvas);
+	}
+
+	listener_window_onresize = null;
+	listener_canvas_onmouseenter = null;
+	listener_canvas_onmouseleave = null;
+	listener_canvas_contextmenu = null;
+
+	canvas = null;
+	getCanvas() { return this.canvas; }
+	setCanvas(newCanvas) {
+		// remove old event listeners.
+		if(this.canvas) {
+			const canvas = this.canvas;
+			canvas.removeEventListener("mouseenter"	, this.listener_canvas_onmouseenter);
+			canvas.removeEventListener("mouseleave"	, this.listener_canvas_onmouseleave);
+			canvas.removeEventListener("contextmenu", this.listener_canvas_contextmenu);
+			window.removeEventListener("resize"		, this.listener_window_onresize);
+		}
+		// add new event listeners.
+		const canvas = this.canvas = newCanvas;
+		this.listener_canvas_onmouseenter	= (ev) => this.canvas_onmouseenter.call(this);
+		this.listener_canvas_onmouseleave	= (ev) => this.canvas_onmouseleave.call(this);
+		this.listener_canvas_contextmenu	= (ev) => ev.preventDefault();
+		this.listener_window_onresize		= (ev) => this.window_onresize.call(this);
+		canvas.addEventListener("mouseenter"	, this.listener_canvas_onmouseenter);
+		canvas.addEventListener("mouseleave"	, this.listener_canvas_onmouseleave);
+		canvas.addEventListener("contextmenu"	, this.listener_canvas_contextmenu);
+		window.addEventListener("resize"		, this.listener_window_onresize);
+		this.window_onresize();
 	}
 
 	// ============================================================
@@ -285,14 +302,14 @@ export class GameUI {
 	changedContent  () { CachedValue_Content  .onChange(); }
 	changedRendering() { CachedValue_Rendering.onChange(); }
 
-	add_cell (item) { gameData.rootBlock.insertCell (item); }
-	add_link (item) { gameData.rootBlock.insertLink (item); }
-	add_block(item) { gameData.rootBlock.insertBlock(item); this.on_minor_blocklib_change(); }
-	add_text (item) { gameData.rootBlock.insertText (item); }
-	rem_cell (item) { gameData.rootBlock.deleteCell (item); }
-	rem_link (item) { gameData.rootBlock.deleteLink (item); }
-	rem_block(item) { gameData.rootBlock.deleteBlock(item); this.on_minor_blocklib_change(); }
-	rem_text (item) { gameData.rootBlock.deleteText (item); }
+	add_cell (item) { main.blockLibrary.rootBlock.insertCell (item); }
+	add_link (item) { main.blockLibrary.rootBlock.insertLink (item); }
+	add_block(item) { main.blockLibrary.rootBlock.insertBlock(item); this.on_minor_blocklib_change(); }
+	add_text (item) { main.blockLibrary.rootBlock.insertText (item); }
+	rem_cell (item) { main.blockLibrary.rootBlock.deleteCell (item); }
+	rem_link (item) { main.blockLibrary.rootBlock.deleteLink (item); }
+	rem_block(item) { main.blockLibrary.rootBlock.deleteBlock(item); this.on_minor_blocklib_change(); }
+	rem_text (item) { main.blockLibrary.rootBlock.deleteText (item); }
 	move_item(item,x,y,w,h,r) {
 		const dim = item.dimensions;
 		if(
@@ -339,7 +356,7 @@ export class GameUI {
 		const minv = 1.0 / mult;
 		const pos = this.cursor_pos.slice();
 		const ofs = [0, 0];
-		gameData.renderBlock.contentTran.applyOffset(ofs, 0, 2, 2);
+		main.gameRenderer.renderBlock.contentTran.applyOffset(ofs, 0, 2, 2);
 		const x = Math.round((pos[0] - ofs[0]) * minv) * mult;
 		const y = Math.round((pos[1] - ofs[1]) * minv) * mult;
 		return [x,y];
@@ -457,24 +474,24 @@ export class GameUI {
 		this.collectionTranslating.clear();
 	}
 	isItemInDragArea(item) {
-		const aabb = gameData.renderBlock.get_axis_aligned_bounding_box(item);
+		const aabb = main.gameRenderer.renderBlock.get_axis_aligned_bounding_box(item);
 		VerificationUtil.verifyType_throw(aabb, Float32Array);
 		return VectorUtil.collision_aabb_aabb_2d(aabb, this.cursor_dragAABB);
 	}
 	isItemHovered(item) {
-		const aabb = gameData.renderBlock.get_axis_aligned_bounding_box(item);
+		const aabb = main.gameRenderer.renderBlock.get_axis_aligned_bounding_box(item);
 		VerificationUtil.verifyType_throw(aabb, Float32Array);
 		return VectorUtil.collision_aabb_point_2d(aabb, this.cursor_pos);
 	}
 	selectAllItemsInDragArea() {
-		const block = gameData.rootBlock;
+		const block = main.blockLibrary.rootBlock;
 		for(const item of block.cells ) if(this.isItemInDragArea(item)) this.collectionSelected.cells .add(item);
 		for(const item of block.texts ) if(this.isItemInDragArea(item)) this.collectionSelected.texts .add(item);
 		for(const item of block.blocks) if(this.isItemInDragArea(item)) this.collectionSelected.blocks.add(item);
 	}
 	updateHoveredItems() {
 		this.collectionHovered.clear();
-		const block = gameData.rootBlock;
+		const block = main.blockLibrary.rootBlock;
 		for(const item of block.cells ) if(this.isItemHovered(item)) this.collectionHovered.cells .add(item);
 		for(const item of block.texts ) if(this.isItemHovered(item)) this.collectionHovered.texts .add(item);
 		for(const item of block.blocks) if(this.isItemHovered(item)) this.collectionHovered.blocks.add(item);
@@ -493,7 +510,7 @@ export class GameUI {
 		for(const item of this.collectionTranslating.blocks) this.translate_item(item,dx,dy);
 	}
 	deleteSelectedItems() {
-		const block = gameData.rootBlock;
+		const block = main.blockLibrary.rootBlock;
 		for(const item of this.collectionSelected.cells ) this.rem_cell(item);
 		for(const item of this.collectionSelected.texts ) this.rem_text(item);
 		for(const item of this.collectionSelected.blocks) this.rem_block(item);
@@ -664,7 +681,7 @@ export class GameUI {
 
 	update_mode_place_links() {
 		// highlight nearest link-point.
-		const blocklib = gameData.blockLibrary;
+		const blocklib = main.blockLibrary;
 		const targets = blocklib.get_all_cell_targets();
 		this.wire_cell_targets = targets;
 		const first_target = (this.wire_buttonStep > 0) ? this.wire_target1[3] : Cell.LINK_TARGET.NONE;
@@ -708,7 +725,7 @@ export class GameUI {
 	}
 
 	isLinkHovered(link) {
-		const points = gameData.renderBlock.l_points.get(link.id);
+		const points = main.gameRenderer.renderBlock.l_points.get(link.id);
 		const pointC = new Vector2D(this.cursor_pos.slice(0,2));
 		const pointA = new Vector2D(points.slice(0,2));
 		const pointB = new Vector2D(points.slice(3,5));
@@ -718,7 +735,7 @@ export class GameUI {
 		return distance <= this.cursor_radius;
 	}
 	deleteHoveredLinks() {
-		const block = gameData.rootBlock;
+		const block = main.blockLibrary.rootBlock;
 		const del = new Set();
 		for(const item of block.links) if(this.isLinkHovered(item)) del.add(item);
 		for(const item of del.keys()) this.rem_link(item);
@@ -774,7 +791,7 @@ export class GameUI {
 			this.place_preview_block = new Block(dim, tid);
 		}
 		else tid = this.place_preview_block?.templateId;
-		const safe = tid && !gameData.blockTemplates.get(tid).containsRootBlockTemplate();
+		const safe = tid && !main.blockLibrary.containsRootTemplate(tid);
 		if(this.place_preview_block && safe) this.setCurrentMode(this.MODES.PLACE_BLOCK);
 		else this.setCurrentMode(null);
 		// set which button is in toggled state.
@@ -787,16 +804,16 @@ export class GameUI {
 	}
 
 	onclick_block_edit(event, templateId) {
-		gameData.setRootBlockTemplate(templateId);
+		main.set_root_block_template(templateId);
 	}
 	onclick_block_place(event, templateId) {
 		this.onclick_block_type(event, templateId);
-		const template = gameData.blockTemplates.get(templateId);
+		const template = main.blockLibrary.templates.get(templateId);
 		this.block_inputs.setValue(0, template.placeW, true);
 		this.block_inputs.setValue(1, template.placeH, true);
 	}
 	onclick_block_remove(event, templateId) {
-		gameData.deleteBlockTemplate(templateId);
+		main.blockLibrary.deleteBlockTemplate(templateId);
 	}
 
 	info_place_blocks = [
@@ -821,16 +838,17 @@ export class GameUI {
 	/* update callback, set by the list element when if loads. */
 	update_template_list_callback = null;
 	update_template_list() {
+		const blocklib = main.blockLibrary;
 		const list = [];
-		for(const [tid, template] of gameData.blockTemplates.entries()) {
-			const rootId = gameData.rootBlock.templateId;
+		for(const [tid, template] of blocklib.templates.entries()) {
+			const rootId = blocklib.rootBlock.templateId;
 			const isEditing	= rootId === tid;
-			const canPlace	= !template.containsTemplate(rootId);
-			const canRemove	= gameData.canDeleteBlockTemplate(tid);
+			const canPlace	= !blocklib.containsRootTemplate(tid);
+			const canRemove	= blocklib.canDeleteBlockTemplate(tid);
 			const info = { templateId:tid, isEditing, canPlace, canRemove };
 			list.push(info);
 		}
-		this.update_template_list_callback(list);
+		if(this.update_template_list_callback) this.update_template_list_callback(list);
 	}
 
 	/*

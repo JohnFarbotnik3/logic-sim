@@ -219,6 +219,6 @@ may have recursive behaviour.
 * add shared mouse-following tooltip component (confined to window area).
 
 > decouple which panel is open and current placement mode.
-
+> add blue background to panel buttons indicating which mode is active (try mixing colours when both open and active)
 
 

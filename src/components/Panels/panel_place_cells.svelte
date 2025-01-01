@@ -2,13 +2,13 @@
 	import InputTable from "../InputTable.svelte";
 	import Button from "../Button.svelte";
 	import Grid from "../Grid.svelte";
-	import { gameUI } from "../../application/Main";
+	import { main } from "../../application/Main";
 	import { CELL_PROPERTIES } from "../../application/content/CellTypes";
 
 	const ctypes = [...Object.values(CELL_PROPERTIES)];
 
 	function onclick_cell_type(event, ctype) {
-		gameUI.onclick_cell_type.call(gameUI, event, ctype);
+		main.gameUI.onclick_cell_type.call(main.gameUI, event, ctype);
 	}
 
 	function packedRGBA(clr) {
@@ -21,7 +21,7 @@
 </script>
 
 <div>
-	<InputTable {...gameUI.table_place_cells} />
+	<InputTable {...main.gameUI.table_place_cells} />
 	<div style="margin:5px;">
 		<Grid cols="1fr 1fr">
 			{#each ctypes as ct}

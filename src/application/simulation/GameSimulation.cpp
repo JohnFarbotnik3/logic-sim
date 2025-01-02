@@ -96,35 +96,50 @@ struct GameSimulation {
 		delete[] olddata;
 	}
 	
+	bool has_outputting_links(const Map<ItemId, Map<ItemId, Map<ItemId, Vector<Link>>>>& linkmap, ItemId tid, ItemId bid) {
+		return linkmap.contains(tid) && linkmap.at(tid).contains(bid);
+	}
+
 	void generate_link_data(
 		SimulationTree& simtree,
 		Vector<SimulationCell>& cell_buffer,
 		Vector<SimulationLink>& link_buffer
 	) {
+		// get map of all outputting links in template library.
+		// format: Map[templateId][blockId][cellId] = Vector<Link>
+		const auto linkmap = simtree.library.getOutputtingLinks();
+		// add link lists to link buffer.
 		for(SimulationBlock& simblock : simtree.simblocks) {
 			const BlockTemplate& btmp = simtree.getTemplate(simblock);
 			Map<ItemId, Vector<SimulationLink>> gathered_links;
 			// get links in this block which output from a cell in this block.
 			{
-				const auto& map = simtree.library.getOutputtingLinks(simblock.templateId)[ItemId::THIS_BLOCK];
-				for(const auto& [cellId, list] : map) {
-					for(const Link& link : list) {
-						const u32 ind = simtree.getCellIndex(simblock, link.dst.bid, link.dst.cid);
-						const u32 tgt = link.dst.tgt;
-						gathered_links[cellId].emplace_back(ind, tgt);
+				const ItemId tid = simblock.templateId;
+				const ItemId bid = ItemId::THIS_BLOCK;
+				if(has_outputting_links(linkmap, tid, bid)) {
+					const auto& map = linkmap.at(tid).at(bid);
+					for(const auto& [cellId, list] : map) {
+						for(const Link& link : list) {
+							const u32 ind = simtree.getCellIndex(simblock, link.dst.bid, link.dst.cid);
+							const u32 tgt = link.dst.tgt;
+							gathered_links[cellId].emplace_back(ind, tgt);
+						}
 					}
 				}
 			}
 			// get links in parent which output from a cell in this (child) block.
 			if(simblock.parentIndex != SimulationTree::INDEX_NONE) {
 				const SimulationBlock& parentSB = simtree.getParent(simblock);
-				const auto& map = simtree.library.getOutputtingLinks(parentSB.templateId)[simblock.blockId];
-				auto& supermap = simtree.library.getOutputtingLinks(parentSB.templateId);
-				for(const auto& [cellId, list] : map) {
-					for(const Link& link : list) {
-						const u32 ind = simtree.getCellIndex(parentSB, link.dst.bid, link.dst.cid);
-						const u32 tgt = link.dst.tgt;
-						gathered_links[cellId].emplace_back(ind, tgt);
+				const ItemId tid = parentSB.templateId;
+				const ItemId bid = simblock.blockId;
+				if(has_outputting_links(linkmap, tid, bid)) {
+					const auto& map = linkmap.at(tid).at(bid);
+					for(const auto& [cellId, list] : map) {
+						for(const Link& link : list) {
+							const u32 ind = simtree.getCellIndex(parentSB, link.dst.bid, link.dst.cid);
+							const u32 tgt = link.dst.tgt;
+							gathered_links[cellId].emplace_back(ind, tgt);
+						}
 					}
 				}
 			}

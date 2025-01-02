@@ -284,7 +284,7 @@ export class GameUI {
 	popup_hide_callback_link_deletion = null;
 	showLinkDeletionPopup(deletionList, text, onsubmit, oncancel) {
 		let html = "";
-		html += `<div>${text}</div>`;
+		html += `<div style="color:pink;">${text}</div>`;
 		for(const [template, links] of deletionList) {
 			const tid = template.templateId;
 			html += `<div>${template.name} (${links.length}x)</div>`;
@@ -795,7 +795,7 @@ export class GameUI {
 			this.place_preview_block = new Block(dim, tid);
 		}
 		else tid = this.place_preview_block?.templateId;
-		const safe = tid && !main.blockLibrary.containsRootTemplate(tid);
+		const safe = tid && !main.blockLibrary.containsRootTemplateInTree(tid);
 		if(this.place_preview_block && safe) this.setCurrentMode(this.MODES.PLACE_BLOCKS);
 		else this.setCurrentMode(null);
 		// set which button is in toggled state.
@@ -854,7 +854,7 @@ export class GameUI {
 		for(const [tid, template] of blocklib.templates.entries()) {
 			const rootId = blocklib.rootBlock.templateId;
 			const isEditing	= rootId === tid;
-			const canPlace	= !blocklib.containsRootTemplate(tid);
+			const canPlace	= !blocklib.containsRootTemplateInTree(tid);
 			const canRemove	= blocklib.canDeleteBlockTemplate(tid);
 			const info = { templateId:tid, name:template.name, isEditing, canPlace, canRemove };
 			list.push(info);

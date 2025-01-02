@@ -27,10 +27,10 @@ struct BlockTemplateLibrary {
 		Returns a map with the number of instances of all templates that appear
 		in this BlockTemplate's tree (including itself).
 	*/
-	Map<ItemId, Map<ItemId, int>> getUsedTemplateCount_cache;
-	Map<ItemId, int>& getUsedTemplateCount(ItemId templateId) {
+	Map<ItemId, Map<ItemId, int>> _countUsedTemplatesInTree_cache;
+	Map<ItemId, int>& _countUsedTemplatesInTree(ItemId templateId) {
 		// check if already cached.
-		if(getUsedTemplateCount_cache.contains(templateId)) return getUsedTemplateCount_cache[templateId];
+		if(_countUsedTemplatesInTree_cache.contains(templateId)) return _countUsedTemplatesInTree_cache[templateId];
 		// add self to use-count.
 		Map<ItemId, int> used;
 		used[templateId] = 1;
@@ -38,32 +38,31 @@ struct BlockTemplateLibrary {
 		const BlockTemplate temp = this->templates[templateId];
 		for(const Block block : temp.blocks) {
 			// NOTE: when values are accessed with '[]' that do not yet exist, c++ maps zero-initialize them.
-			const auto map = getUsedTemplateCount(block.templateId);
+			const auto map = _countUsedTemplatesInTree(block.templateId);
 			for(const auto& [tid, count] : map) used[tid] += count;
 		}
 		// add to cache and return.
-		return getUsedTemplateCount_cache[templateId] = used;
+		return _countUsedTemplatesInTree_cache[templateId] = used;
 	}
-	
-	/* Returns true if template with id occurs anywhere in given BlockTemplate's tree. */
-	bool containsTemplate(ItemId templateId, ItemId id) {
-		return getUsedTemplateCount(templateId).contains(id);
+	Map<ItemId, int>& countUsedTemplatesInTree(ItemId templateId) {
+		_countUsedTemplatesInTree_cache.clear();
+		return _countUsedTemplatesInTree(templateId);
 	}
-	
+
 	int totalCellsInTree(ItemId templateId) {
-		const auto used = getUsedTemplateCount(templateId);
+		const auto used = countUsedTemplatesInTree(templateId);
 		int sum = 0;
 		for(const auto& [tid, count] : used) sum += count * templates[tid].cells.size();
 		return sum;
 	}
 	int totalLinksInTree(ItemId templateId) {
-		const auto used = getUsedTemplateCount(templateId);
+		const auto used = countUsedTemplatesInTree(templateId);
 		int sum = 0;
 		for(const auto& [tid, count] : used) sum += count * templates[tid].links.size();
 		return sum;
 	}
 	int totalBlocksInTree(ItemId templateId) {
-		const auto used = getUsedTemplateCount(templateId);
+		const auto used = countUsedTemplatesInTree(templateId);
 		int sum = 0;
 		for(const auto& [tid, count] : used) sum += count * templates[tid].blocks.size();
 		return sum;
@@ -74,32 +73,23 @@ struct BlockTemplateLibrary {
 	// ------------------------------------------------------------
 	
 	/*
-		Returns map containing all links in [templateId],
+		Returns map containing all links in each template,
 		sorted into per-cell lists based on link source-address.
 	*/
-	Map<ItemId, Map<ItemId, Map<ItemId, Vector<Link>>>> getOutputtingLinks_cache;
-	Map<ItemId, Map<ItemId, Vector<Link>>>& getOutputtingLinks(ItemId templateId) {
-		// check if already cached.
-		if(getOutputtingLinks_cache.contains(templateId)) return getOutputtingLinks_cache[templateId];
-		// collect links into lists based on output source block.
-		Map<ItemId, Map<ItemId, Vector<Link>>> map;
-		const BlockTemplate btmp = this->templates[templateId];
-		for(const auto link : btmp.links) {
-			map[link.src.bid][link.src.cid].push_back(link);
-			assert(map[link.src.bid][link.src.cid].size() > 0);
+	Map<ItemId, Map<ItemId, Map<ItemId, Vector<Link>>>> getOutputtingLinks() {
+		Map<ItemId, Map<ItemId, Map<ItemId, Vector<Link>>>> map;
+		for(const auto& [tid, btmp] : this->templates) {
+			for(const auto link : btmp.links) {
+				map[tid][link.src.bid][link.src.cid].push_back(link);
+				assert(map[tid][link.src.bid][link.src.cid].size() > 0);
+			}
 		}
-		// add to cache and return.
-		return getOutputtingLinks_cache[templateId] = map;
+		return map;
 	}
 
 	// ============================================================
 	// Content modification
 	// ------------------------------------------------------------
-
-	void clear_caches() {
-		this->getUsedTemplateCount_cache.clear();
-		this->getOutputtingLinks_cache.clear();
-	}
 
 	void new_template(String templateId, String name, String desc, float innerW, float innerH, float placeW, float placeH) {
 		BlockTemplate btmp;
@@ -111,7 +101,6 @@ struct BlockTemplateLibrary {
 		btmp.placeW = placeW;
 		btmp.placeH = placeH;
 		this->templates[templateId] = btmp;
-		this->clear_caches();
 	}
 
 	void add_cell(String templateId, String id, ItemDim dim, u32 type, u32 value) {
@@ -124,7 +113,6 @@ struct BlockTemplateLibrary {
 		item.initProperties();
 		assert(item.taskOrder < NUM_CELL_TYPES);
 		this->templates[templateId].cells.push_back(item);
-		this->clear_caches();
 	}
 
 	void add_link(
@@ -141,7 +129,6 @@ struct BlockTemplateLibrary {
 		item.dst = dst;
 		item.clr = clr;
 		this->templates[templateId].links.push_back(item);
-		this->clear_caches();
 	}
 
 	void add_block(String templateId, String id, String tid, ItemDim dim) {
@@ -150,7 +137,6 @@ struct BlockTemplateLibrary {
 		item.templateId = tid;
 		item.dim = dim;
 		this->templates[templateId].blocks.push_back(item);
-		this->clear_caches();
 	}
 };
 

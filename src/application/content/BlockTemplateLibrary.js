@@ -28,39 +28,35 @@ export class BlockTemplateLibrary {
 		returns a map with the number of instances of all templates that appear
 		in this BlockTemplate's tree (including itself).
 	*/
-	_countUsedTemplates_cache = new Map();// Map<templateId>
-	_countUsedTemplates(templateId) {
+	_countUsedTemplatesInTree_cache = new Map();// Map<templateId>
+	_countUsedTemplatesInTree(templateId) {
 		// check cache.
-		if(this._countUsedTemplates_cache.has(templateId)) return this._countUsedTemplates_cache.get(templateId);
+		const cache = this._countUsedTemplatesInTree_cache;
+		if(cache.has(templateId)) return cache.get(templateId);
 		// add self to use-count.
 		const used = new Map();// Map<templateId, count>
 		used.set(templateId, 1);
 		// sum child template use-counts.
 		const template = this.templates.get(templateId);
 		for(const block of template.blocks) {
-			const map = this._countUsedTemplates(block.templateId);
+			const map = this._countUsedTemplatesInTree(block.templateId);
 			for(const [tid,num] of map.entries()) used.set(tid, (used.get(tid) ?? 0) + num);
 		}
 		// add to cache and return.
-		this._countUsedTemplates_cache.set(templateId, used);
+		cache.set(templateId, used);
 		return used;
 	}
-	countUsedTemplates(templateId) {
+	countUsedTemplatesInTree(templateId) {
 		if(!templateId) throw("missing templateId");
-		this._countUsedTemplates_cache.clear();
-		return this._countUsedTemplates(templateId);
+		this._countUsedTemplatesInTree_cache.clear();
+		return this._countUsedTemplatesInTree(templateId);
 	}
 
-	containsTemplate(templateId, tid) {
-		return this.countUsedTemplates(templateId).has(tid);
+	containsTemplateInTree(templateId, tid) {
+		return this.countUsedTemplatesInTree(templateId).has(tid);
 	}
-	containsTemplateDirectly(templateId, tid) {
-		const template = this.templates.get(templateId);
-		for(const block of template.blocks) if(tid === block.templateId) return true;
-		return false;
-	}
-	containsRootTemplate(templateId) {
-		return this.containsTemplate(templateId, this.rootBlock.templateId);
+	containsRootTemplateInTree(templateId) {
+		return this.countUsedTemplatesInTree(templateId).has(this.rootBlock.templateId);
 	}
 
 	// ============================================================
@@ -88,15 +84,15 @@ export class BlockTemplateLibrary {
 
 	/* Return all templates that contain templateId. */
 	getTemplateDependents(templateId) {
-		const deps = [];// [template, useCount, direct][]
+		const deps = [];// [template, useCount][]
 		for(const [tid, template] of this.templates.entries()) {
 			if(tid !== templateId) {
-				const used = this.countUsedTemplates(tid);
-				if(used.has(templateId)) {
-					const useCount = used.get(templateId);
-					const direct = this.containsTemplateDirectly(tid, templateId);
-					deps.push([template, useCount, direct]);
+				const used = new Map();// Map<templateId, count>
+				for(const block of template.blocks) {
+					const tid = block.templateId;
+					used.set(tid, (used.get(tid) ?? 0) + 1);
 				}
+				if(used.has(templateId)) deps.push([template, used.get(templateId)]);
 			}
 		}
 		return deps;

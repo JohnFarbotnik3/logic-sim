@@ -9,23 +9,30 @@
 </script>
 
 <style>
-	div {
-		padding: 2px;
-		margin: 2px;
+	button {
+		width: 100%;
+		min-width: fit-content;
 		background: #000;
+		color: inherit;
+		font-family: inherit;
 		display: flex;
 		justify-content: center;
 		align-items: center;
+		border: none;
+		cursor: pointer;
 	}
-	div[toggled=true] {
-		background: #333;
+	button[toggled=true] {
+		background: #333 !important;
 		filter: brightness(1.5);
 	}
-	div:hover {
-		background: #443;
+	button:hover {
+		filter: contrast(0.7) brightness(1.5);
+	}
+	button:disabled {
+		filter: contrast(0.7) brightness(0.7);
 	}
 </style>
 
-<div {...props}>
+<button {...props}>
 	{@render props?.children()}
-</div>
+</button>

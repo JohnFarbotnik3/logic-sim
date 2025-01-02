@@ -45,9 +45,6 @@ class Main {
 		for(const tid of this.blockLibrary.templates.keys()) { templateId = tid; break; }
 		this.set_root_block_template(templateId);
 
-		// update templatelist.
-		this.gameUI.update_template_list();
-
 		// start update cycle.
 		requestAnimationFrame((t) => this.update.call(this, t));
 	}

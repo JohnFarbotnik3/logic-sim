@@ -34,7 +34,7 @@ export class BlockTemplateLibrary {
 		if(this._countUsedTemplates_cache.has(templateId)) return this._countUsedTemplates_cache.get(templateId);
 		// add self to use-count.
 		const used = new Map();// Map<templateId, count>
-		used.set(this.templateId, 1);
+		used.set(templateId, 1);
 		// sum child template use-counts.
 		const template = this.templates.get(templateId);
 		for(const block of template.blocks) {
@@ -121,7 +121,7 @@ export class BlockTemplateLibrary {
 			return;
 		}
 		console.log("deleting template", templateId);
-		this.blockTemplates.delete(templateId);
+		this.templates.delete(templateId);
 		main.gameUI.on_major_blocklib_change();
 	}
 

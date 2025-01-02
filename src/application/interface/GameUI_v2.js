@@ -4,6 +4,7 @@ import {
 	Link,
 	Block,
 	ComponentId,
+	ComponentDimensions,
 	CELL_PROPERTIES,
 } from "../content/exports";
 import { InputProps, INPUT_TYPES } from "../../components/Input";
@@ -14,6 +15,7 @@ import {
 	Vector2D,
 	VectorUtil,
 	VerificationUtil,
+	PromiseUtil,
 } from "../lib/exports";
 import { CachedValue_Content, CachedValue_Rendering } from "../misc/CachedValue";
 
@@ -47,7 +49,9 @@ export class GameUI {
 	setCurrentMode(mode) {
 		console.log("GameUI_v2.setCurrentMode(mode)", mode);
 		this.currentMode = mode;
-		if(this.setCurrentMode_callback) this.setCurrentMode_callback(mode);
+		PromiseUtil.tryUntilTruthy(() => this.setCurrentMode_callback, [], 100, 20)
+			.then((func) => func(mode))
+			.catch(() => console.error("failed to call setCurrentMode_callback"));
 	}
 
 	get buttonDownL() { return this.input.button_prev.get(0); }
@@ -58,7 +62,6 @@ export class GameUI {
 	get dragEnded() { return (this.clickDeltaL === -1) && this.isCanvasHovered && this.isCanvasActive; }
 
 	update() {
-		console.log("main.gameRenderer", main.gameRenderer);
 		const camera = main.gameRenderer.camera;
 		const input = this.input;
 		input.updateInputDeltas();
@@ -94,8 +97,6 @@ export class GameUI {
 
 		// update hovered items.
 		this.updateHoveredItems();
-
-		console.log("this.currentMode", this.currentMode);
 
 		// select, translate, or delete items.
 		if(this.currentMode === this.MODES.SELECT) {
@@ -792,7 +793,7 @@ export class GameUI {
 		}
 		else tid = this.place_preview_block?.templateId;
 		const safe = tid && !main.blockLibrary.containsRootTemplate(tid);
-		if(this.place_preview_block && safe) this.setCurrentMode(this.MODES.PLACE_BLOCK);
+		if(this.place_preview_block && safe) this.setCurrentMode(this.MODES.PLACE_BLOCKS);
 		else this.setCurrentMode(null);
 		// set which button is in toggled state.
 		const key = "panel_block_btn_toggled";
@@ -808,9 +809,13 @@ export class GameUI {
 	}
 	onclick_block_place(event, templateId) {
 		this.onclick_block_type(event, templateId);
+		// update place-W and place-H inputs.
+		const inputs = this.table_place_blocks.inputs;
 		const template = main.blockLibrary.templates.get(templateId);
-		this.block_inputs.setValue(0, template.placeW, true);
-		this.block_inputs.setValue(1, template.placeH, true);
+		this.setElementValue(inputs[0].id, template.placeW);
+		this.setElementValue(inputs[1].id, template.placeH);
+		this.oninput_block_w(template.placeW);
+		this.oninput_block_h(template.placeH);
 	}
 	onclick_block_remove(event, templateId) {
 		main.blockLibrary.deleteBlockTemplate(templateId);
@@ -839,16 +844,21 @@ export class GameUI {
 	update_template_list_callback = null;
 	update_template_list() {
 		const blocklib = main.blockLibrary;
+		// check if root block has not been assigned yet (happens during init).
+		if(!blocklib.rootBlock) return;
+		// generate template info list.
 		const list = [];
 		for(const [tid, template] of blocklib.templates.entries()) {
 			const rootId = blocklib.rootBlock.templateId;
 			const isEditing	= rootId === tid;
 			const canPlace	= !blocklib.containsRootTemplate(tid);
 			const canRemove	= blocklib.canDeleteBlockTemplate(tid);
-			const info = { templateId:tid, isEditing, canPlace, canRemove };
+			const info = { templateId:tid, name:template.name, isEditing, canPlace, canRemove };
 			list.push(info);
 		}
-		if(this.update_template_list_callback) this.update_template_list_callback(list);
+		PromiseUtil.tryUntilTruthy(() => this.update_template_list_callback, [], 100, 20)
+			.then((func) => func(list))
+			.catch(() => console.error("failed to call update_template_list_callback"));
 	}
 
 	/*
@@ -861,11 +871,11 @@ export class GameUI {
 
 	on_major_blocklib_change() {
 		this.clearCollections();
-		if(this.block_buttons_grid) this.update_template_list();
+		this.update_template_list();
 		if(this.rootbt_panel) this.refresh_rootbt_inputs();
 	}
 	on_minor_blocklib_change() {
-		if(this.block_buttons_grid) this.update_template_list();
+		this.update_template_list();
 		if(this.rootbt_panel) this.refresh_rootbt_inputs();
 	}
 

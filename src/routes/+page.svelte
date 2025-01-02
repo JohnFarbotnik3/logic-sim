@@ -40,6 +40,9 @@
 			[gameUI.MODES.PLACE_LINKS	, Panels.panel_place_links],
 			[gameUI.MODES.PLACE_BLOCKS	, Panels.panel_place_blocks],
 		]);
+
+		// update templatelist.
+		main.gameUI.update_template_list();
 	});
 
 
@@ -55,11 +58,11 @@
 		<Grid cols="1fr">
 			<Canvas class="first_column" id="canvas"></Canvas>
 			<Grid class="first_column" cols="auto auto" style="width: fit-content; height: fit-content;">
-				<div id="sidebar">
+				<Grid id="sidebar" cols="auto">
 					{#each modes as mode}
 					<Button toggled={currentPanel === mode} onclick={() => currentPanel = mode} title={titles.get(mode)}>{mode}</Button>
 					{/each}
-				</div>
+				</Grid>
 				<div id="panelarea">
 					{#each modes as mode}
 					<div class="sidepanel" style={currentPanel === mode ? "" : "display: none;"}>
@@ -106,8 +109,8 @@
 .sidepanel {
 	width: fit-content;
 	height: fit-content;
-	background: #000;
 	position: absolute;
+	background: #0007;
 }
 
 /*

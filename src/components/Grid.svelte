@@ -10,6 +10,8 @@
 		display: grid;
 		height: 100%;
 		width: 100%;
+		grid-gap: 2px;
+		background: #0007;
 	}
 </style>
 

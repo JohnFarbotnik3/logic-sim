@@ -219,7 +219,7 @@ may have recursive behaviour.
 
 > decouple which panel is open and current placement mode.
 > add blue background to panel buttons indicating which mode is active (try mixing colours when both open and active)
-
+> add way to close panels while in a placement mode.
 
 
 

@@ -230,10 +230,11 @@ export class BlockTemplateLibrary {
 				const {bid_src, bid_dst, cid_src, cid_dst, tgt_src, tgt_dst} = link;
 				const tid_src = (bid_src === ComponentId.THIS_BLOCK) ? tid : tidmap.get(bid_src);
 				const tid_dst = (bid_dst === ComponentId.THIS_BLOCK) ? tid : tidmap.get(bid_dst);
-				if((tid_src === tid & cid_src === cid) | (tid_dst === tid & cid_dst === cid)) arr.push(link);
+				if((tid_src === templateId & cid_src === cid) | (tid_dst === templateId & cid_dst === cid)) arr.push(link);
 			}
 			if(arr.length > 0) list.push([template, arr]);
 		}
+		console.debug("<>getLinksThatPointToCellInTemplate(templateId, cid, includeSelf)", templateId, cid, includeSelf, list);
 		return list;
 	}
 
@@ -283,18 +284,22 @@ export class BlockTemplateLibrary {
 	verifyLinksCanFindTargets() {
 		const deletionList = this.getLinksThatCantFindTargets();
 		const promise = new Promise((resolve, reject) => {
-			const onsubmit = () => {
-				this.deleteLinksInTemplateLinkList(deletionList);
-				resolve(true);
-				return true;
-			};
-			const oncancel = () => {
-				resolve(false);
-				return true;
-			};
-			const text = "WARNING - links in the following templates failed to find targets (delete links?):";
-			if(deletionList.length > 0)	main.gameUI.showLinkDeletionPopup(deletionList, text, onsubmit, oncancel);
-			else						onsubmit();
+			if(deletionList.length === 0) resolve(true);
+			else {
+				const onsubmit = () => {
+					console.debug("<>verifyLinksCanFindTargets submit");
+					this.deleteLinksInTemplateLinkList(deletionList);
+					main.gameUI.hideLinkDeletionPopup();
+					resolve(true);
+				};
+				const oncancel = () => {
+					console.debug("<>verifyLinksCanFindTargets cancel");
+					main.gameUI.hideLinkDeletionPopup();
+					resolve(false);
+				};
+				const text = "WARNING - links in the following templates failed to find targets (delete links?):";
+				main.gameUI.showLinkDeletionPopup(deletionList, text, onsubmit, oncancel);
+			}
 		});
 		return promise;
 	}

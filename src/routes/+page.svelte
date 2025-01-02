@@ -2,9 +2,11 @@
 	import Grid from "../components/Grid.svelte";
 	import Button from "../components/Button.svelte";
 	import Canvas from "../components/Canvas.svelte";
+	import Popup from "../components/Popup.svelte";
 	import * as Panels from "../components/Panels/Panels.js";
 	import { main } from "../application/Main.js";
 
+	// mode stuff.
 	let modes			= $state([]);
 	let titles			= $state(new Map());
 	let panels			= $state(new Map());
@@ -13,17 +15,33 @@
 	function onModeChange(mode) {
 		currentMode = mode;
 	}
-	$effect(() => {
-		// TODO - somewhat decouple current panel and current mode.
-		main.gameUI.setCurrentMode(currentPanel);
-	});
+	function onclickSetPanelMode(mode) {
+		currentPanel = (currentPanel === mode) ? null : mode;
+		main.gameUI.setCurrentMode(mode);
+	}
 
+	// popup stuff.
+	let popup_link_deletion_props = $state(null);
+	let popup_link_deletion_visible = $state(false);
+	function popup_show_callback_link_deletion(props) {
+		popup_link_deletion_props = props;
+		popup_link_deletion_visible = true;
+	}
+	function popup_hide_callback_link_deletion() {
+		popup_link_deletion_visible = false;
+	}
+
+	// init.
 	main.init().then(() => {
 		const gameUI = main.gameUI;
 
 		modes = [...Object.values(gameUI.MODES)];
 		gameUI.setCurrentMode_callback = onModeChange;
-		gameUI.setCurrentMode(currentPanel);
+		gameUI.setCurrentMode(gameUI.MODES.SELECT);
+		currentPanel = null;
+
+		gameUI.popup_show_callback_link_deletion = popup_show_callback_link_deletion;
+		gameUI.popup_hide_callback_link_deletion = popup_hide_callback_link_deletion;
 
 		titles = new Map([
 			[gameUI.MODES.SELECT		, gameUI.info_select],
@@ -45,10 +63,7 @@
 		main.gameUI.update_template_list();
 	});
 
-
 </script>
-
-
 
 <div id="page">
 	<Grid rows="auto 1fr">
@@ -60,7 +75,7 @@
 			<Grid class="first_column" cols="auto auto" style="width: fit-content; height: fit-content;">
 				<Grid id="sidebar" cols="auto">
 					{#each modes as mode}
-					<Button toggled={currentPanel === mode} onclick={() => currentPanel = mode} title={titles.get(mode)}>{mode}</Button>
+					<Button toggled={currentPanel === mode} onclick={() => onclickSetPanelMode(mode)} title={titles.get(mode)}>{mode}</Button>
 					{/each}
 				</Grid>
 				<div id="panelarea">
@@ -73,21 +88,10 @@
 			</Grid>
 		</Grid>
 	</Grid>
-</div>
-
-{#if false}
-<div id="container">
-	<div id="header" class="pad outline"></div>
-	<div id="middle">
-		<div id="toolPanel" class="pad outline"></div>
-		<div id="canvasWrapper" class="fit">
-			<canvas id="canvas" width=800 height=600></canvas>
-		</div>
+	<div style={popup_link_deletion_visible ? "" : "visibility:hidden;"}>
+		<Popup {...popup_link_deletion_props}></Popup>
 	</div>
 </div>
-{/if}
-
-
 
 <style>
 

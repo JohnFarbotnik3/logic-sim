@@ -90,10 +90,13 @@ export class Block {
 	insertText (item) { VerificationUtil.verifyType_throw(item, Text ); 									this.template.insertText (item); CachedValue_Content.onChange(); 											 return item; }
 	insertBlock(item) { VerificationUtil.verifyType_throw(item, Block); 									this.template.insertBlock(item); CachedValue_Content.onChange(); main.onRootContentChanged_addBlock(item); return item; }
 	
-	deleteCell (item) { VerificationUtil.verifyType_throw(item, Cell );	this.cleanupBeforeDeleteCell(item).then((confirmed) => {
-		if(!confirmed) return;
-		this.template.removeCell (item); CachedValue_Content.onChange(); main.onRootContentChanged_remCell (item);
-	}); }
+	deleteCell (item) { VerificationUtil.verifyType_throw(item, Cell );
+		this.cleanupBeforeDeleteCell(item).then((confirmed) => {
+			console.debug("<>deleteCell() confirmed", confirmed);
+			if(!confirmed) return;
+			this.template.removeCell (item); CachedValue_Content.onChange(); main.onRootContentChanged_remCell (item);
+		});
+	}
 	deleteLink (item) { VerificationUtil.verifyType_throw(item, Link ); 												this.template.removeLink (item); CachedValue_Content.onChange(); main.onRootContentChanged_remLink (item); }
 	deleteText (item) { VerificationUtil.verifyType_throw(item, Text ); 												this.template.removeText (item); CachedValue_Content.onChange(); 											 }
 	deleteBlock(item) { VerificationUtil.verifyType_throw(item, Block); this.cleanupBeforeDeleteBlock(item);			this.template.removeBlock(item); CachedValue_Content.onChange(); main.onRootContentChanged_remBlock(item); }
@@ -128,20 +131,30 @@ export class Block {
 		console.debug("deletionList", deletionList);
 		// show popup.
 		const promise = new Promise((resolve, reject) => {
-			const onsubmit = () => {
-				console.debug("deletionList submit");
-				for(const link of this.links.slice()) if(link.isConnectedToCell(cell.id)) this.deleteLink(link);
-				main.blockLibrary.deleteLinksInTemplateLinkList(deletionList);
+			console.debug("<>cleanupBeforeDeleteCell promise", deletionList);
+			if(deletionList.length === 0) {
 				resolve(true);
-				return true;
-			};
-			const oncancel = () => {
-				console.debug("deletionList cancel");
-				resolve(false);
-			};
-			const text = "WARNING - links in the following templates will also be deleted:";
-			if(deletionList.length > 0)	gameUI.showLinkDeletionPopup(deletionList, text, onsubmit, oncancel);
-			else						onsubmit();
+			}
+			else {
+				const onsubmit = () => {
+					console.debug("<>cleanupBeforeDeleteCell submit");
+					main.blockLibrary.deleteLinksInTemplateLinkList(deletionList);
+					main.gameUI.hideLinkDeletionPopup();
+					resolve(true);
+				};
+				const oncancel = () => {
+					console.debug("<>cleanupBeforeDeleteCell cancel");
+					main.gameUI.hideLinkDeletionPopup();
+					resolve(false);
+				};
+				const text = "WARNING - links in the following templates will also be deleted:";
+				main.gameUI.showLinkDeletionPopup(deletionList, text, onsubmit, oncancel);
+			}
+		}).then(confirmed => {
+			// delete links in this block which point to cell.
+			// TODO: link.isConnectedToCell(cell.id) needs to be improved --> what if child template has cell with same Id!
+			if(confirmed) for(const link of this.links.slice()) if(link.isConnectedToCell(cell.id)) this.deleteLink(link);
+			return confirmed;
 		});
 		return promise;
 	}

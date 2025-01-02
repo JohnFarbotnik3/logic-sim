@@ -66,9 +66,9 @@ class Main {
 			const t0 = Date.now();
 			this.frameCounter++;
 			const blocklib = this.blockLibrary;
-			blocklib.verifyLinksCanFindTargets();
+			await blocklib.verifyLinksCanFindTargets();
 			this.gameUI.update();
-			blocklib.verifyLinksCanFindTargets();
+			await blocklib.verifyLinksCanFindTargets();
 			const rootTemplateId = blocklib.rootBlock.templateId;
 			const t_s0 = Date.now();
 			if(this.simulationShouldRebuild | this.simulationShouldReset) {
@@ -87,7 +87,7 @@ class Main {
 			Performance.increment_time("sim.rebuild", t_s1-t_s0);
 			Performance.increment_time("sim.update ", t_s2-t_s1);
 			Performance.increment_time("main.update", t1-t0);
-			Performance.log_all();
+			//Performance.log_all();
 			requestAnimationFrame((t) => this.update.call(this, t));
 		} catch(error) {
 			this.gameUI.showCrashPopup(error, "application crashed during Main.update()");

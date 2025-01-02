@@ -263,7 +263,7 @@ export class GameUI {
 	}
 
 	// ============================================================
-	// Tooltip
+	// Tooltips
 	// ------------------------------------------------------------
 
 	tooltip_elem = null;//TODO
@@ -277,23 +277,26 @@ export class GameUI {
 	}
 
 	// ============================================================
-	// Popups.
+	// Popups
 	// ------------------------------------------------------------
 
-	link_delete_popup = null;
+	popup_show_callback_link_deletion = null;
+	popup_hide_callback_link_deletion = null;
 	showLinkDeletionPopup(deletionList, text, onsubmit, oncancel) {
-		const wrapper = new Div({ id:"link_delete_popup_wrapper", style:"display: flex; flex-direction: column;" });
-		const header = new Div({ id:"link_delete_popup_header", parent:wrapper, innerText:text });
+		let html = "";
+		html += `<div>${text}</div>`;
 		for(const [template, links] of deletionList) {
 			const tid = template.templateId;
-			const elem = new Div({ id:`link_delete_popup_elem_${tid}`, parent:wrapper, innerText:`${template.name} (${links.length}x)` });
+			html += `<div>${template.name} (${links.length}x)</div>`;
 		}
-		this.link_delete_popup = new Popup({ id:"link_delete_popup", parent:document.body, content:[wrapper], onsubmit, oncancel });
+		this.popup_show_callback_link_deletion({ innerHTML:html, onsubmit, oncancel });
+	}
+	hideLinkDeletionPopup() {
+		this.popup_hide_callback_link_deletion();
 	}
 
 	showCrashPopup(error, text) {
-		//TODO: re-enable this (after overhaul)!
-		//alert(text + "\n\n" + error);
+		alert(text + "\n\n" + error);
 	}
 
 	// ============================================================
@@ -604,7 +607,7 @@ export class GameUI {
 	}
 	setval_hovered(val) {
 		for(const item of this.collectionHovered.cells) {
-			gameServer.simulation_set_cell_value(ComponentId.THIS_BLOCK, item.id, val);
+			main.gameServer.simulation_set_cell_value(ComponentId.THIS_BLOCK, item.id, val);
 			if(item.type === CELL_PROPERTIES.CONSTANT.type) item.value = val;
 		}
 	}

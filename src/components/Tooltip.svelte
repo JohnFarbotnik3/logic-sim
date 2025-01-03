@@ -15,7 +15,6 @@
 		// TODO: make this code more reliable.
 		{
 			const rect_page = element.parentElement.getClientRects()[0];
-			console.log("<>rect_page", rect_page);
 			const { x, y, width, height } = element.getClientRects()[0];
 			const out_x = rect_page.right  - (x + width);
 			const out_y = rect_page.bottom - (y + height);

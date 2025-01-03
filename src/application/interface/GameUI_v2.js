@@ -151,7 +151,7 @@ export class GameUI {
 		const active = !this.isInputElementActive;
 		const input = this.input;
 		const camera = main.gameRenderer.camera;
-		//if(active & input.getKeydownDelta("p") === +1) GameUI.clickButton(this.hotkey_btn_play);
+		if(active & input.getKeydownDelta("p") === +1) this.onclick_toggle_play(this.header_btn_play, true);
 		if(active & input.getKeydownDelta("x") === +1) this.setCurrentMode(this.MODES.SELECT);
 		if(active & input.getKeydownDelta("v") === +1) this.setCurrentMode(this.MODES.SET_VALUES);
 		if(active & input.getKeydownDelta("c") === +1) this.setCurrentMode(this.MODES.PLACE_CELLS);
@@ -361,6 +361,66 @@ export class GameUI {
 
 	showCrashPopup(error, text) {
 		alert(text + "\n\n" + error);
+	}
+
+
+	// ============================================================
+	// Play, Pause, Reset, Speed.
+	// ------------------------------------------------------------
+
+	header_btn_play = null;
+
+	onclick_toggle_play(btn, toggle) {
+		if(toggle) main.simulationIsRunning = !main.simulationIsRunning;
+		console.log("<>main.simulationIsRunning", main.simulationIsRunning);
+		const value = main.simulationIsRunning;
+		btn.innerText = value ? "Pause" : "Play";
+		btn.title = value ? "(Hotkey: p) Pause simulation" : "(Hotkey: p) Run simulation";
+	}
+	onclick_reset_simulation() {
+		main.simulationShouldReset = true;
+	}
+
+	init_play_header(btn_play, btn_reset, speed_slider, speed_label) {
+		console.log("<>", btn_play, speed_slider, speed_label);
+		// play button.
+		this.header_btn_play = btn_play;
+		btn_play.onclick = () => this.onclick_toggle_play(btn_play, true);
+		this.onclick_toggle_play(btn_play, false);
+		// reset button.
+		btn_reset.onclick = this.onclick_reset_simulation;
+		btn_reset.title = "Reset simulation";
+		// speed slider.
+		const M = 0.5;				// multiplier
+		const O = Math.round(1/M);	// step offset
+		const N = 20;				// number of steps per order
+		const L = (N-O) * 6;		// step limit
+		const compute = (step) => M * ((step % (N-O)) + O) * Math.pow(10, Math.floor(step / (N-O)));
+		const inverse = (step) => {
+			// binary search.
+			let min = 0;
+			let max = L;
+			let cur = L/2;
+			while(min<cur && cur<max) {
+				const val = compute(cur);
+				if(val <= step) { min=cur; cur=(min+max)/2; }
+				if(val >= step) { max=cur; cur=(min+max)/2; }
+			}
+			return cur;
+		};
+		const V = inverse(main.simulationSpeed);
+		const oninput = (event) => {
+			const speed = compute(Number(event.target.value));
+			main.simulationSpeed = speed;
+			speed_label.innerText = `Speed: ${Number(speed).toFixed(1)} steps/sec.`;
+		};
+		const slider = speed_slider;
+		slider.min = 0;
+		slider.max = L;
+		slider.step = 1;
+		slider.value = V;
+		slider.oninput = oninput;
+		slider.oninput({target:{value:V}});
 	}
 
 	// ============================================================

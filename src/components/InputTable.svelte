@@ -1,6 +1,5 @@
 <script>
-	import Grid from "./Grid.svelte"
-	import Input from "./Input.svelte"
+	import { Grid, Input } from "./exports"
 
 	const props = $props();
 	const { title, inputs } = props;

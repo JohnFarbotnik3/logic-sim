@@ -1,6 +1,6 @@
 <script>
-	import Button from "./Button.svelte";
-	import Grid from "./Grid.svelte";
+	import { Button, Grid } from "./exports"
+
 	let props = $props();
 </script>
 

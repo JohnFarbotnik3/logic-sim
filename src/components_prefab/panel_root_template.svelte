@@ -1,11 +1,6 @@
 <script>
-	import Input from "../Input.svelte";
-	import InputArea from "../InputArea.svelte";
-	import InputTable from "../InputTable.svelte";
-	import Button from "../Button.svelte";
-	import Grid from "../Grid.svelte";
-	import FlexCol from "../FlexCol.svelte";
-	import { main } from "../../application/Main";
+	import { Input, InputArea, InputTable, Button, Grid, FlexCol } from "../components/exports";
+	import { main } from "../application/Main";
 
 	const gameUI = main.gameUI;
 	const name_params = gameUI.input_root_template_name;

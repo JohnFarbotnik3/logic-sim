@@ -1,14 +1,16 @@
 <script>
-	import Grid from "../components/Grid.svelte";
-	import FlexCol from "../components/FlexCol.svelte";
-	import FlexRow from "../components/FlexRow.svelte";
-	import FlexFit from "../components/FlexFit.svelte";
-	import FlexGrow from "../components/FlexGrow.svelte";
-	import Button from "../components/Button.svelte";
-	import Canvas from "../components/Canvas.svelte";
-	import Popup from "../components/Popup.svelte";
-	import Tooltip from "../components/Tooltip.svelte";
-	import * as Panels from "../components/Panels/Panels.js";
+	import {
+		Grid,
+		FlexCol,
+		FlexRow,
+		FlexFit,
+		FlexGrow,
+		Button,
+		Canvas,
+		Popup,
+		Tooltip,
+	} from "../components/exports";
+	import * as Prefab from "../components_prefab/exports";
 	import { main } from "../application/Main.js";
 
 	// mode stuff.
@@ -72,13 +74,13 @@
 		]);
 
 		panels = new Map([
-			[gameUI.MODES.SELECT		, Panels.panel_select],
-			[gameUI.MODES.SET_VALUES	, Panels.panel_cell_values],
-			[gameUI.MODES.PLACE_CELLS	, Panels.panel_place_cells],
-			[gameUI.MODES.PLACE_LINKS	, Panels.panel_place_links],
-			[gameUI.MODES.PLACE_BLOCKS	, Panels.panel_place_blocks],
-			[gameUI.MODES.ROOT_BLOCK	, Panels.panel_root_template],
-			[gameUI.MODES.FILE			, Panels.panel_file_export],
+			[gameUI.MODES.SELECT		, Prefab.panel_select],
+			[gameUI.MODES.SET_VALUES	, Prefab.panel_cell_values],
+			[gameUI.MODES.PLACE_CELLS	, Prefab.panel_place_cells],
+			[gameUI.MODES.PLACE_LINKS	, Prefab.panel_place_links],
+			[gameUI.MODES.PLACE_BLOCKS	, Prefab.panel_place_blocks],
+			[gameUI.MODES.ROOT_BLOCK	, Prefab.panel_root_template],
+			[gameUI.MODES.FILE			, Prefab.panel_file_export],
 		]);
 
 		// update UI.
@@ -91,7 +93,7 @@
 <div id="page">
 	<FlexCol>
 		<FlexFit id="header">
-			abc
+			{@render Prefab.header_play_settings?.()}
 		</FlexFit>
 		<FlexGrow id="middle">
 			<Grid cols="1fr">

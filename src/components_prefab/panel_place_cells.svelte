@@ -1,9 +1,7 @@
 <script>
-	import InputTable from "../InputTable.svelte";
-	import Button from "../Button.svelte";
-	import Grid from "../Grid.svelte";
-	import { main } from "../../application/Main";
-	import { CELL_PROPERTIES } from "../../application/content/CellTypes";
+	import { InputTable, Button, Grid } from "../components/exports";
+	import { main } from "../application/Main";
+	import { CELL_PROPERTIES } from "../application/content/exports";
 
 	const ctypes = [...Object.values(CELL_PROPERTIES)];
 

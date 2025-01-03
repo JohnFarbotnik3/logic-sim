@@ -1,6 +1,6 @@
 <script>
-	import InputTable from "../InputTable.svelte";
-	import { main } from "../../application/Main";
+	import { InputTable } from "../components/exports";
+	import { main } from "../application/Main";
 
 	// TODO: figure out how to do this onMount instead, this may be a race condition.
 	$effect(() => {

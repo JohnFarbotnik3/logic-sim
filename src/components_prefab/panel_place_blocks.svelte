@@ -1,8 +1,6 @@
 <script>
-	import { main } from "../../application/Main";
-	import InputTable from "../InputTable.svelte";
-	import Button from "../Button.svelte";
-	import Grid from "../Grid.svelte";
+	import { InputTable, Button, Grid } from "../components/exports";
+	import { main } from "../application/Main";
 
 	let infoList = $state([]);
 	function update_template_list_callback(list) { infoList = list; }

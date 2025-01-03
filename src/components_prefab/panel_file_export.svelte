@@ -1,7 +1,6 @@
 <script>
-	import InputArea from "../InputArea.svelte";
-	import Button from "../Button.svelte";
-	import { main } from "../../application/Main";
+	import { InputArea, Button} from "../components/exports";
+	import { main } from "../application/Main";
 
 	const gameUI = main.gameUI;
 	const exp_params = gameUI.input_file_export_exp;

@@ -266,22 +266,60 @@ export class GameUI {
 	// Tooltips
 	// ------------------------------------------------------------
 
-	tooltip_elem = null;//TODO
-	show_tooltip(hoveredElem, htmlContent) {
-		tooltip_elem.style.display = "";
-		tooltip_elem.innerHTML = htmlContent;
-		// TODO - place tooltip near hoveredElem, confined to window space if needed.
+	show_tooltip_callback = null;
+	hide_tooltip_callback = null;
+	show_tooltip(target, html) {
+		this.show_tooltip_callback({target, innerHTML:html});
 	}
 	hide_tooltip() {
-		tooltip_elem.style.display = "none";
+		this.hide_tooltip_callback();
 	}
+
+	show_tooltip_block_place(elem, tid) {
+		const chain = main.blockLibrary.get_root_template_dependency_chain(tid);
+		let html = "";
+		if(chain) {
+			html += `<div style="color:pink;">Block is not safe to place,<br/>as it contains this template in its tree:</div>`;
+			for(let x=0;x<chain.length;x++) {
+				html += `<div>${x>0?"+":""}${new Array(x).fill("-").join("")}${chain[x].name}</div>`;
+			}
+		} else if(tid === main.blockLibrary.rootBlock.templateId) {
+			html += `<div style="color:pink;">Cannot place block inside of itself.</div>`;
+		} else {
+			html += `<div style="color:#afa;">Block is safe to place.</div>`;
+		}
+		this.show_tooltip(elem, html);
+	}
+
+	show_tooltip_block_remove(elem, tid) {
+		const deps = main.blockLibrary.getTemplateDependents(tid);
+		if(deps.length === 0) {
+			const html = `<div>Block is safe to remove.</div>`;
+			this.show_tooltip(elem, html);
+		} else {
+			let html = "";
+			html += `<div>Block is not safe to remove,<br/>as other templates are using it:</div>`;
+			for(const [template, useCount] of deps) {
+				html += `<div>${template.name} (${useCount}x)</div>`;
+			}
+			this.show_tooltip(elem, html);
+		}
+	}
+
 
 	// ============================================================
 	// Popups
 	// ------------------------------------------------------------
 
-	popup_show_callback_link_deletion = null;
-	popup_hide_callback_link_deletion = null;
+	show_popup_callback = null;
+	hide_popup_callback = null;
+	show_popup(html, onsubmit, oncancel) {
+		this.show_popup_callback({ innerHTML:html, onsubmit, oncancel });
+	}
+	hide_popup() {
+		this.hide_popup_callback();
+	}
+
 	showLinkDeletionPopup(deletionList, text, onsubmit, oncancel) {
 		let html = "";
 		html += `<div style="color:pink;">${text}</div>`;
@@ -289,10 +327,10 @@ export class GameUI {
 			const tid = template.templateId;
 			html += `<div>${template.name} (${links.length}x)</div>`;
 		}
-		this.popup_show_callback_link_deletion({ innerHTML:html, onsubmit, oncancel });
+		this.show_popup(html, onsubmit, oncancel);
 	}
 	hideLinkDeletionPopup() {
-		this.popup_hide_callback_link_deletion();
+		this.hide_popup();
 	}
 
 	showCrashPopup(error, text) {
@@ -427,7 +465,7 @@ export class GameUI {
 	update_mode_select() {
 		// update state and selection.
 		if(!this.buttonDownL) this.collectionTranslating.clear();
-		if(this.dragBegan) {
+		if(this.dragBegan && this.isCanvasHovered) {
 			let isTranslating = false;
 			let holdingShift = this.input.getKeydown("Shift");
 			if(!holdingShift) {
@@ -458,7 +496,7 @@ export class GameUI {
 			this.cursor_isSelecting		= !isTranslating;
 			if(!holdingShift && !isTranslating) this.collectionSelected.clear();
 		}
-		if(this.dragEnded) {
+		if(this.dragEnded && this.isCanvasHovered) {
 			if(this.cursor_isSelecting) {
 				this.selectAllItemsInDragArea();
 				this.on_selection_update();
@@ -864,12 +902,9 @@ export class GameUI {
 			.catch(() => console.error("failed to call update_template_list_callback"));
 	}
 
-	/*
-		Generate tooltip with generated html containing info about template usage.
-	*/
-	onmouseenter_block_place(event, templateId) {}// TODO
+	onmouseenter_block_place(event, templateId) { this.show_tooltip_block_place(event.target, templateId); }
 	onmouseleave_block_place(event, templateId) { this.hide_tooltip(); }
-	onmouseenter_block_remove(event, templateId) {}// TODO
+	onmouseenter_block_remove(event, templateId) { this.show_tooltip_block_remove(event.target, templateId); }
 	onmouseleave_block_remove(event, templateId) { this.hide_tooltip(); }
 
 	on_major_blocklib_change() {

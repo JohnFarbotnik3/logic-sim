@@ -1,4 +1,3 @@
-
 <script>
 	const props = $props();
 	const rows = $derived(props.rows ? `grid-template-rows: ${props.rows};` : "");
@@ -8,10 +7,9 @@
 <style>
 	div {
 		display: grid;
+		grid-gap: 2px;
 		height: 100%;
 		width: 100%;
-		grid-gap: 2px;
-		background: #0007;
 	}
 </style>
 

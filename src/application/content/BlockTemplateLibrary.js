@@ -121,6 +121,28 @@ export class BlockTemplateLibrary {
 		main.gameUI.on_major_blocklib_change();
 	}
 
+	get_template_dependency_chain(templateId, tid) {
+		// check if block is contained in this template
+		const template = this.templates.get(templateId);
+		for(const block of template.blocks) if(block.templateId === tid) {
+			const btmp = this.templates.get(block.templateId);
+			return [template, btmp];
+		}
+		// get set of unique templates in this template.
+		const tids = new Set();
+		for(const block of template.blocks) tids.add(block.templateId);
+		// get (first) chain of containment among templates.
+		for(const subtid of tids.keys()) {
+			const chain = this.get_template_dependency_chain(subtid, tid);
+			if(chain) return [template, ...chain];
+		}
+		// no dependency chain found.
+		return null;
+	}
+	get_root_template_dependency_chain(templateId) {
+		return this.get_template_dependency_chain(templateId, this.rootBlock.templateId);
+	}
+
 	// ============================================================
 	// Import, Export
 	// ------------------------------------------------------------

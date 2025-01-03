@@ -1,8 +1,13 @@
 <script>
 	import Grid from "../components/Grid.svelte";
+	import FlexCol from "../components/FlexCol.svelte";
+	import FlexRow from "../components/FlexRow.svelte";
+	import FlexFit from "../components/FlexFit.svelte";
+	import FlexGrow from "../components/FlexGrow.svelte";
 	import Button from "../components/Button.svelte";
 	import Canvas from "../components/Canvas.svelte";
 	import Popup from "../components/Popup.svelte";
+	import Tooltip from "../components/Tooltip.svelte";
 	import * as Panels from "../components/Panels/Panels.js";
 	import { main } from "../application/Main.js";
 
@@ -21,14 +26,25 @@
 	}
 
 	// popup stuff.
-	let popup_link_deletion_props = $state(null);
-	let popup_link_deletion_visible = $state(false);
-	function popup_show_callback_link_deletion(props) {
-		popup_link_deletion_props = props;
-		popup_link_deletion_visible = true;
+	let popup_props = $state(null);
+	let popup_visible = $state(false);
+	function show_popup_callback(props) {
+		popup_props = props;
+		popup_visible = true;
 	}
-	function popup_hide_callback_link_deletion() {
-		popup_link_deletion_visible = false;
+	function hide_popup_callback() {
+		popup_visible = false;
+	}
+
+	// tooltip stuff.
+	let tooltip_props = $state(null);
+	let tooltip_visible = $state(false);
+	function show_tooltip_callback(props) {
+		tooltip_props = props;
+		tooltip_visible = true;
+	}
+	function hide_tooltip_callback() {
+		tooltip_visible = false;
 	}
 
 	// init.
@@ -40,8 +56,10 @@
 		gameUI.setCurrentMode(gameUI.MODES.SELECT);
 		currentPanel = null;
 
-		gameUI.popup_show_callback_link_deletion = popup_show_callback_link_deletion;
-		gameUI.popup_hide_callback_link_deletion = popup_hide_callback_link_deletion;
+		gameUI.show_popup_callback = show_popup_callback;
+		gameUI.hide_popup_callback = hide_popup_callback;
+		gameUI.show_tooltip_callback = show_tooltip_callback;
+		gameUI.hide_tooltip_callback = hide_tooltip_callback;
 
 		titles = new Map([
 			[gameUI.MODES.SELECT		, gameUI.info_select],
@@ -66,30 +84,35 @@
 </script>
 
 <div id="page">
-	<Grid rows="auto 1fr">
-		<div id="header">
+	<FlexCol>
+		<FlexFit id="header">
 			abc
-		</div>
-		<Grid cols="1fr">
-			<Canvas class="first_column" id="canvas"></Canvas>
-			<Grid class="first_column" cols="auto auto" style="width: fit-content; height: fit-content;">
-				<Grid id="sidebar" cols="auto">
-					{#each modes as mode}
-					<Button toggled={currentPanel === mode} onclick={() => onclickSetPanelMode(mode)} title={titles.get(mode)}>{mode}</Button>
-					{/each}
-				</Grid>
-				<div id="panelarea">
-					{#each modes as mode}
-					<div class="sidepanel" style={currentPanel === mode ? "" : "display: none;"}>
-						{@render panels.get(mode)?.()}
-					</div>
-					{/each}
-				</div>
+		</FlexFit>
+		<FlexGrow id="middle">
+			<Grid cols="1fr">
+				<Canvas class="first_cell" id="canvas"></Canvas>
+				<FlexRow class="first_cell clickthrough" style="width: fit-content; height: 100%;">
+					<FlexCol class="clickable" style="height: fit-content;">
+						{#each modes as mode}
+						<Button toggled={currentPanel === mode} onclick={() => onclickSetPanelMode(mode)} title={titles.get(mode)}>{mode}</Button>
+						{/each}
+					</FlexCol>
+					<FlexCol class="clickable" style="height: fit-content; background: #000a;">
+						{#each modes as mode}
+						<div style={currentPanel === mode ? "" : "display: none;"}>
+							{@render panels.get(mode)?.()}
+						</div>
+						{/each}
+					</FlexCol>
+				</FlexRow>
 			</Grid>
-		</Grid>
-	</Grid>
-	<div style={popup_link_deletion_visible ? "" : "visibility:hidden;"}>
-		<Popup {...popup_link_deletion_props}></Popup>
+		</FlexGrow>
+	</FlexCol>
+	<div style={popup_visible ? "" : "visibility:hidden;"}>
+		<Popup {...popup_props}></Popup>
+	</div>
+	<div style={tooltip_visible ? "" : "visibility:hidden;"}>
+		<Tooltip {...tooltip_props}></Tooltip>
 	</div>
 </div>
 
@@ -104,24 +127,21 @@
 	left: 0px;
 	color: #fff;
 	font-family: monospace;
+	overflow: clip;
 }
 
-#sidebar {
-	width: fit-content;
-	height: fit-content;
+:global(.clickthrough) {
+	pointer-events: none;
 }
-.sidepanel {
-	width: fit-content;
-	height: fit-content;
-	position: absolute;
-	background: #0007;
+:global(.clickable) {
+	pointer-events: all;
 }
 
 /*
 	IMPORTANT TRICK - REMEBER THIS TRICK!!!!!!!!!!
 	this allows putting multiple elements in the same row.
 */
-:global(.first_column) {
+:global(.first_cell) {
 	grid-column: 1;
 	grid-row: 1;
 }

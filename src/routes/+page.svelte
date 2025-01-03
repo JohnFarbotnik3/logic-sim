@@ -16,7 +16,7 @@
 	let titles			= $state(new Map());
 	let panels			= $state(new Map());
 	let currentPanel	= $state(null);
-	let currentMode		= $state(null);// TODO: add styling to indicate currentMode.
+	let currentMode		= $state(null);
 	function onModeChange(mode) {
 		currentMode = mode;
 	}
@@ -68,6 +68,7 @@
 			[gameUI.MODES.PLACE_LINKS	, gameUI.info_place_links],
 			[gameUI.MODES.PLACE_BLOCKS	, gameUI.info_place_blocks],
 			[gameUI.MODES.ROOT_BLOCK	, gameUI.info_root_template],
+			[gameUI.MODES.FILE			, gameUI.info_file_export],
 		]);
 
 		panels = new Map([
@@ -77,6 +78,7 @@
 			[gameUI.MODES.PLACE_LINKS	, Panels.panel_place_links],
 			[gameUI.MODES.PLACE_BLOCKS	, Panels.panel_place_blocks],
 			[gameUI.MODES.ROOT_BLOCK	, Panels.panel_root_template],
+			[gameUI.MODES.FILE			, Panels.panel_file_export],
 		]);
 
 		// update UI.
@@ -97,7 +99,12 @@
 				<FlexRow class="first_cell clickthrough" style="width: fit-content; height: 100%;">
 					<FlexCol class="clickable" style="height: fit-content;">
 						{#each modes as mode}
-						<Button toggled={currentPanel === mode} onclick={() => onclickSetPanelMode(mode)} title={titles.get(mode)}>{mode}</Button>
+						<Button
+							toggled={currentPanel === mode}
+							style={currentMode === mode ? "background:#047;" : ""}
+							onclick={() => onclickSetPanelMode(mode)}
+							title={titles.get(mode)}
+						>{mode}</Button>
 						{/each}
 					</FlexCol>
 					<FlexCol class="clickable" style="height: fit-content; background: #000a;">

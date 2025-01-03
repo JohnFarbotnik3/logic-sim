@@ -7,7 +7,13 @@ import {
 	ComponentDimensions,
 	CELL_PROPERTIES,
 } from "../content/exports";
-import { InputProps, INPUT_TYPES } from "../../components/Input";
+import {
+	InputProps,
+	INPUT_TYPES,
+	parse_dim,
+	parse_name,
+	parse_str,
+} from "../../components/Input";
 import { main } from "../Main.js";
 import { InputHandlerSet } from "./InputHandlerSet";
 import {
@@ -48,6 +54,8 @@ export class GameUI {
 	setCurrentMode_callback = null;
 	setCurrentMode(mode) {
 		console.log("GameUI_v2.setCurrentMode(mode)", mode);
+		if(mode === this.MODES.ROOT_BLOCK	) mode = this.MODES.SELECT;
+		if(mode === this.MODES.FILE			) mode = this.MODES.SELECT;
 		this.currentMode = mode;
 		PromiseUtil.tryUntilTruthy(() => this.setCurrentMode_callback, [], 100, 20)
 			.then((func) => func(mode))
@@ -128,6 +136,9 @@ export class GameUI {
 		// place blocks.
 		if(this.currentMode === this.MODES.PLACE_BLOCKS) {
 			this.update_mode_place_blocks();
+		} else {
+			// I found it a bit distracting starting with the previous block when opening the panel.
+			this.place_preview_block = null;
 		}
 
 		this.update_hotkeys();
@@ -294,7 +305,7 @@ export class GameUI {
 		const chain = main.blockLibrary.get_root_template_dependency_chain(tid);
 		let html = "";
 		if(chain) {
-			html += `<div style="color:pink;">(Recursion safety) Block is not safe to place, as it contains this template in its tree:</div>`;
+			html += `<div style="color:pink;">(Recursion safety) Block is not safe to place because it contains this template in its tree:</div>`;
 			for(let x=0;x<chain.length;x++) {
 				html += `<div>${x>0?"+":""}${new Array(x).fill("-").join("")}${chain[x].name}</div>`;
 			}
@@ -313,7 +324,7 @@ export class GameUI {
 			this.show_tooltip(elem, html);
 		} else {
 			let html = "";
-			html += `<div style="color:pink;">Block is not safe to remove, as other templates are using it:</div>`;
+			html += `<div style="color:pink;">Block is not safe to remove because other templates are using it:</div>`;
 			for(const [template, useCount] of deps) {
 				html += `<div>${template.name} (${useCount}x)</div>`;
 			}
@@ -1010,7 +1021,78 @@ export class GameUI {
 	root_template_oncancel() {
 		this.root_template_reset_inputs();
 	}
-	// TODO - continue overhaul from here...
+
+	// ============================================================
+	// File import and export
+	// ------------------------------------------------------------
+
+	info_file_export = [
+		"- To create a new block, click 'New Block', then fill in block details.",
+		"- To import block-templates, paste text into text-area below 'Import' button, then press 'Import' button.",
+		"- To export block-templates, press 'Export' button. This will put a text representation of all loaded block-templates into the text-area below.",
+	].join("\n");
+
+	input_file_export_exp = {
+		style: "width: 150px; height: 80px; margin-top: 5px;",
+		input: new InputProps("fexp", "", INPUT_TYPES.str	, "", this.empty_handler),
+	};
+	input_file_export_imp = {
+		style: "width: 150px; height: 80px; margin-top: 5px;",
+		input: new InputProps("fimp", "", INPUT_TYPES.str	, "", this.empty_handler),
+	};
+
+	onclick_file_export() {
+		const elem = this.getElement(this.input_file_export_exp.input.id);
+		elem.value = main.blockLibrary.exportTemplates();
+	}
+	onclick_file_import() {
+		const elem = this.getElement(this.input_file_export_imp.input.id);
+		const json = elem.value;
+		main.blockLibrary.importTemplates(json);
+		main.refresh_root_block_template();
+	}
+
+	show_new_template_popup() {
+		const id_w = "ntpw";
+		const id_h = "ntph";
+		const id_n = "ntpn";
+		const id_d = "ntpd";
+		let html = "";
+		html += `
+			<div>Width</div>
+			<input type="text" id=${id_w}></input>
+			<div>Height</div>
+			<input type="text" id=${id_h}></input>
+			<div>Name</div>
+			<input type="text" id=${id_n}></input>
+			<div>Description (optional)</div>
+			<textarea id=${id_d} style:"width:500px;height:300px;"></textarea>
+		`;
+		const onsubmit = () => {
+			const [w, w_valid] = parse_dim (document.getElementById(id_w).value);
+			const [h, h_valid] = parse_dim (document.getElementById(id_h).value);
+			const [n, n_valid] = parse_name(document.getElementById(id_n).value);
+			const [d, d_valid] = parse_str (document.getElementById(id_d).value);
+			const errors = [];
+			if(!w_valid) errors.push(`width [${w}] is not valid.`);
+			if(!h_valid) errors.push(`height [${h}] is not valid.`);
+			if(!n_valid) errors.push(`name [${n}] is not valid.`);
+			if(!d_valid) errors.push(`description [${d}] is not valid.`);
+			if(errors.length > 0) {
+				alert("One or more inputs were invalid:\n" + errors.join("\n"));
+			} else {
+				main.blockLibrary.createNewBlockTemplate(w, h, n, d);
+				this.hide_new_template_popup();
+			}
+		};
+		const oncancel = () => {
+			this.hide_new_template_popup();
+		};
+		this.show_popup(html, onsubmit, oncancel);
+	}
+	hide_new_template_popup() {
+		this.hide_popup();
+	}
 
 
 };

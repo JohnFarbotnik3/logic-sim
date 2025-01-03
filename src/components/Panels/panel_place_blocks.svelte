@@ -24,11 +24,13 @@
 			disabled={!canPlace}
 			onclick={(ev) => gameUI.onclick_block_place(ev, templateId)}
 			onmouseenter={(ev) => gameUI.onmouseenter_block_place(ev, templateId)}
+			onmouseleave={(ev) => gameUI.onmouseleave_block_place(ev, templateId)}
 		>{name}</Button>
 		<Button
 			disabled={!canRemove}
 			onclick={(ev) => gameUI.onclick_block_remove(ev, templateId)}
 			onmouseenter={(ev) => gameUI.onmouseenter_block_remove(ev, templateId)}
+			onmouseleave={(ev) => gameUI.onmouseleave_block_remove(ev, templateId)}
 			style="min-width:20px; background:#703;"
 		>X</Button>
 		{/each}

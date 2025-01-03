@@ -5,6 +5,7 @@ import panel_place_cells from "./panel_place_cells.svelte";
 import panel_place_links from "./panel_place_links.svelte";
 import panel_place_blocks from "./panel_place_blocks.svelte";
 import panel_root_template from "./panel_root_template.svelte";
+import panel_file_export from "./panel_file_export.svelte";
 
 export {
 	panel_cell_values,
@@ -13,4 +14,5 @@ export {
 	panel_place_links,
 	panel_place_blocks,
 	panel_root_template,
+	panel_file_export,
 };

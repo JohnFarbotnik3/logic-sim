@@ -46,5 +46,5 @@
 		bind:value={inputValue}
 		class={inputValid ? "valid" : "error"}
 		oninput={oninputFunc}
-	/>
+	></textarea>
 </div>

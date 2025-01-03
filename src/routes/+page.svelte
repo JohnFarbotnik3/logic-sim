@@ -67,6 +67,7 @@
 			[gameUI.MODES.PLACE_CELLS	, gameUI.info_place_cells],
 			[gameUI.MODES.PLACE_LINKS	, gameUI.info_place_links],
 			[gameUI.MODES.PLACE_BLOCKS	, gameUI.info_place_blocks],
+			[gameUI.MODES.ROOT_BLOCK	, gameUI.info_root_template],
 		]);
 
 		panels = new Map([
@@ -75,10 +76,12 @@
 			[gameUI.MODES.PLACE_CELLS	, Panels.panel_place_cells],
 			[gameUI.MODES.PLACE_LINKS	, Panels.panel_place_links],
 			[gameUI.MODES.PLACE_BLOCKS	, Panels.panel_place_blocks],
+			[gameUI.MODES.ROOT_BLOCK	, Panels.panel_root_template],
 		]);
 
-		// update templatelist.
-		main.gameUI.update_template_list();
+		// update UI.
+		gameUI.update_template_list();
+		gameUI.root_template_reset_inputs();
 	});
 
 </script>

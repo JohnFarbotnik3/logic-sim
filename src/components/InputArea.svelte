@@ -25,12 +25,12 @@
 	.error {
 		outline: 2px #f88 solid;
 	}
-	input {
+	textarea {
 		border: none;
 		width: 100%;
 		padding: 0px;
 	}
-	input:disabled {
+	textarea:disabled {
 		opacity: 0.5;
 		background: #fff;
 	}
@@ -40,7 +40,7 @@
 	{#if label}
 		<div>{label}</div>
 	{/if}
-	<input
+	<textarea
 		{...props}
 		bind:this={element}
 		bind:value={inputValue}

@@ -190,6 +190,8 @@ export class GameUI {
 		}
 	}
 
+	empty_handler(event) {}
+
 	// ============================================================
 	// Svelte Element Map
 	// ------------------------------------------------------------
@@ -201,6 +203,11 @@ export class GameUI {
 	setElement(id, elem) {
 		return this.elementMap.set(id, elem);
 	}
+	getElementValue(id) {
+		const elem = this.elementMap.get(id);
+		if(elem) return elem.value;
+		else console.error(`getElementValue(): elem with id ${id} not found`);
+	}
 	setElementValue(id, value) {
 		const elem = this.elementMap.get(id);
 		if(elem) elem.value = value;
@@ -211,6 +218,12 @@ export class GameUI {
 		if(elem) elem.disabled = !enabled;
 		else console.error(`setElementEnabled(): elem with id ${id} not found`);
 	}
+	getElementInputValid(id) {
+		const elem = this.elementMap.get(id);
+		if(elem) return elem.classList.contains("valid")
+		else console.error(`getElementInputValid(): elem with id ${id} not found`);
+	}
+
 
 	// ============================================================
 	// Canvas
@@ -228,8 +241,10 @@ export class GameUI {
 		const ch = canvas.height;
 		const rect = canvas.parentElement.getBoundingClientRect();
 		const ratio = Math.min(rect.width / cw, rect.height / ch);
-		canvas.width  = Math.floor(rect.width);
-		canvas.height = Math.floor(rect.height);
+		// experimental: prevent canvas from becoming pixelated by trying to determine actual pixel size.
+		const zoom = window.devicePixelRatio;
+		canvas.width  = Math.floor(rect.width  * zoom);
+		canvas.height = Math.floor(rect.height * zoom);
 		main.recreateRenderer(canvas);
 	}
 
@@ -279,12 +294,12 @@ export class GameUI {
 		const chain = main.blockLibrary.get_root_template_dependency_chain(tid);
 		let html = "";
 		if(chain) {
-			html += `<div style="color:pink;">Block is not safe to place,<br/>as it contains this template in its tree:</div>`;
+			html += `<div style="color:pink;">(Recursion safety) Block is not safe to place, as it contains this template in its tree:</div>`;
 			for(let x=0;x<chain.length;x++) {
 				html += `<div>${x>0?"+":""}${new Array(x).fill("-").join("")}${chain[x].name}</div>`;
 			}
 		} else if(tid === main.blockLibrary.rootBlock.templateId) {
-			html += `<div style="color:pink;">Cannot place block inside of itself.</div>`;
+			html += `<div style="color:pink;">(Recursion safety) Cannot place block inside of itself.</div>`;
 		} else {
 			html += `<div style="color:#afa;">Block is safe to place.</div>`;
 		}
@@ -294,11 +309,11 @@ export class GameUI {
 	show_tooltip_block_remove(elem, tid) {
 		const deps = main.blockLibrary.getTemplateDependents(tid);
 		if(deps.length === 0) {
-			const html = `<div>Block is safe to remove.</div>`;
+			const html = `<div style="color:#afa;">Block is safe to remove.</div>`;
 			this.show_tooltip(elem, html);
 		} else {
 			let html = "";
-			html += `<div>Block is not safe to remove,<br/>as other templates are using it:</div>`;
+			html += `<div style="color:pink;">Block is not safe to remove, as other templates are using it:</div>`;
 			for(const [template, useCount] of deps) {
 				html += `<div>${template.name} (${useCount}x)</div>`;
 			}
@@ -916,6 +931,86 @@ export class GameUI {
 		this.update_template_list();
 		if(this.rootbt_panel) this.refresh_rootbt_inputs();
 	}
+
+	// ============================================================
+	// Root Template
+	// ------------------------------------------------------------
+
+	info_root_template = [
+		"- To modify properties of the current block-template, edit the desired fields, then press 'Submit'.",
+		"- To reset fields, press 'Cancel'.",
+	].join("\n");
+
+	input_root_template_name = {
+		style: "width: 150px;",
+		input: new InputProps("trnm", "Name"		, INPUT_TYPES.name	, "_", this.empty_handler),
+	};
+	input_root_template_desc = {
+		style: "width: 150px; height: 80px;",
+		input: new InputProps("trds", "Description"	, INPUT_TYPES.str	, "_", this.empty_handler),
+	};
+	table_root_template = {
+		title: "Properties",
+		style: "width: 150px;",
+		inputs: [
+			new InputProps("triw", "internal width"			, INPUT_TYPES.dim	, "8", this.empty_handler),
+			new InputProps("trih", "internal height"		, INPUT_TYPES.dim	, "8", this.empty_handler),
+			new InputProps("trew", "default block width"	, INPUT_TYPES.dim	, "2", this.empty_handler),
+			new InputProps("treh", "default block height"	, INPUT_TYPES.dim	, "2", this.empty_handler),
+		]
+	};
+
+	root_template_reset_inputs() {
+		PromiseUtil.tryUntilTruthy((id) => this.getElement.call(this, id), this.input_root_template_name.input.id, 100, 20).then(() => {
+			const template = main.blockLibrary.rootBlock.template;
+			this.setElementValue(this.input_root_template_name.input.id, template.name);
+			this.setElementValue(this.input_root_template_desc.input.id, template.desc);
+			this.setElementValue(this.table_root_template.inputs[0].id, template.width);
+			this.setElementValue(this.table_root_template.inputs[1].id, template.height);
+			this.setElementValue(this.table_root_template.inputs[2].id, template.placeW);
+			this.setElementValue(this.table_root_template.inputs[3].id, template.placeH);
+		});
+	}
+
+	root_template_onsubmit() {
+		const template = main.blockLibrary.rootBlock.template;
+		const errors = [];
+		let name = "";
+		let desc = "";
+		let inps = [0,0,0,0];
+		{
+			const id = this.input_root_template_name.input.id;
+			const value = this.getElementValue(id);
+			if(this.getElementInputValid(id)) name = value;
+			else errors.push(`name [${value}] is not valid.`);
+		}
+		{
+			const id = this.input_root_template_desc.input.id;
+			const value = this.getElementValue(id);
+			desc = value;
+		}
+		for(let x=0;x<this.table_root_template.inputs.length;x++) {
+			const id = this.table_root_template.inputs[x].id;
+			const value = this.getElementValue(id);
+			if(this.getElementInputValid(id)) inps[x] = value;
+			else errors.push(`${this.table_root_template.inputs[x].label} [${value}] is not valid.`);
+		}
+		if(errors.length > 0) alert("failed to submit some or all of given inputs:\n"+errors.join("\n"));
+		else {
+			template.name = name;
+			template.desc = desc;
+			template.width = inps[0];
+			template.height = inps[1];
+			template.placeW = inps[2];
+			template.placeH = inps[3];
+			main.refresh_root_block_template();
+		}
+		this.root_template_reset_inputs();
+	}
+	root_template_oncancel() {
+		this.root_template_reset_inputs();
+	}
+	// TODO - continue overhaul from here...
 
 
 };

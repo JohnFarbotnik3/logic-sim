@@ -115,8 +115,8 @@ class Main {
 		this.simulationShouldRebuild = true;
 		this.gameUI.on_major_blocklib_change();
 	}
-	refresh_root_block_template(templateId) {
-		this.blockLibrary.refresh_root_block_template(templateId);
+	refresh_root_block_template() {
+		this.blockLibrary.refresh_root_block_template();
 		CachedValue_Content.onChange();
 		this.gameUI.on_minor_blocklib_change();
 	}

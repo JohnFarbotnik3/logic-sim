@@ -65,11 +65,12 @@ export class BlockTemplateLibrary {
 
 	set_root_block_template(templateId) {
 		const template = this.templates.get(templateId);
-		this.rootBlock = new Block(new ComponentDimensions(0, 0, template.width, template.height, 0), template.templateId);
+		this.rootBlock = new Block(new ComponentDimensions(0, 0, template.width, template.height, 0), templateId);
 	}
-	refresh_root_block_template(templateId) {
+	refresh_root_block_template() {
+		const templateId = this.rootBlock.templateId;
 		const template = this.templates.get(templateId);
-		this.rootBlock = new Block(new ComponentDimensions(0, 0, template.width, template.height, 0), template.templateId);
+		this.rootBlock = new Block(new ComponentDimensions(0, 0, template.width, template.height, 0), templateId);
 	}
 
 	createNewBlockTemplate(w, h, name, desc) {

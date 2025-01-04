@@ -1,4 +1,3 @@
-
 source ./build-wasm-config.sh
 
 em++ -O0 $COMBINED_SETTINGS \

@@ -13,11 +13,6 @@
 </script>
 
 <style>
-
-input:focus {
-	outline: 2px dotted #ace;
-}
-
 </style>
 
 <Grid cols="1fr auto auto auto 1fr">

@@ -42,15 +42,13 @@ export class GameUI {
 	// ------------------------------------------------------------
 
 	MODES = {
-		// content editing modes.
+		FILE:			"File",
 		SELECT:			"Select",
 		SET_VALUES:		"Outputs",
 		PLACE_CELLS:	"Cells",
 		PLACE_LINKS:	"Links",
 		PLACE_BLOCKS:	"Blocks",
-		// other panel modes.
 		ROOT_BLOCK:		"Template",
-		FILE:			"File",
 	};
 	currentMode = this.MODES.SELECT;
 	setCurrentMode_callback = null;
@@ -316,6 +314,11 @@ export class GameUI {
 		} else {
 			html += `<div style="color:#afa;">Block is safe to place.</div>`;
 		}
+		const template = main.blockLibrary.templates.get(tid);
+		html += `<hr>`;
+		html += `<div>${template.name}</div>`;
+		html += `<br>`;
+		html += `<div>${template.desc}</div>`;
 		this.show_tooltip(elem, html);
 	}
 
@@ -645,6 +648,7 @@ export class GameUI {
 	}
 
 	info_select = [
+		"(Hotkey: x)",
 		"- Select items by clicking them, or by dragging to select all items in drag-area.",
 		"- Delete selected items by pressing 'DELETE' key.",
 		"- Move selected items by hovering over any selected item, then clicking and dragging cursor.",
@@ -739,6 +743,7 @@ export class GameUI {
 	oninput_setval_rmb(value) { this.setval_value_rmb = value; }
 
 	info_setval = [
+		"(Hotkey: v)",
 		"- Set the output value of cells by hovering over them while the left or right mouse-button is down.",
 	].join("\n");
 
@@ -774,7 +779,8 @@ export class GameUI {
 	oninput_cell_r(value) { this.place_dim_cell[2] = value / 360; }
 
 	info_place_cells = [
-		"- To place cells, click one of the cell types (ex. XOR), then clicking on canvas.",
+		"(Hotkey: c)",
+		"- To place cells, click one of the cell types (ex: XOR), then clicking on canvas.",
 	].join("\n");
 
 	table_place_cells = {
@@ -884,8 +890,10 @@ export class GameUI {
 	oninput_link_colour_b(value) { this.wire_colour_b = value; }
 
 	info_place_links = [
+		"(Hotkey: l)",
 		"- To place links, click near desired input/output of first cell,",
 		"then click again near desired output/input of second cell.",
+		"- To remove links, hold down the right mouse button and drag across them.",
 	].join("\n");
 
 	table_place_links = {
@@ -917,15 +925,15 @@ export class GameUI {
 			const dim = new ComponentDimensions(0,0,1,1,0);
 			this.place_preview_block = new Block(dim, tid);
 		}
-		else tid = this.place_preview_block?.templateId;
-		const safe = tid && !main.blockLibrary.containsRootTemplateInTree(tid);
+		const blocklib = main.blockLibrary;
+		const safe = tid && blocklib.templates.has(tid) && !blocklib.containsRootTemplateInTree(tid);
 		if(this.place_preview_block && safe) this.setCurrentMode(this.MODES.PLACE_BLOCKS);
 		else this.setCurrentMode(null);
 		// set which button is in toggled state.
 		const key = "panel_block_btn_toggled";
 		let elem = this.getElement(key);
 		elem?.setAttribute("toggled", false);
-		elem = event.target;
+		elem = event?.target;
 		elem?.setAttribute("toggled", true);
 		this.setElement(key, elem);
 	}
@@ -944,10 +952,13 @@ export class GameUI {
 		this.oninput_block_h(template.placeH);
 	}
 	onclick_block_remove(event, templateId) {
+		this.onclick_block_type(null, ComponentId.NONE);
 		main.blockLibrary.deleteBlockTemplate(templateId);
+		this.changedRendering();
 	}
 
 	info_place_blocks = [
+		"(Hotkey: b)",
 		"- To place blocks, click the block's name in the list of available block-templates.",
 		"- To edit a block, click the 'Edit' button beside the desired block's name.",
 		"- To remove a block-template, click the 'X' button beside the desired block's name.",

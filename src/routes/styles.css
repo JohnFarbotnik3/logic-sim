@@ -3,3 +3,25 @@
 	outline: 1px solid #777;
 	outline-offset: -1px;
 }
+
+*:focus {
+	outline: 2px dotted #ace;
+	outline-offset: -1px;
+}
+
+.clickthrough {
+	pointer-events: none;
+}
+.clickable {
+	pointer-events: all;
+}
+
+/*
+	IMPORTANT TRICK - REMEBER THIS TRICK!!!!!!!!!!
+	this allows putting multiple elements in the same row.
+*/
+.first_cell {
+	grid-column: 1;
+	grid-row: 1;
+}
+

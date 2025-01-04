@@ -84,11 +84,6 @@ but if build/render performance is a problem, this is one potential solution.
 Near-term.
 ------------------------------------------------------------
 
-
-> User stylesheets
-- allow user to add and remove their own stylesheets for the app.
-
-
 > Multithreading notes:
 * C++: it would be strongly advised to create memory pools to allocate various
 fixed or variable length structs to prevent an absurd levels of heap-memory fragmentation,
@@ -101,8 +96,6 @@ as this will allow writing tree-structs without major performance problems.
 	- send a list/queue of pairs to each thread.
 	- given each thread has shared (read-only) access to the simblock tree,
 	this should be enough information to allow generating cell data and link data.
-
-
 
 > Multithreading plan:
 - service workers will act as threads
@@ -119,16 +112,29 @@ as this will allow writing tree-structs without major performance problems.
 - rendering:
 	TODO
 
+> c++ server
+* most of the update loop can happen in c++
+- the browser sends updated blockTemplates on change.
+- the browser sends request to update simulation by N steps.
+- the browser sends request to get render data for cells, links, etc. (which will get cell data from simulation)
+* first objective: find way to communicate with a local c++ compute server (requires basic networking in c++)
+* the same code that is used to implement the c++ compute server can be used for WASM calls,
+	allowing some parts of javascript implementation to be deprecated.
+	(c++:"GameServer.cpp", wasm:"GameServer.js")
+* to detect if building with emscripten (for example to use different threading model in WASM then C++),
+	the __EMSCRIPTEN__ is defined by emcc/em++, see:
+	https://emscripten.org/docs/compiling/Building-Projects.html
+* WARNING: emscripten is a 32-bit platform, so size_t is also 32-bit!
+
+
+
+> User stylesheets
+- allow user to add and remove their own stylesheets for the app.
 
 
 > add Graphs panel
 - use same graphing utility class as performance panel?
 - have a table of graphs, which show selected cell output-values over time.
-
-
-> Hotkeys panel
-- put in sidebar.
-* create Hotkeys class? (for named bindings such as "Hotkeys.state_move_L" and "*.delta_move_L")
 
 
 > Performance panel
@@ -154,14 +160,6 @@ as this will allow writing tree-structs without major performance problems.
 	- max drawn blocks		maximum number of blocks allowed to be drawn (safety value to prevent program from freezing).
 
 
-
-> seperate tree types (RenderBlock and SimulationBlock) into a data-nodes (XBlock) and a tree-manager (XBlockTree).
-- nodes should not initialize recursively. instead, an init function should be called in tree-manager which
-may have recursive behaviour.
-- initialization may be broken into multiple phases (for example with SimulationBlocks), with seperate recursive init-functions.
-^ RenderBlock may not see the same benefits from this, but it is worth examining as well.
-
-
 > add list management features for BlockTemplates
 
 
@@ -174,24 +172,6 @@ may have recursive behaviour.
 - allow saving (and loading) the entire UndoStack struct as JSON
 
 
-> c++ server
-* most of the update loop can happen in c++
-- the browser sends updated blockTemplates on change.
-- the browser sends request to update simulation by N steps.
-- the browser sends request to get render data for cells, links, etc. (which will get cell data from simulation)
-* first objective: find way to communicate with a local c++ compute server (requires basic networking in c++)
-* the same code that is used to implement the c++ compute server can be used for WASM calls,
-	allowing some parts of javascript implementation to be deprecated.
-	(c++:"GameServer.cpp", wasm:"GameServer.js")
-* to detect if building with emscripten (for example to use different threading model in WASM then C++),
-	the __EMSCRIPTEN__ is defined by emcc/em++, see:
-	https://emscripten.org/docs/compiling/Building-Projects.html
-* WARNING: emscripten is a 32-bit platform, so size_t is also 32-bit!
-
-
-> "Values" mode: allow targeting cells in child-blocks.
-
-
 > troubleshoot poor performance on older devices with modest processing power
 - why is my laptop browser struggling to render even a mostly empty scene?
 ! it is a software rendering problem - empty webGL canvas already costs 65% cpu to render!
@@ -201,6 +181,28 @@ may have recursive behaviour.
 > add a "View" panel
 - add inputs for some draw settings.
 - and "Pan" mode button, for navigating with mouse.
+
+
+> create Hotkeys panel
+
+
+> misc tasks:
+- write TESTING.md with testing procedures to make sure all features work and most edge cases have been checked.
+- fun: add option for generating a block with random contents (for fun).
+- fun: create a code-converter which converts basic arithmetic functions into block-tempates.
+- fun: create a "Fun" panel.
+- try to get SSR working, using onMount to make browser stuff happen:
+	import { onMount } from "svelte";
+	onMount(() => {});
+- experiment with svelte stores and the $store directive.
+	https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Frameworks_libraries/Svelte_stores
+	import { writable } from "svelte/store";
+	...
+	import { storeValue } from "../myStores.js"
+	...
+	<div>{$storeValue}</div>
+- add function to GameUI for setting current mode and panel.
+- "Values" mode: allow targeting cells in child-blocks.
 
 
 > misc simulator improvements
@@ -219,22 +221,9 @@ may have recursive behaviour.
 	(the text would be easier to read if it was all horizontal and not stretched in weird ways).
 
 
-- add option for generating a block with random contents (for fun).
-- create a code-converter which converts basic arithmetic functions into block-tempates.
-- check if remove "ccall,cwrap" reduces bundle size.
-- figure out how to generate a "public" build.
 
-- move "outline" style from styles.css to +page.svelte
-- try to get SSR working, using onMount to make browser stuff happen:
-	import { onMount } from "svelte";
-	onMount(() => {});
-- experiment with svelte stores and the $store directive.
-	https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Frameworks_libraries/Svelte_stores
-	import { writable } from "svelte/store";
-	...
-	import { storeValue } from "../myStores.js"
-	...
-	<div>{$storeValue}</div>
+
+
 
 
 

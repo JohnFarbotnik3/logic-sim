@@ -64,23 +64,23 @@
 		gameUI.hide_tooltip_callback = hide_tooltip_callback;
 
 		titles = new Map([
+			[gameUI.MODES.FILE			, gameUI.info_file_export],
 			[gameUI.MODES.SELECT		, gameUI.info_select],
 			[gameUI.MODES.SET_VALUES	, gameUI.info_setval],
 			[gameUI.MODES.PLACE_CELLS	, gameUI.info_place_cells],
 			[gameUI.MODES.PLACE_LINKS	, gameUI.info_place_links],
 			[gameUI.MODES.PLACE_BLOCKS	, gameUI.info_place_blocks],
 			[gameUI.MODES.ROOT_BLOCK	, gameUI.info_root_template],
-			[gameUI.MODES.FILE			, gameUI.info_file_export],
 		]);
 
 		panels = new Map([
+			[gameUI.MODES.FILE			, Prefab.panel_file_export],
 			[gameUI.MODES.SELECT		, Prefab.panel_select],
 			[gameUI.MODES.SET_VALUES	, Prefab.panel_cell_values],
 			[gameUI.MODES.PLACE_CELLS	, Prefab.panel_place_cells],
 			[gameUI.MODES.PLACE_LINKS	, Prefab.panel_place_links],
 			[gameUI.MODES.PLACE_BLOCKS	, Prefab.panel_place_blocks],
 			[gameUI.MODES.ROOT_BLOCK	, Prefab.panel_root_template],
-			[gameUI.MODES.FILE			, Prefab.panel_file_export],
 		]);
 
 		// update UI.
@@ -140,22 +140,6 @@
 	color: #fff;
 	font-family: monospace;
 	overflow: clip;
-}
-
-:global(.clickthrough) {
-	pointer-events: none;
-}
-:global(.clickable) {
-	pointer-events: all;
-}
-
-/*
-	IMPORTANT TRICK - REMEBER THIS TRICK!!!!!!!!!!
-	this allows putting multiple elements in the same row.
-*/
-:global(.first_cell) {
-	grid-column: 1;
-	grid-row: 1;
 }
 
 </style>

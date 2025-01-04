@@ -1,7 +1,7 @@
 import { TEST_BLOCKS_OBJECT } from "./GameInit_json"
 import { GameServer_wasm } from "./server/GameServer_wasm"
 import { GameUI, GameRenderer } from "./interface/exports";
-import { BlockTemplateLibrary } from "./content/exports";
+import { BlockTemplateLibrary, ComponentId } from "./content/exports";
 import { CachedValue_Rendering } from "./CachedValue";
 import { Performance } from "./Performance";
 
@@ -84,7 +84,7 @@ class Main {
 			const prevStep = Math.floor(this.simulationSpeed * 0.001 * this.simulationDatePrev);
 			const currStep = Math.floor(this.simulationSpeed * 0.001 * Date.now());
 			const numSteps = currStep - prevStep;
-			this.gameServer.simulation_update(numSteps);
+			if(this.simulationIsRunning) this.gameServer.simulation_update(numSteps);
 			this.simulationDatePrev = Date.now();
 			const t_s2 = Date.now();
 			this.gameRenderer.render();
@@ -120,6 +120,7 @@ class Main {
 		this.simulationShouldRebuild = true;
 		this.gameUI.on_major_blocklib_change();
 		this.gameUI.root_template_reset_inputs();
+		this.gameUI.onclick_block_type(null, ComponentId.NONE);
 	}
 	refresh_root_block_template() {
 		this.blockLibrary.refresh_root_block_template();

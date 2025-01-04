@@ -14,14 +14,14 @@
 
 <div>
 	<div class="outline" style="margin:5px; padding:2px;">
-		<Button onclick={onnewtmp} style="width:100%;">New Template</Button>
-	</div>
-	<div class="outline" style="margin:5px; padding:2px;">
-		<Button onclick={onexport} style="width:100%;">Export</Button>
-		<InputArea {...exp_props} />
+		<Button onclick={onnewtmp} style="width:100%;">New Block</Button>
 	</div>
 	<div class="outline" style="margin:5px; padding:2px;">
 		<Button onclick={onimport} style="width:100%;">Import</Button>
 		<InputArea {...imp_props} />
+	</div>
+	<div class="outline" style="margin:5px; padding:2px;">
+		<Button onclick={onexport} style="width:100%;">Export</Button>
+		<InputArea {...exp_props} />
 	</div>
 </div>

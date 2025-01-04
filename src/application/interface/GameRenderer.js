@@ -1,4 +1,4 @@
-import { RenderTreeBlock } from "./RenderTreeBlock";
+import { RenderTreeBlock } from "./exports";
 import { main } from "../Main";
 import {
 	mat4,
@@ -20,8 +20,8 @@ import {
 	Rectangle,
 	Transformation2D,
 } from "../lib/exports";
-import { Performance } from "../misc/Performance";
-import { CachedValue_Rendering } from "../misc/CachedValue";
+import { CachedValue_Rendering } from "../CachedValue";
+import { Performance } from "../Performance";
 
 
 const INDEX_NONE_SB = 0xffffffff;
@@ -491,6 +491,7 @@ export class GameRenderer {
 		const isSelected = main.gameUI.collectionSelected.cells.has(cell) | renderblock.is_selected;
 		const isHovered  = main.gameUI.collectionHovered .cells.has(cell) | renderblock.is_hovered;
 		if(isSelected | isHovered | renderblock.is_selected | renderblock.is_hovered) {
+			const textDepth = depth+1;
 			const fontHeight = 0.30;
 			const fontColour = 0xffffffff;
 			const wrap = false;
@@ -500,7 +501,8 @@ export class GameRenderer {
 				const str = cell.typeString;
 				const clr = fontColour;
 				const unitRectPoint = [0.5, 1.0];
-				this.push_content_text_box_against_circle(tran, depth, str, fontHeight, clr, unitRectPoint, dist);
+				this.push_content_text_box_against_circle(tran, textDepth, str, fontHeight, 0x000000ff, unitRectPoint, dist);
+				this.push_content_text_box_against_circle(tran, textDepth, str, fontHeight, clr, unitRectPoint, dist);
 			}
 			// draw values.
 			const labels = ["OUT:", "A:", "B:"];
@@ -511,7 +513,8 @@ export class GameRenderer {
 					RenderTreeBlock.LINK_POINTS_F32[i*3+0],
 					RenderTreeBlock.LINK_POINTS_F32[i*3+1],
 				];
-				this.push_content_text_box_against_circle(tran, depth, str, fontHeight, clr, unitRectPoint, dist);
+				this.push_content_text_box_against_circle(tran, textDepth, str, fontHeight, 0x000000ff, unitRectPoint, dist);
+				this.push_content_text_box_against_circle(tran, textDepth, str, fontHeight, clr, unitRectPoint, dist);
 			}
 		}
 	}

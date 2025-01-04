@@ -95,9 +95,9 @@ struct GameServer_wasm {
 		}
 	}
 
-	void simulation_update(float rate) {
+	void simulation_update(int numSteps) {
 		try {
-			simulation.update(rate);
+			simulation.update(numSteps);
 		} catch(std::exception& err) {
 			printf("%s\n", err.what());
 		}

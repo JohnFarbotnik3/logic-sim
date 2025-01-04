@@ -7,7 +7,7 @@ import {
 	Link,
 	Text,
 } from "./exports";
-import { CachedValue_Content } from "../misc/CachedValue";
+import { CachedValue_Rendering } from "../CachedValue";
 
 /*
 	A Block is a placeholder that refers to some BlockTemplate.
@@ -82,21 +82,21 @@ export class Block {
 	
 	// TODO: these functions should probably go in BlockTemplate instead...
 	
-	insertCell (item) { VerificationUtil.verifyType_throw(item, Cell ); 									this.template.insertCell (item); CachedValue_Content.onChange(); main.onRootContentChanged_addCell (item); return item; }
-	insertLink (item) { VerificationUtil.verifyType_throw(item, Link ); this.cleanupBeforeInsertLink(item); this.template.insertLink (item); CachedValue_Content.onChange(); main.onRootContentChanged_addLink (item); return item; }
-	insertText (item) { VerificationUtil.verifyType_throw(item, Text ); 									this.template.insertText (item); CachedValue_Content.onChange(); 											 return item; }
-	insertBlock(item) { VerificationUtil.verifyType_throw(item, Block); 									this.template.insertBlock(item); CachedValue_Content.onChange(); main.onRootContentChanged_addBlock(item); return item; }
+	insertCell (item) { VerificationUtil.verifyType_throw(item, Cell ); 									this.template.insertCell (item); CachedValue_Rendering.onChange(); main.onRootContentChanged_addCell (item); return item; }
+	insertLink (item) { VerificationUtil.verifyType_throw(item, Link ); this.cleanupBeforeInsertLink(item); this.template.insertLink (item); CachedValue_Rendering.onChange(); main.onRootContentChanged_addLink (item); return item; }
+	insertText (item) { VerificationUtil.verifyType_throw(item, Text ); 									this.template.insertText (item); CachedValue_Rendering.onChange(); 											 return item; }
+	insertBlock(item) { VerificationUtil.verifyType_throw(item, Block); 									this.template.insertBlock(item); CachedValue_Rendering.onChange(); main.onRootContentChanged_addBlock(item); return item; }
 	
 	deleteCell (item) { VerificationUtil.verifyType_throw(item, Cell );
 		this.cleanupBeforeDeleteCell(item).then((confirmed) => {
 			console.debug("<>deleteCell() confirmed", confirmed);
 			if(!confirmed) return;
-			this.template.removeCell (item); CachedValue_Content.onChange(); main.onRootContentChanged_remCell (item);
+			this.template.removeCell (item); CachedValue_Rendering.onChange(); main.onRootContentChanged_remCell (item);
 		});
 	}
-	deleteLink (item) { VerificationUtil.verifyType_throw(item, Link ); 												this.template.removeLink (item); CachedValue_Content.onChange(); main.onRootContentChanged_remLink (item); }
-	deleteText (item) { VerificationUtil.verifyType_throw(item, Text ); 												this.template.removeText (item); CachedValue_Content.onChange(); 											 }
-	deleteBlock(item) { VerificationUtil.verifyType_throw(item, Block); this.cleanupBeforeDeleteBlock(item);			this.template.removeBlock(item); CachedValue_Content.onChange(); main.onRootContentChanged_remBlock(item); }
+	deleteLink (item) { VerificationUtil.verifyType_throw(item, Link ); 												this.template.removeLink (item); CachedValue_Rendering.onChange(); main.onRootContentChanged_remLink (item); }
+	deleteText (item) { VerificationUtil.verifyType_throw(item, Text ); 												this.template.removeText (item); CachedValue_Rendering.onChange(); 											 }
+	deleteBlock(item) { VerificationUtil.verifyType_throw(item, Block); this.cleanupBeforeDeleteBlock(item);			this.template.removeBlock(item); CachedValue_Rendering.onChange(); main.onRootContentChanged_remBlock(item); }
 	
 	cleanupBeforeInsertLink(link) {
 		// since blocks do not contain themselves,

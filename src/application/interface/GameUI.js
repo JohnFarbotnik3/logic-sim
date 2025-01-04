@@ -1,4 +1,7 @@
-import { ItemCollection } from "./ItemCollection"
+import {
+	ItemCollection,
+	InputHandlerSet,
+} from "./exports"
 import {
 	Cell,
 	Link,
@@ -15,7 +18,6 @@ import {
 	parse_str,
 } from "../../components/Input";
 import { main } from "../Main.js";
-import { InputHandlerSet } from "./InputHandlerSet";
 import {
 	Vector3D,
 	Vector2D,
@@ -23,7 +25,7 @@ import {
 	VerificationUtil,
 	PromiseUtil,
 } from "../lib/exports";
-import { CachedValue_Content, CachedValue_Rendering } from "../misc/CachedValue";
+import { CachedValue_Rendering } from "../CachedValue";
 
 export class GameUI {
 	// ============================================================
@@ -427,7 +429,7 @@ export class GameUI {
 	// Content modification.
 	// ------------------------------------------------------------
 
-	changedContent  () { CachedValue_Content  .onChange(); }
+	changedContent  () { CachedValue_Rendering  .onChange(); }
 	changedRendering() { CachedValue_Rendering.onChange(); }
 
 	add_cell (item) { main.blockLibrary.rootBlock.insertCell (item); }
@@ -568,9 +570,6 @@ export class GameUI {
 					this.collectionTranslating.addFromCollection(this.collectionSelected);
 					this.on_selection_update();
 				}
-				console.log("this.collectionHovered", this.collectionHovered);
-				console.log("this.collectionSelected", this.collectionSelected);
-				console.log("this.collectionTranslating", this.collectionTranslating);
 				isTranslating = this.collectionTranslating.count() > 0;
 				if(isTranslating) {
 					this.translate_start.set(this.cursor_pos);
@@ -1061,10 +1060,10 @@ export class GameUI {
 			desc = value;
 		}
 		for(let x=0;x<this.table_root_template.inputs.length;x++) {
-			const id = this.table_root_template.inputs[x].id;
-			const value = this.getElementValue(id);
-			if(this.getElementInputValid(id)) inps[x] = value;
-			else errors.push(`${this.table_root_template.inputs[x].label} [${value}] is not valid.`);
+			const input = this.table_root_template.inputs[x];
+			const [value, valid] = input.get_parsed_input();
+			if(valid) inps[x] = value;
+			else errors.push(`${input.label} [${value}] is not valid.`);
 		}
 		if(errors.length > 0) alert("failed to submit some or all of given inputs:\n"+errors.join("\n"));
 		else {
@@ -1075,8 +1074,8 @@ export class GameUI {
 			template.placeW = inps[2];
 			template.placeH = inps[3];
 			main.refresh_root_block_template();
+			this.root_template_reset_inputs();
 		}
-		this.root_template_reset_inputs();
 	}
 	root_template_oncancel() {
 		this.root_template_reset_inputs();

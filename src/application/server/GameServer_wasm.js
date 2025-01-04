@@ -36,11 +36,12 @@ export class GameServer_wasm {
 					bid_dst, cid_dst, tgt_dst,
 					clr
 				} = link;
+				const _clr = new Uint32Array([clr]);
 				server.add_link(
 					templateId, id+"",
 					bid_src+"", cid_src+"", tgt_src,
 					bid_dst+"", cid_dst+"", tgt_dst,
-					clr
+					_clr[0]
 				);
 			}
 			for(const block of temp.blocks) {
@@ -59,8 +60,8 @@ export class GameServer_wasm {
 		this.server.simulation_rebuild(rootTemplateId+"", keepCellValues);
 	}
 
-	simulation_update(rate) {
-		this.server.simulation_update(rate);
+	simulation_update(numSteps) {
+		this.server.simulation_update(numSteps);
 	}
 
 	simulation_get_cell_value(cellId, sb, tgt) {

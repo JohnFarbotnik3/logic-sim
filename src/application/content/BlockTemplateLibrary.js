@@ -31,12 +31,14 @@ export class BlockTemplateLibrary {
 	_countUsedTemplatesInTree_cache = new Map();// Map<templateId>
 	_countUsedTemplatesInTree(templateId) {
 		// check cache.
+		console.log("<>templateId",templateId);
 		const cache = this._countUsedTemplatesInTree_cache;
 		if(cache.has(templateId)) return cache.get(templateId);
 		// add self to use-count.
 		const used = new Map();// Map<templateId, count>
 		used.set(templateId, 1);
 		// sum child template use-counts.
+		console.log("<>this.templates",this.templates);
 		const template = this.templates.get(templateId);
 		for(const block of template.blocks) {
 			const map = this._countUsedTemplatesInTree(block.templateId);
@@ -157,10 +159,11 @@ export class BlockTemplateLibrary {
 	}
 
 	importTemplates(json) {
-		const value = json;
-		if(json.trim().length > 0) try {
+		const value = json.trim();
+		if(value.length > 0) try {
 			const templates = [];
-			const arr = JSON.parse(value.trim());
+			const arr = JSON.parse(value);
+			console.log("<>arr", arr);
 			for(const item of arr) {
 				const template = BlockTemplate.load(item);
 				this.templates.set(template.templateId, template);

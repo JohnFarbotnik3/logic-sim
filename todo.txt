@@ -189,6 +189,8 @@ may have recursive behaviour.
 * WARNING: emscripten is a 32-bit platform, so size_t is also 32-bit!
 
 
+> "Values" mode: allow targeting cells in child-blocks.
+
 
 > troubleshoot poor performance on older devices with modest processing power
 - why is my laptop browser struggling to render even a mostly empty scene?
@@ -201,22 +203,39 @@ may have recursive behaviour.
 - and "Pan" mode button, for navigating with mouse.
 
 
+> misc simulator improvements
+- make queue in simtree heap-allocated instead of stack-allocated (stack overflow avoidance)
+- write safe_get function for c++ Map wrapper.
 
-> Renderer improvements:
+
+> misc renderer improvements:
 * most of these can just be done on the c++ side.
 * draw lines using triangles.
-- simplify render-tree generation and updates (even at the expense of performance).
-- instead of cells/celldatas being in treeBlocks, just generate a shared per-tree queue.
-^ same goes for other content types.
-- cells should have simcell index to speed up and simplify value access.
 - give cells a Colour class for easier value editing (for feature parity with c++).
+- create second text-texture with same letters but slightly thicker, so that
+	it can be drawn in black underneath regular text to improve contrast.
+	(can use 1px blur to get thicker letters).
+- draw cell values using average scale of parent block (or cell) rather than using the cell transformation.
+	(the text would be easier to read if it was all horizontal and not stretched in weird ways).
 
 
+- add option for generating a block with random contents (for fun).
+- create a code-converter which converts basic arithmetic functions into block-tempates.
+- check if remove "ccall,cwrap" reduces bundle size.
+- figure out how to generate a "public" build.
 
+- move "outline" style from styles.css to +page.svelte
+- try to get SSR working, using onMount to make browser stuff happen:
+	import { onMount } from "svelte";
+	onMount(() => {});
+- experiment with svelte stores and the $store directive.
+	https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Frameworks_libraries/Svelte_stores
+	import { writable } from "svelte/store";
+	...
+	import { storeValue } from "../myStores.js"
+	...
+	<div>{$storeValue}</div>
 
-> decouple which panel is open and current placement mode.
-> add blue background to panel buttons indicating which mode is active (try mixing colours when both open and active)
-> add way to close panels while in a placement mode.
 
 
 

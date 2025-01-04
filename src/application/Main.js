@@ -1,10 +1,9 @@
 import { TEST_BLOCKS_OBJECT } from "./GameInit_json"
 import { GameServer_wasm } from "./server/GameServer_wasm"
-import { GameUI } from "./interface/GameUI_v2";
-import { GameRenderer } from "./render/GameRenderer";
-import { Performance } from "./misc/Performance";
+import { GameUI, GameRenderer } from "./interface/exports";
 import { BlockTemplateLibrary } from "./content/exports";
-import { CachedValue_Content } from "./misc/CachedValue";
+import { CachedValue_Rendering } from "./CachedValue";
+import { Performance } from "./Performance";
 
 class Main {
 	constructor() {
@@ -20,6 +19,7 @@ class Main {
 		this.simulationShouldReset = true;
 		// simulation speed - steps per second.
 		this.simulationSpeed = 60;
+		this.simulationDatePrev = 0;
 		this.simulationIsRunning = true;
 		// maximum recursive drawing depth for blocks.
 		this.maxDrawDepth = 2;
@@ -80,14 +80,19 @@ class Main {
 				this.simulationShouldReset = false;
 			}
 			const t_s1 = Date.now();
-			if(this.simulationIsRunning) this.gameServer.simulation_update(this.simulationSpeed);
+			if(this.simulationDatePrev === 0) this.simulationDatePrev = Date.now();
+			const prevStep = Math.floor(this.simulationSpeed * 0.001 * this.simulationDatePrev);
+			const currStep = Math.floor(this.simulationSpeed * 0.001 * Date.now());
+			const numSteps = currStep - prevStep;
+			this.gameServer.simulation_update(numSteps);
+			this.simulationDatePrev = Date.now();
 			const t_s2 = Date.now();
 			this.gameRenderer.render();
 			const t1 = Date.now();
 			Performance.increment_time("sim.rebuild", t_s1-t_s0);
 			Performance.increment_time("sim.update ", t_s2-t_s1);
 			Performance.increment_time("main.update", t1-t0);
-			//Performance.log_all();
+			Performance.log_all();
 			requestAnimationFrame((t) => this.update.call(this, t));
 		} catch(error) {
 			this.gameUI.showCrashPopup(error, "application crashed during Main.update()");
@@ -111,13 +116,14 @@ class Main {
 
 	set_root_block_template(templateId) {
 		this.blockLibrary.set_root_block_template(templateId);
-		CachedValue_Content.onChange();
+		CachedValue_Rendering.onChange();
 		this.simulationShouldRebuild = true;
 		this.gameUI.on_major_blocklib_change();
+		this.gameUI.root_template_reset_inputs();
 	}
 	refresh_root_block_template() {
 		this.blockLibrary.refresh_root_block_template();
-		CachedValue_Content.onChange();
+		CachedValue_Rendering.onChange();
 		this.gameUI.on_minor_blocklib_change();
 	}
 

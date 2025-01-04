@@ -16,16 +16,8 @@ struct GameSimulation {
 	SimulationTree simtree;
 	/* List of task objects. */
 	Vector<SimulationTask> tasks;
-	/* Amount of accumulated simulation steps, based on elapsed time and simulation-speed. */
-	u64 prev_time_ms;
-	u64 curr_time_ms;
-	u32 accumulated_msteps;
-	
-	GameSimulation() {
-		this->prev_time_ms			= 0;
-		this->curr_time_ms			= 0;
-		this->accumulated_msteps	= 0;
-	}
+
+	GameSimulation() {}
 	
 	// ============================================================
 	// Helpers.
@@ -203,28 +195,14 @@ struct GameSimulation {
 	// ============================================================
 	// Update
 	// ------------------------------------------------------------
-	void update(float simulationRate) {
-		const u64 max_runtime_ms = 1000 / 60;
-		u64 prev = this->prev_time_ms = this->curr_time_ms;
-		u64 curr = this->curr_time_ms = Date::now_ms();
-		if(prev == 0) prev = curr;
-		this->accumulated_msteps += (curr - prev) * simulationRate;
-		while(this->accumulated_msteps > 1000) {
-			// check if time limit reached
-			if(Date::now_ms() - curr < max_runtime_ms) {
-				this->accumulated_msteps -= 1000;
-			} else {
-				this->accumulated_msteps = 0;
-				break;
-			}
+	void update(int steps) {
+		const u64 max_date_ms = Date::now_ms() + (1000 / 60);
+		while((steps > 0) & (Date::now_ms() < max_date_ms)) {
+			steps--;
 			// perform simulation step.
-			for(SimulationTask& task : this->tasks) {
-				if(task.shouldUpdate()) task.update();
-			}
+			for(SimulationTask& task : this->tasks) if(task.shouldUpdate()) task.update();
 			// gather and spread outputs.
-			for(SimulationTask& task : this->tasks) {
-				for(SimulationUpdate& upd : task.out_buffer) this->pushCellUpdate(upd);
-			}
+			for(SimulationTask& task : this->tasks) for(SimulationUpdate& upd : task.out_buffer) this->pushCellUpdate(upd);
 		}
 	}
 };

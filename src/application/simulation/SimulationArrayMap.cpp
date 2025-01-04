@@ -3,12 +3,12 @@
 
 struct SimulationArrayMap {
 	/* Number of indices in stack. */
-	u32		count;
-	/* Index-associated Set of booleans for ensuring indices are only added once. */
-	bool	added[CELLS_PER_TASK];
+	u32 count;
 	/* List of indices. */
-	u32		stack[CELLS_PER_TASK];
-	
+	Array<u32, CELLS_PER_TASK> stack;
+	/* Index-associated Set of booleans for ensuring indices are only added once. */
+	Array<bool, CELLS_PER_TASK> added;
+
 	SimulationArrayMap() {
 		count = 0;
 		for(int x=0;x<CELLS_PER_TASK;x++) added[x] = false;

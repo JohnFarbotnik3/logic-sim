@@ -7,6 +7,10 @@ export class InputProps {
 		this.initial	= initial;
 		this.oninput	= oninput;
 	}
+	get_parsed_input() {
+		const elem = document.getElementById(this.id);
+		return parse_input(elem.value, this.type);
+	}
 };
 
 export const INPUT_TYPES = {

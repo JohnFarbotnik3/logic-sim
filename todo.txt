@@ -212,10 +212,7 @@ may have recursive behaviour.
 - give cells a Colour class for easier value editing (for feature parity with c++).
 
 
-> add copy cell to XOR gate template so that propagation time of both paths is equal.
 
-> Re-implement UI in Svelte
-* add shared mouse-following tooltip component (confined to window area).
 
 > decouple which panel is open and current placement mode.
 > add blue background to panel buttons indicating which mode is active (try mixing colours when both open and active)

@@ -62,11 +62,17 @@ export class Link {
 	
 	save() {
 		const {id, bid_src, bid_dst, cid_src, cid_dst, tgt_dst, clr} = this;
-		return {id, bid_src, bid_dst, cid_src, cid_dst, tgt_dst, clr};
+		const src_addr = [bid_src, cid_src];
+		const dst_addr = [bid_dst, cid_dst, tgt_dst];
+		return {id, src_addr, dst_addr, clr};
 	}
 	static load(obj) {
+		const {id, src_addr, dst_addr, clr} = obj;
+		const [bid_src, cid_src] = src_addr;
+		const [bid_dst, cid_dst, tgt_dst] = dst_addr;
+		const objobj = {id, bid_src, bid_dst, cid_src, cid_dst, tgt_dst, clr};
 		const newobj = new Link();
-		Object.assign(newobj, obj);
+		Object.assign(newobj, objobj);
 		return newobj;
 	}
 	clone() {

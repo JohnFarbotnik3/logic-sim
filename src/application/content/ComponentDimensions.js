@@ -18,10 +18,10 @@ export class ComponentDimensions {
 	
 	save() {
 		const {x,y,w,h,r} = this;
-		return {x,y,w,h,r};
+		return [x,y,w,h,r];
 	}
 	static load(obj) {
-		const {x,y,w,h,r} = obj;
+		const [x,y,w,h,r] = obj;
 		const newobj = new ComponentDimensions(x,y,w,h,r);
 		return newobj;
 	}

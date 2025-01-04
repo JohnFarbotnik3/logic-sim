@@ -46,19 +46,16 @@ export class Block {
 	// ------------------------------------------------------------
 	
 	save() {
-		const {
-			dimensions,
-			id, templateId
-		} = this;
+		const { dimensions, id, templateId } = this;
 		return {
-			dimensions: dimensions.save(),
+			dim: dimensions.save(),
 			id, templateId
 		};
 	}
 	static load(obj) {
 		const newobj = new Block();
 		Object.assign(newobj, obj);
-		newobj.dimensions = ComponentDimensions.load(obj.dimensions);
+		newobj.dimensions = ComponentDimensions.load(obj.dim);
 		return newobj;
 	}
 	clone() {

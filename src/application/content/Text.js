@@ -37,19 +37,16 @@ export class Text {
 	// ------------------------------------------------------------
 	
 	save() {
-		const {
-			dimensions,
-			id, str, fhgt, fclr, bclr, oclr
-		} = this;
+		const { dimensions, id, str, fhgt, fclr, bclr, oclr } = this;
 		return {
-			dimensions: dimensions.save(),
+			dim: dimensions.save(),
 			id, str, fhgt, fclr, bclr, oclr
 		};
 	}
 	static load(obj) {
 		const newobj = new Text();
 		Object.assign(newobj, obj);
-		newobj.dimensions = ComponentDimensions.load(obj.dimensions);
+		newobj.dimensions = ComponentDimensions.load(obj.dim);
 		return newobj;
 	}
 	clone() {
@@ -57,6 +54,3 @@ export class Text {
 	}
 	
 };
-
-
-

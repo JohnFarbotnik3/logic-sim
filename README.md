@@ -7,6 +7,8 @@ This web-application is a simple builder and real-time simulator for basic combi
 
 Running the app involves serving "index.html" for viewing in a web-browser. Any server will do, but for convenience I've included a script named "serve.py" which runs a simple Python http-server, making the app available at "http://localhost:3000/" (note: you will need Python-v3 installed for this).
 
+To run a pre-built copy of the app:
+`cd build_serve && ../serve.py`
 
 # Who is this application for?
 

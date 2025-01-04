@@ -50,14 +50,14 @@ export class Cell {
 	save() {
 		const { dimensions, id, type, value } = this;
 		return {
-			dimensions: dimensions.save(),
+			dim: dimensions.save(),
 			id, type, value,
 		};
 	}
 	static load(obj) {
 		const newobj = new Cell();
 		Object.assign(newobj, obj);
-		newobj.dimensions = ComponentDimensions.load(obj.dimensions);
+		newobj.dimensions = ComponentDimensions.load(obj.dim);
 		return newobj;
 	}
 	clone() {

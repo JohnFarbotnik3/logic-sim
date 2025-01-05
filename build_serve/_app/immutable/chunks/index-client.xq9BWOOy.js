@@ -1,1 +1,0 @@
-import{i as o,l as e,u as r,j as u}from"./runtime.DEMVnaZ-.js";function l(n){throw new Error("https://svelte.dev/e/lifecycle_outside_component")}function s(n){o===null&&l(),e&&o.l!==null?c(o).m.push(n):r(()=>{const t=u(n);if(typeof t=="function")return t})}function c(n){var t=n.l;return t.u??(t.u={a:[],b:[],m:[]})}export{s as o};

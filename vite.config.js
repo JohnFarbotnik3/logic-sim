@@ -1,11 +1,14 @@
 import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig } from 'vite';
-import topLevelAwait from "vite-plugin-top-level-await";
+//import topLevelAwait from "vite-plugin-top-level-await";
 
 export default defineConfig({
-	plugins: [ sveltekit(), topLevelAwait() ],
-	assetsInclude: ["**/*.wasm"],
+	plugins: [
+		sveltekit(),
+		//topLevelAwait(),
+	],
+	//assetsInclude: ["**/*.wasm"],
 	build: {
-		assetsInlineLimit: 4096	// default: 4096 (4 KiB)
+		assetsInlineLimit: 65536	// default: 4096 (4 KiB)
 	},
 });

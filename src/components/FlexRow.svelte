@@ -7,7 +7,7 @@
 		display: flex;
 		flex-direction: row;
 		width: 100%;
-		overflow-x: scroll;
+		overflow-x: auto;
 
 		min-width: 0px;
 		max-width: 100%;

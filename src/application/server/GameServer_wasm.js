@@ -1,7 +1,5 @@
 import createEmModule from "./em_index";
 
-const module = await createEmModule();
-
 /* Functions for interacting with c++ implementation. */
 export class GameServer_wasm {
 

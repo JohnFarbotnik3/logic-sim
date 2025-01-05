@@ -3,12 +3,12 @@
 This web-application is a simple builder and real-time simulator for basic combinational logic-circuits.
 
 
-# Running the application
+# Building and Running the application
 
-Running the app involves serving "index.html" for viewing in a web-browser. Any server will do, but for convenience I've included a script named "serve.py" which runs a simple Python http-server, making the app available at "http://localhost:3000/" (note: you will need Python-v3 installed for this).
+Building and running this project from source requires having NodeJS installed.
 
-To run a pre-built copy of the app:
-`cd build_serve && ../serve.py`
+First, install dependencies with `npm i`, then build and run application with `npm run build && npm run preview`.
+
 
 # Who is this application for?
 

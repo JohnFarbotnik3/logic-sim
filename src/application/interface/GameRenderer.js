@@ -342,6 +342,8 @@ export class GameRenderer {
 	// line grid
 	push_content_line_grid(tran, depth, rect, clr, nx, ny) {
 		// generate data.
+		nx = Math.floor(nx);
+		ny = Math.floor(ny);
 		const [x,y,w,h] = rect;
 		const count = 2*(nx+1) + 2*(ny+1);
 		const idata = new Array(count);

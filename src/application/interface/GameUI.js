@@ -1151,7 +1151,7 @@ export class GameUI {
 			if(errors.length > 0) {
 				alert("One or more inputs were invalid:\n" + errors.join("\n"));
 			} else {
-				main.blockLibrary.createNewBlockTemplate(w, h, n, d);
+				main.blockLibrary.createNewBlockTemplate(Math.ceil(w), Math.ceil(h), n, d);
 				this.hide_new_template_popup();
 			}
 		};

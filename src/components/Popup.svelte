@@ -26,15 +26,19 @@
 	}
 </style>
 
-<div class={`underlay ${props?.class}`} style={props?.style}>
+<div class={`underlay ${props?.class ?? ""}`} style={props?.style}>
 	<div class="outline inner">
 		<Grid rows="auto auto">
-			<div style="margin-bottom:10px;">
-				{@html props.innerHTML}
+			<Grid cols="1fr">
+				{#if props?.onclose}<Button onclick={() => props.onclose()} style="background:#033; right:0px;">Close</Button>{/if}
+			</Grid>
+			<div>
+				{@html props?.innerHTML}
+				{@render props?.children()}
 			</div>
 			<Grid cols="1fr 1fr">
-				<Button onclick={() => props.oncancel()} style="background:#300; left:0px;">Cancel</Button>
-				<Button onclick={() => props.onsubmit()} style="background:#033; right:0px;">Submit</Button>
+				{#if props?.oncancel}<Button onclick={() => props.oncancel()} style="background:#300; left:0px;">Cancel</Button>{/if}
+				{#if props?.onsubmit}<Button onclick={() => props.onsubmit()} style="background:#033; right:0px;">Submit</Button>{/if}
 			</Grid>
 		</Grid>
 	</div>

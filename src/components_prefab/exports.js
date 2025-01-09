@@ -6,6 +6,7 @@ import panel_place_links	from "./panel_place_links.svelte";
 import panel_place_blocks	from "./panel_place_blocks.svelte";
 import panel_root_template	from "./panel_root_template.svelte";
 import panel_file_export	from "./panel_file_export.svelte";
+import panel_help			from "./panel_help.svelte";
 import header_play_settings	from "./header_play_settings.svelte";
 
 export {
@@ -16,5 +17,6 @@ export {
 	panel_place_blocks,
 	panel_root_template,
 	panel_file_export,
+	panel_help,
 	header_play_settings,
 };

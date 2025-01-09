@@ -19,8 +19,11 @@
 	let panels			= $state(new Map());
 	let currentPanel	= $state(null);
 	let currentMode		= $state(null);
-	function onModeChange(mode) {
+	function setCurrentMode(mode) {
 		currentMode = mode;
+	}
+	function setCurrentPanel(mode) {
+		currentPanel = (currentPanel === mode) ? null : mode;
 	}
 	function onclickSetPanelMode(mode) {
 		currentPanel = (currentPanel === mode) ? null : mode;
@@ -54,7 +57,8 @@
 		const gameUI = main.gameUI;
 
 		modes = [...Object.values(gameUI.MODES)];
-		gameUI.setCurrentMode_callback = onModeChange;
+		gameUI.setCurrentMode_callback = setCurrentMode;
+		gameUI.setCurrentPanel_callback = setCurrentPanel;
 		gameUI.setCurrentMode(gameUI.MODES.SELECT);
 		currentPanel = null;
 
@@ -64,6 +68,7 @@
 		gameUI.hide_tooltip_callback = hide_tooltip_callback;
 
 		titles = new Map([
+			[gameUI.MODES.HELP			, "View user guide."],
 			[gameUI.MODES.FILE			, gameUI.info_file_export],
 			[gameUI.MODES.SELECT		, gameUI.info_select],
 			[gameUI.MODES.SET_VALUES	, gameUI.info_setval],
@@ -74,6 +79,7 @@
 		]);
 
 		panels = new Map([
+			[gameUI.MODES.HELP			, Prefab.panel_help],
 			[gameUI.MODES.FILE			, Prefab.panel_file_export],
 			[gameUI.MODES.SELECT		, Prefab.panel_select],
 			[gameUI.MODES.SET_VALUES	, Prefab.panel_cell_values],

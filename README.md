@@ -9,6 +9,9 @@ Building and running this project from source requires having NodeJS installed.
 
 First, install dependencies with `npm i`, then build and run application with `npm run build && npm run preview`.
 
+Some parts of this app are implemented in C++, which has been compiled into WebAssembly using Emscripten. The build scripts seen in the `/src/application/server` directory of this project (ex: "build-wasm-debug.sh") refer to a local installation of the EmscriptenSDK, but that is not included with this project.
+
+For more information, see: https://emscripten.org/index.html
 
 # Who is this application for?
 
@@ -21,7 +24,7 @@ When taking Computer Architecture I & II in university, professors usually drew 
 - It is also for people who just want to play with logic circuits.
 
 
-# Documentation
+# User Guide
 
-See [DOCUMENTATION.md](./docs/DOCUMENTATION.md)
-
+See "Help" panel in the application:
+https://johnfarbotnik3.github.io/logic-sim-site/

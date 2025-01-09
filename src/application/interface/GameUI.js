@@ -42,6 +42,7 @@ export class GameUI {
 	// ------------------------------------------------------------
 
 	MODES = {
+		HELP:			"Help",
 		FILE:			"File",
 		SELECT:			"Select",
 		SET_VALUES:		"Outputs",
@@ -52,10 +53,12 @@ export class GameUI {
 	};
 	currentMode = this.MODES.SELECT;
 	setCurrentMode_callback = null;
+	setCurrentPanel_callback = null;
 	setCurrentMode(mode) {
 		console.log("GameUI_v2.setCurrentMode(mode)", mode);
 		if(mode === this.MODES.ROOT_BLOCK	) mode = this.MODES.SELECT;
 		if(mode === this.MODES.FILE			) mode = this.MODES.SELECT;
+		if(mode === this.MODES.HELP			) mode = this.MODES.SELECT;
 		this.currentMode = mode;
 		PromiseUtil.tryUntilTruthy(() => this.setCurrentMode_callback, [], 100, 20)
 			.then((func) => func(mode))

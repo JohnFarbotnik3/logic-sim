@@ -218,9 +218,12 @@ as this will allow writing tree-structs without major performance problems.
 	it can be drawn in black underneath regular text to improve contrast.
 	(can use 1px blur to get thicker letters).
 - draw cell values using average scale of parent block (or cell) rather than using the cell transformation.
-	(the text would be easier to read if it was all horizontal and not stretched in weird ways).
+(the text would be easier to read if it was all horizontal and not stretched in weird ways).
 
 
+> Accessibility
+- improve keyboard usability by setting focus when panels open/close, etc...
+^ ex: first input, "Close", or "Cancel" should be focused by default when opening popup.
 
 
 

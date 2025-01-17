@@ -1,3 +1,6 @@
+#ifndef SimulationTask_h
+#define SimulationTask_h
+
 #include "./SimulationCell.cpp"
 #include "./SimulationLink.cpp"
 #include "./SimulationUpdate.cpp"
@@ -221,5 +224,4 @@ struct SimulationTask {
 	}
 };
 
-
-
+#endif

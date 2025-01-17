@@ -2,7 +2,7 @@
 #define _CellTypes
 
 #include "../Imports.cpp"
-#include "./Colour.cpp"
+#include "./ItemClr.cpp"
 #include <cassert>
 
 struct CellType {
@@ -10,10 +10,10 @@ struct CellType {
 	u32			type;
 	u32			numTargets;
 	u32			taskOrder;
-	Colour 		clr;
+	ItemClr 	clr;
 
 	CellType() {}
-	CellType(std::string typecode, u32 type, u32 numTargets, u32 taskOrder, Colour clr) {
+	CellType(std::string typecode, u32 type, u32 numTargets, u32 taskOrder, ItemClr clr) {
 		this->typecode		= typecode;
 		this->type			= type;
 		this->clr			= clr;
@@ -26,10 +26,10 @@ struct CellType {
 };
 
 static Map<u32, CellType> CELL_TYPES_MAP;
-CellType addCellType(std::string typecode, u32 type, u32 numTargets, u32 taskOrder, Colour clr) {
+CellType addCellType(std::string typecode, u32 type, u32 numTargets, u32 taskOrder, ItemClr clr) {
 	return CELL_TYPES_MAP[type] = CellType(typecode, type, numTargets, taskOrder, clr);
 }
-CellType addCellType(std::string typecode, u32 numTargets, u32 taskOrder, Colour clr) {
+CellType addCellType(std::string typecode, u32 numTargets, u32 taskOrder, ItemClr clr) {
 	u32 type = 0;
 	for(int x=0;x<typecode.length();x++) type = (type << 8) | typecode[x];
 	return addCellType(typecode, type, numTargets, taskOrder, clr);

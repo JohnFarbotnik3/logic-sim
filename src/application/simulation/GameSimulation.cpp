@@ -1,3 +1,6 @@
+#ifndef GameSimulation_h
+#define GameSimulation_h
+
 #include "../lib/Date.cpp"
 #include "./SimulationTree.cpp"
 #include "./SimulationTask.cpp"
@@ -48,6 +51,41 @@ struct GameSimulation {
 		const u32 ind = (blockId == ItemId::THIS_BLOCK) ? rootSB.cmap.at(cellId) : simtree.simblocks[rootSB.bmap.at(blockId)].cmap[cellId];
 		this->tasks[ind / CELLS_PER_TASK].modifyCellValue(ind, val);
 	}
+
+	/*
+		a pointer for traversing simulation tree and getting cell values.
+		this is used by GameRenderer.
+	*/
+	struct SimulationPointer {
+		const GameSimulation* simulation;
+		const SimulationBlock* simblock;
+		SimulationPointer() {
+			this->simulation = nullptr;
+			this->simblock = nullptr;
+		}
+		SimulationPointer(const GameSimulation* simulation, const SimulationBlock* simblock) {
+			this->simulation = simulation;
+			this->simblock = simblock;
+		}
+		bool is_nullptr() {
+			return simulation == nullptr | simblock == nullptr;
+		}
+		SimulationPointer get_child_pointer(ItemId bid) {
+			if(is_nullptr()) return SimulationPointer();
+			if(!simblock->bmap.contains(bid)) return SimulationPointer();
+			return SimulationPointer(simulation, &(simulation->simtree.simblocks[simblock->bmap.at(bid)]));
+		}
+		Array<u32, 3> get_cell_values(ItemId cellId) {
+			if(is_nullptr() || !simblock->cmap.contains(cellId)) return Array<u32, 3>{0,0,0};
+			const u32 ind = simblock->cmap.at(cellId);
+			const SimulationTask& task = simulation->tasks[ind / CELLS_PER_TASK];
+			const u32* vals = task.cell_buffer[task.toLocalIndex(ind)].values;
+			return Array<u32, 3>{vals[0], vals[1], vals[2]};
+		}
+	};
+	SimulationPointer get_simtree_root_pointer() const {
+		return SimulationPointer(this, &simtree.root());
+	}
 	
 	// ============================================================
 	// Initialization stages.
@@ -60,7 +98,7 @@ struct GameSimulation {
 		for(SimulationBlock& simblock : simtree.simblocks) {
 			const BlockTemplate& btmp = simtree.getTemplate(simblock);
 			u32 index = cell_buffer.size();
-			for(const Cell& cell : btmp.cells) {
+			for(const auto& [id, cell] : btmp.cells) {
 				cell_buffer.push_back(SimulationCell(cell.value, cell.taskOrder));
 				const auto order = cell_buffer[index].task_order;
 				assert(order < NUM_CELL_TYPES);
@@ -206,3 +244,5 @@ struct GameSimulation {
 		}
 	}
 };
+
+#endif

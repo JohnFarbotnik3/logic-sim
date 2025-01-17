@@ -2,8 +2,9 @@
 #define _Cell
 
 #include "./CellTypes.cpp"
-#include "./ItemDim.cpp"
 #include "./ItemId.cpp"
+#include "./ItemDim.cpp"
+#include "./ItemClr.cpp"
 
 struct Cell {
 	ItemDim	dim;
@@ -24,7 +25,7 @@ struct Cell {
 	// ------------------------------------------------------------
 	Transformation2D	tran;
 	String				typecode;
-	Colour 				clr;
+	ItemClr 			clr;
 	u32 				numTargets;
 	u32					taskOrder;
 

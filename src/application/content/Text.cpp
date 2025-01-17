@@ -2,9 +2,9 @@
 #define _Text
 
 #include "../Imports.cpp"
-#include "./ItemDim.cpp"
 #include "./ItemId.cpp"
-#include "./Colour.cpp"
+#include "./ItemDim.cpp"
+#include "./ItemClr.cpp"
 
 struct Text {
 	ItemDim	dim;
@@ -13,14 +13,14 @@ struct Text {
 	/* Font height/scale. */
 	f32		fhgt;
 	/* Foreground colour. */
-	Colour	fclr;
+	ItemClr	fclr;
 	/* Background colour. */
-	Colour	bclr;
+	ItemClr	bclr;
 	/* Outline colour. */
-	Colour	oclr;			
+	ItemClr	oclr;
 	
 	Text() {}
-	Text(ItemDim dim, String str, f32 fhgt, Colour fclr, Colour bclr, Colour oclr) {
+	Text(ItemDim dim, String str, f32 fhgt, ItemClr fclr, ItemClr bclr, ItemClr oclr) {
 		this->dim	= dim;
 		this->id	= ItemId::next();
 		this->str	= str;

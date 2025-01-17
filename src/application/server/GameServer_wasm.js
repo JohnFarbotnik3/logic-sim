@@ -78,6 +78,43 @@ export class GameServer_wasm {
 	// Renderer
 	// ------------------------------------------------------------
 	
-	// TODO
+	// font renderer init.
+	get_font_renderer_num_missing_glyphs() {
+		return this.server.get_font_renderer_num_missing_glyphs();
+	}
+	get_font_renderer_next_missing_glyph(index) {
+		return this.server.get_font_renderer_next_missing_glyph(index);
+	}
+	set_font_renderer_tex_dim(tw, th) {
+		this.server.set_font_renderer_tex_dim(tw, th);
+	}
+	set_font_renderer_glyph(c, tx, ty, tw, th) {
+		//console.log("set_font_renderer_glyph", c, tx, ty, tw, th);
+		return this.server.set_font_renderer_glyph(c, tx, ty, tw, th);
+	}
+
+	// draw
+	draw_all(
+		rootTemplateId
+	) {
+		// get selection.
+		// TODO
+		const ids_selected = [];
+		const ids_hovered = [];
+		// draw.
+		this.server.draw_all(rootTemplateId+"");
+	}
+
+	// buffer data.
+	triangles_ind() { const obj = this.server.triangles_ind(); return this.module.HEAPU32.subarray(obj.hptr, obj.hptr + obj.size); }
+	triangles_pos() { const obj = this.server.triangles_pos(); return this.module.HEAPF32.subarray(obj.hptr, obj.hptr + obj.size); }
+	triangles_clr() { const obj = this.server.triangles_clr(); return this.module.HEAPU32.subarray(obj.hptr, obj.hptr + obj.size); }
+	lines_ind() { const obj = this.server.lines_ind(); return this.module.HEAPU32.subarray(obj.hptr, obj.hptr + obj.size); }
+	lines_pos() { const obj = this.server.lines_pos(); return this.module.HEAPF32.subarray(obj.hptr, obj.hptr + obj.size); }
+	lines_clr() { const obj = this.server.lines_clr(); return this.module.HEAPU32.subarray(obj.hptr, obj.hptr + obj.size); }
+	font_ind() { const obj = this.server.font_ind(); return this.module.HEAPU32.subarray(obj.hptr, obj.hptr + obj.size); }
+	font_pos() { const obj = this.server.font_pos(); return this.module.HEAPF32.subarray(obj.hptr, obj.hptr + obj.size); }
+	font_clr() { const obj = this.server.font_clr(); return this.module.HEAPU32.subarray(obj.hptr, obj.hptr + obj.size); }
+	font_tex() { const obj = this.server.font_tex(); return this.module.HEAPF32.subarray(obj.hptr, obj.hptr + obj.size); }
 	
 }

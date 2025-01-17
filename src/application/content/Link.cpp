@@ -3,7 +3,7 @@
 
 #include "../Imports.cpp"
 #include "./ItemId.cpp"
-#include "./Colour.cpp"
+#include "./ItemClr.cpp"
 
 using LinkTarget = u32;
 
@@ -47,10 +47,10 @@ struct Link {
 	ItemId	id;
 	LinkAddress src;
 	LinkAddress dst;
-	Colour clr;
+	ItemClr clr;
 	
 	Link() {}
-	Link(LinkAddress src, LinkAddress dst, Colour clr) {
+	Link(LinkAddress src, LinkAddress dst, ItemClr clr) {
 		this->id	= ItemId::next();
 		this->src	= src;
 		this->dst	= dst;

@@ -12,11 +12,11 @@
 	as well as Blocks, which refer to some other BlockTemplate.
 */
 struct BlockTemplate {
-	ItemId		templateId;
-	Vector<Cell>	cells;
-	Vector<Link>	links;
-	Vector<Text>	texts;
-	Vector<Block>	blocks;
+	ItemId				templateId;
+	Map<ItemId, Cell>	cells;
+	Map<ItemId, Link>	links;
+	Map<ItemId, Text>	texts;
+	Map<ItemId, Block>	blocks;
 	String	name;
 	String	desc;
 	/* Internal width  of template. */

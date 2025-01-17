@@ -18,7 +18,7 @@ struct BlockTemplateLibrary {
 	Map<ItemId, BlockTemplate> templates;
 
 	BlockTemplateLibrary() {}
-	
+
 	// ============================================================
 	// Content logistics
 	// ------------------------------------------------------------
@@ -35,8 +35,8 @@ struct BlockTemplateLibrary {
 		Map<ItemId, int> used;
 		used[templateId] = 1;
 		// sum across child blocks.
-		const BlockTemplate temp = this->templates[templateId];
-		for(const Block block : temp.blocks) {
+		const BlockTemplate btmp = this->templates[templateId];
+		for(const auto& [id, block] : btmp.blocks) {
 			// NOTE: when values are accessed with '[]' that do not yet exist, c++ maps zero-initialize them.
 			const auto map = _countUsedTemplatesInTree(block.templateId);
 			for(const auto& [tid, count] : map) used[tid] += count;
@@ -67,7 +67,7 @@ struct BlockTemplateLibrary {
 		for(const auto& [tid, count] : used) sum += count * templates[tid].blocks.size();
 		return sum;
 	}
-	
+
 	// ============================================================
 	// Simulation helpers
 	// ------------------------------------------------------------
@@ -79,7 +79,7 @@ struct BlockTemplateLibrary {
 	Map<ItemId, Map<ItemId, Map<ItemId, Vector<Link>>>> getOutputtingLinks() {
 		Map<ItemId, Map<ItemId, Map<ItemId, Vector<Link>>>> map;
 		for(const auto& [tid, btmp] : this->templates) {
-			for(const auto link : btmp.links) {
+			for(const auto& [id, link] : btmp.links) {
 				map[tid][link.src.bid][link.src.cid].push_back(link);
 				assert(map[tid][link.src.bid][link.src.cid].size() > 0);
 			}
@@ -112,7 +112,7 @@ struct BlockTemplateLibrary {
 		item.value = value;
 		item.initProperties();
 		assert(item.taskOrder < NUM_CELL_TYPES);
-		this->templates[templateId].cells.push_back(item);
+		this->templates[templateId].cells[id] = item;
 	}
 
 	void add_link(
@@ -128,7 +128,7 @@ struct BlockTemplateLibrary {
 		item.src = src;
 		item.dst = dst;
 		item.clr = clr;
-		this->templates[templateId].links.push_back(item);
+		this->templates[templateId].links[id] = item;
 	}
 
 	void add_block(String templateId, String id, String tid, ItemDim dim) {
@@ -136,7 +136,7 @@ struct BlockTemplateLibrary {
 		item.id = id;
 		item.templateId = tid;
 		item.dim = dim;
-		this->templates[templateId].blocks.push_back(item);
+		this->templates[templateId].blocks[id] = item;
 	}
 };
 

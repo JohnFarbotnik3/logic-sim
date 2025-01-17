@@ -21,7 +21,7 @@ struct ItemDim {
 		this->r = r;
 	}
 	
-	Transformation2D getTransformation() {
+	Transformation2D getTransformation() const {
 		return Transformation2D(x,y,w,h,r);
 	}
 };

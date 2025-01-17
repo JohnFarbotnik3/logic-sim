@@ -1,3 +1,6 @@
+#ifndef SimulationUpdate_h
+#define SimulationUpdate_h
+
 #include "../Imports.cpp"
 
 struct SimulationUpdate {
@@ -14,3 +17,4 @@ struct SimulationUpdate {
 	u32 get_tgt() { return this->data & 0b11; }
 };
 
+#endif

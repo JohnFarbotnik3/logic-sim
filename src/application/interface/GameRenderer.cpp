@@ -1,0 +1,481 @@
+#include <cstdint>
+#include <cstdlib>
+#include "../Imports.cpp"
+#include "./VertexTypes.cpp"
+#include "../lib/Transformation2D.cpp"
+#include "../lib/Rectangle.cpp"
+#include "../lib/VectorND.cpp"
+#include "../WebGL/FontEngine.cpp"
+#include "./RenderTree.cpp"
+#include "../simulation/GameSimulation.cpp"
+
+struct GameRenderer {
+	// ============================================================
+	// Constants.
+	// ------------------------------------------------------------
+	const float pi_v  = 3.14159265358979f;
+	const float tau_v = 3.14159265358979f * 2.0f;
+
+	// Font renderer.
+	FontRenderer fontRenderer;
+
+	// ============================================================
+	// Vertex buffers.
+	// ------------------------------------------------------------
+
+	using Ind = uint32_t;
+	using Pos = VertexPos;
+	using Clr = VertexClr;
+	using Tex = VertexTex;
+
+	Vector<Ind> triangles_ind;
+	Vector<Pos> triangles_pos;
+	Vector<Clr> triangles_clr;
+	Vector<Ind> lines_ind;
+	Vector<Pos> lines_pos;
+	Vector<Clr> lines_clr;
+	Vector<Ind> font_ind;
+	Vector<Pos> font_pos;
+	Vector<Clr> font_clr;
+	Vector<Tex> font_tex;
+
+	void clear_buffers(bool mysteryOffset) {
+		triangles_ind.clear();
+		triangles_pos.clear();
+		triangles_clr.clear();
+		lines_ind.clear();
+		lines_pos.clear();
+		lines_clr.clear();
+		font_ind.clear();
+		font_pos.clear();
+		font_clr.clear();
+		font_tex.clear();
+		// add initial mystery offsets to integer data.
+		if(mysteryOffset) {
+			const int Q = 1;
+			triangles_clr	.push_back(Clr(0xffffffff));
+			lines_clr		.push_back(Clr(0xffffffff));
+			font_clr		.push_back(Clr(0xffffffff));
+		}
+	}
+
+	void transform_vdata(
+		Vector<Pos>& vdata,
+		const Transformation2D& tran,
+		const float depth,
+		const int vertBeg,
+		const int vertEnd
+	) {
+		tran.apply<Pos>(vdata.data(), vertBeg, vertEnd);
+		const float zofs = depth * -0.01;
+		for(int i=vertBeg;i<vertEnd;i++) vdata[i].z += zofs;
+	}
+
+	void triangles_push(
+		const Vector<Ind>& idata,
+		const Vector<Pos>& vdata,
+		const Vector<Clr>& cdata
+	) {
+		const Ind iofs = triangles_pos.size();
+		for(int x=0;x<idata.size();x++) triangles_ind.push_back(idata[x] + iofs);
+		for(int x=0;x<vdata.size();x++) triangles_pos.push_back(vdata[x]);
+		for(int x=0;x<cdata.size();x++) triangles_clr.push_back(cdata[x]);
+	}
+
+	void lines_push(
+		const Vector<Ind>& idata,
+		const Vector<Pos>& vdata,
+		const Vector<Clr>& cdata
+	) {
+		const Ind iofs = lines_pos.size();
+		for(int x=0;x<idata.size();x++) lines_ind.push_back(idata[x] + iofs);
+		for(int x=0;x<vdata.size();x++) lines_pos.push_back(vdata[x]);
+		for(int x=0;x<cdata.size();x++) lines_clr.push_back(cdata[x]);
+	}
+
+	void font_push(
+		const Vector<Ind>& idata,
+		const Vector<Pos>& vdata,
+		const Vector<Clr>& cdata,
+		const Vector<Tex>& tdata
+	) {
+		const Ind iofs = lines_pos.size();
+		for(int x=0;x<idata.size();x++) font_ind.push_back(idata[x] + iofs);
+		for(int x=0;x<vdata.size();x++) font_pos.push_back(vdata[x]);
+		for(int x=0;x<cdata.size();x++) font_clr.push_back(cdata[x]);
+		for(int x=0;x<tdata.size();x++) font_tex.push_back(tdata[x]);
+	}
+
+	// ============================================================
+	// Shape generators.
+	// ------------------------------------------------------------
+
+	const float DEPTH_ON_TOP = 33.0f;
+
+	// triangle-rectangles.
+	void tri_rects_push(Transformation2D tran, float depth, Rectangle rect, Clr clr) {
+		const auto& [x,y,w,h] = rect;
+		Vector<Ind> idata = {0,1,2,2,3,0};
+		Vector<Pos> vdata = {
+			Pos{x+0, y+0, 0.0},
+			Pos{x+w, y+0, 0.0},
+			Pos{x+w, y+h, 0.0},
+			Pos{x+0, y+h, 0.0},
+		};
+		Vector<Clr> cdata = {clr, clr, clr, clr};
+		transform_vdata(vdata, tran, depth, 0, vdata.size());
+		triangles_push(idata, vdata, cdata);
+	}
+
+	// line-rectangles
+	void line_rects_push(Transformation2D tran, float depth, Rectangle rect, Clr clr) {
+		const auto& [x,y,w,h] = rect;
+		Vector<Ind> idata = {0,1,1,2,2,3,3,0};
+		Vector<Pos> vdata = {
+			Pos{x+0, y+0, 0.0},
+			Pos{x+w, y+0, 0.0},
+			Pos{x+w, y+h, 0.0},
+			Pos{x+0, y+h, 0.0},
+		};
+		Vector<Clr> cdata = {clr, clr, clr, clr};
+		transform_vdata(vdata, tran, depth, 0, vdata.size());
+		lines_push(idata, vdata, cdata);
+	}
+
+	// lines
+	void push_content_line(Transformation2D tran, float depth, Pos p0, Pos p1, Clr clr) {
+		// generate data.
+		Vector<Ind> idata = {0,1};
+		Vector<Pos> vdata = {p0, p1};
+		Vector<Clr> cdata = {clr, clr};
+		// push data.
+		transform_vdata(vdata, tran, depth, 0, vdata.size());
+		lines_push(idata, vdata, cdata);
+	}
+
+	// line grid
+	void push_content_line_grid(Transformation2D tran, float depth, Rectangle rect, Clr clr, int nx, int ny) {
+		// generate data.
+		const auto& [x,y,w,h] = rect;
+		const int count = 2*(nx+1) + 2*(ny+1);
+		Vector<Ind> idata(count);
+		Vector<Pos> vdata(count);
+		Vector<Clr> cdata(count);
+		for(int i=0;i<count;i++) idata[i] = i;
+		for(int i=0;i<count;i++) cdata[i] = clr;
+		int i = 0;
+		const float xincr = w / nx;
+		const float yincr = h / ny;
+		for(int n=0;n<=nx;n++) {
+			const float px = x + (n * xincr);
+			vdata[i++] = Pos{px, y+0, 0};
+			vdata[i++] = Pos{px, y+h, 0};
+		}
+		for(int n=0;n<=ny;n++) {
+			const float py = y + (n * yincr);
+			vdata[i++] = Pos{x+0, py, 0};
+			vdata[i++] = Pos{x+w, py, 0};
+		}
+		// push data.
+		transform_vdata(vdata, tran, depth, 0, vdata.size());
+		lines_push(idata, vdata, cdata);
+	}
+
+	// line circle
+	void push_content_line_circle(Transformation2D tran, float depth, float x, float y, float r, int n, Clr clr) {
+		Vector<Ind> idata(n*2);
+		Vector<Pos> vdata(n);
+		Vector<Clr> cdata(n);
+		for(int i=0;i<n;i++) cdata[i] = clr;
+		for(int i=0;i<n;i++) {
+			idata[i*2+0] = i;
+			idata[i*2+1] = i+1;
+		}
+		idata[idata.size() - 1] = 0;
+		float aincr = tau_v / (n-1);
+		for(int i=0;i<n;i++) {
+			const float angle = i * aincr;
+			vdata[i] = Pos{
+				std::cosf(angle) * r + x,
+				std::sinf(angle) * r + y,
+				0
+			};
+		}
+		// push data.
+		transform_vdata(vdata, tran, depth, 0, vdata.size());
+		lines_push(idata, vdata, cdata);
+	}
+
+	void push_content_text_box(
+		Transformation2D tran, float depth,
+		String str, float fontHeight, Clr fontColour, Rectangle boundingRect, Vector2D textAlign, Vector2D rectOrigin, bool wrap
+	) {
+		// generate data
+		const float widthMult = 1.0;
+		const Vector3D offset = {0.0, 0.0, 0.0};
+		const Vector3D xbasis = {1.0, 0.0, 0.0};
+		const Vector3D ybasis = {0.0, 1.0, 0.0};
+		auto data = fontRenderer.generateVertexData3d<Ind, Pos, Tex>(
+			str, fontHeight, widthMult, wrap, boundingRect, textAlign, rectOrigin, offset, xbasis, ybasis
+		);
+		Vector<Clr> cdata;
+		for(int x=0;x<data.vdata.size();x++) cdata.push_back(fontColour);
+		// push data.
+		transform_vdata(data.vdata, tran, depth, 0, data.vdata.size());
+		font_push(data.idata, data.vdata, cdata, data.tdata);
+	}
+
+	void push_content_text_box_against_circle(
+		Transformation2D tran, float depth,
+		String str, float fontHeight, Clr fontColour, Vector2D unitRectPoint, float dist
+	) {
+		// get width.
+		const float widthMult = 1.0;
+		const float strh = fontHeight;
+		const float strw = fontRenderer.getTotalWidth(str, fontHeight) * widthMult;
+		// get box position.
+		const bool wrap = false;
+		const float rx = unitRectPoint.x;
+		const float ry = unitRectPoint.y;
+		const Vector2D rectOrigin = {
+			1.0f - (((rx - 0.5f) * dist) + 0.5f),
+			1.0f - (((ry - 0.5f) * dist) + 0.5f),
+		};
+		const Vector2D textAlign = {0.5, 0.5};
+		const Rectangle boundingRect{rx, ry, strw, strh};
+		// generate data
+		const Vector3D offset = {0.0, 0.0, 0.0};
+		const Vector3D xbasis = {1.0, 0.0, 0.0};
+		const Vector3D ybasis = {0.0, 1.0, 0.0};
+		auto data = fontRenderer.generateVertexData3d<Ind, Pos, Tex>(
+			str, fontHeight, widthMult, wrap, boundingRect, textAlign, rectOrigin, offset, xbasis, ybasis
+		);
+		Vector<Clr> cdata;
+		for(int x=0;x<data.vdata.size();x++) cdata.push_back(fontColour);
+		// push data.
+		transform_vdata(data.vdata, tran, depth, 0, data.vdata.size());
+		font_push(data.idata, data.vdata, cdata, data.tdata);
+	}
+
+	// ============================================================
+	// Item generators.
+	// ------------------------------------------------------------
+
+	void draw_cell(
+		const Cell& cell,
+		const Transformation2D& tran,
+		const float depth,
+		const Array<uint32_t, 3> vals,
+		bool shouldDrawText
+	) {
+		// draw cell areas.
+		const Clr clr_on	= Clr(cell.clr);
+		const Clr clr_off	= Clr(
+			(uint8_t)(cell.clr.r / 2),
+			(uint8_t)(cell.clr.g / 2),
+			(uint8_t)(cell.clr.b / 2),
+			(uint8_t)(cell.clr.a)
+		);
+		for(int i=0;i<3;i++) tri_rects_push(tran, depth, RenderBlock::CELL_AREA_RECTS[i], vals[i] ? clr_on : clr_off);
+		// draw link points.
+		const int N = cell.numTargets;
+		for(int i=0;i<N;i++) tri_rects_push(tran, depth, RenderBlock::LINK_POINT_RECTS[i], 0xffeeccff);
+		// draw text.
+		/* TODO - go back to using average scale factor of containing block instead of applying basis vectors. */
+		if(shouldDrawText) {
+			const float textDepth = depth + 1;
+			const float fontHeight = 0.30;
+			const float dist = 1.2;
+			const Clr bclr = 0x000000ff;
+			const Clr fclr = 0xffffffff;
+			// draw type code.
+			{
+				const String str = cell.typecode;
+				const Vector2D unitRectPoint {0.5, 1.0};
+				push_content_text_box_against_circle(tran, textDepth, str, fontHeight, bclr, unitRectPoint, dist);
+				push_content_text_box_against_circle(tran, textDepth, str, fontHeight, fclr, unitRectPoint, dist);
+			}
+			// draw values.
+			const Array<String, 3> labels = {"OUT", "A", "B"};
+			for(int i=0;i<cell.numTargets;i++) {
+				// TODO - http://localhost:4000/cpp/io/c/printf.html
+				char buf[256];
+				sprintf(buf, "%s:%#X", labels[i].c_str(), vals[i]);
+				const String str = String(buf);
+				const Clr clr = (vals[i] == 0 ? 0x777777ff : fclr);
+				const Vector2D unitRectPoint = {
+					RenderBlock::LINK_POINTS[i].x,
+					RenderBlock::LINK_POINTS[i].y,
+				};
+				push_content_text_box_against_circle(tran, textDepth, str, fontHeight, bclr, unitRectPoint, dist);
+				push_content_text_box_against_circle(tran, textDepth, str, fontHeight,  clr, unitRectPoint, dist);
+			}
+		}
+	}
+	void draw_cell_preview(Cell cell) {
+		const Transformation2D& tran = cell.dim.getTransformation();
+		const float depth = 0;
+		const Array<u32, 3> vals = {0,0,0};
+		const bool shouldDrawText = false;
+		draw_cell(cell, tran, depth, vals, shouldDrawText);
+	}
+
+	void draw_link(Pos p0, Pos p1, Clr clr, float depth=0) {
+		push_content_line(Transformation2D(), depth+1, p0, p1, clr);
+	}
+	void draw_link_preview(Vector<Pos> points, Clr clr) {
+		// draw circles.
+		for(const Pos point : points) push_content_line_circle(Transformation2D(), DEPTH_ON_TOP, point.x, point.y, 0.2, 20, clr);
+		// draw link preview
+		if(points.size() >= 2) draw_link(points[0], points[1], clr, DEPTH_ON_TOP);
+	}
+
+	void draw_text(
+		const Text& text,
+		const Transformation2D& tran,
+		const float depth
+	) {
+		// draw background.
+		// ...TODO...
+		// draw outline.
+		/// ...TODO...
+		// draw text.
+		{
+			const Clr fontColour = text.fclr;
+			const float fontHeight = text.fhgt;
+			const ItemDim dim = text.dim;
+			const Rectangle boundingRect{dim.x, dim.y, dim.w, dim.h};
+			const Vector2D textAlign {0.0, 0.0};
+			const Vector2D rectOrigin {0.0, 0.0};
+			const bool wrap = true;
+			push_content_text_box(tran, depth, text.str, fontHeight, fontColour, boundingRect, textAlign, rectOrigin, wrap);
+		}
+	}
+
+	void draw_block_background(const RenderBlock& renderblock) {
+		const float depth = renderblock.depth - 0.5;
+		const Transformation2D itran = renderblock.itemTran;
+		// draw underlay.
+		tri_rects_push(itran, depth, Rectangle{0,0,1,1}, 0x00000033);
+		// draw grid.
+		if(renderblock.depth == 0) {
+			const float w = renderblock.blockTemplate->innerW;
+			const float h = renderblock.blockTemplate->innerH;
+			push_content_line_grid(itran, depth, Rectangle{0,0,1,1}, 0x77aaff99, w, h);
+		} else {
+			line_rects_push(itran, depth, Rectangle{0,0,1,1}, 0x77aaff99);
+		}
+	}
+	void draw_block_placeholder(const RenderBlock& renderblock, const Block& block) {
+		const Transformation2D& tran = renderblock.itemTrans.at(block.id);
+		const float depth = renderblock.depth;
+		// draw background.
+		tri_rects_push(tran, depth, Rectangle{0,0,1,1}, 0x00000033);
+		// draw outline.
+		line_rects_push(tran, depth, Rectangle{0,0,1,1}, 0x77aaff99);
+	}
+	void draw_block(
+		const RenderBlock& renderblock,
+		float depth,
+		float maxDepth,
+		GameSimulation::SimulationPointer simptr,
+		Set<ItemId> ids_selected = Set<ItemId>(),
+		Set<ItemId> ids_hovered  = Set<ItemId>()
+	) {
+		// draw background.
+		draw_block_background(renderblock);
+		// draw texts.
+		for(const auto& [id,text] : renderblock.blockTemplate->texts) {
+			const Transformation2D& tran = renderblock.itemTrans.at(text.id);
+			const float depth = renderblock.depth;
+			draw_text(text, tran, depth);
+		}
+		// draw cells.
+		const bool block_sel = ids_selected.contains(renderblock.block.id);
+		const bool block_hvr = ids_hovered .contains(renderblock.block.id);
+		for(const auto& [id,cell] : renderblock.blockTemplate->cells) {
+			const Transformation2D& tran = renderblock.itemTrans.at(cell.id);
+			const float depth = renderblock.depth;
+			const Array<u32, 3> vals = simptr.get_cell_values(id);
+			const bool cell_sel = ids_selected.contains(id);
+			const bool cell_hvr = ids_hovered.contains(id);
+			const bool shouldDrawText = block_sel | block_hvr | cell_sel | cell_hvr | true/*TODO: TESTING*/;
+			draw_cell(cell, tran, depth, vals, shouldDrawText);
+		}
+		// draw links.
+		for(const auto& [id,link] : renderblock.blockTemplate->links) {
+			const Optional<Pos> p0 = renderblock.get_link_point(link.src);
+			const Optional<Pos> p1 = renderblock.get_link_point(link.dst);
+			if(p0.has_value() && p1.has_value()) draw_link(p0.value(), p1.value(), link.clr, renderblock.depth);
+		}
+		// draw blocks.
+		if(depth < maxDepth)
+				for(const auto& [id,child_block] : renderblock.blockTemplate->blocks)
+					draw_block(renderblock.get_child(child_block), depth+1, maxDepth, simptr.get_child_pointer(id));
+		else	for(const auto& [id,child_block] : renderblock.blockTemplate->blocks)
+					draw_block_placeholder(renderblock, child_block);
+	}
+	void draw_block_preview(const RenderBlock& previewblock) {
+		const float depth		= 1;
+		const float maxDepth	= 3;
+		draw_block(previewblock, depth, maxDepth, GameSimulation::SimulationPointer());
+	}
+
+	// ============================================================
+	// Selection and hover
+	// ------------------------------------------------------------
+
+	void drawCursor(Pos pos, float radius) {
+		const float depth = DEPTH_ON_TOP;
+		const Clr clr = 0xffff99ff;
+		push_content_line_circle(Transformation2D(), DEPTH_ON_TOP, pos.x, pos.y, radius, 30, clr);
+	}
+
+	void drawDragArea(Rectangle rect) {
+		const Clr clr = 0xffffff55;
+		tri_rects_push(Transformation2D(), DEPTH_ON_TOP, rect, clr);
+	}
+
+	void drawSelection(const RenderBlock& renderblock, Set<ItemId> ids) {
+		const float s = 0.03;
+		const Rectangle rect {0.0f - s, 0.0f - s, 1.0f + s*2, 1.0f + s*2};
+		const Clr clr = 0xffff55ff;
+		for(const ItemId id : ids) { line_rects_push(renderblock.itemTrans.at(id), DEPTH_ON_TOP, rect, clr); }
+	}
+
+	void drawHovered(const RenderBlock& renderblock, Set<ItemId> ids) {
+		const float s = 0.00;
+		const Rectangle rect {0.0f - s, 0.0f - s, 1.0f + s*2, 1.0f + s*2};
+		const Clr clr = 0xaaccffff;
+		for(const ItemId id : ids) { line_rects_push(renderblock.itemTrans.at(id), DEPTH_ON_TOP, rect, clr); }
+	}
+
+	// ============================================================
+	// Combined draw function.
+	// ------------------------------------------------------------
+
+	/*
+		this function draws contents as well as previews,
+		taking a very long list of arguments from the javascript side to do all the needed rendering.
+	*/
+	void draw_all(
+		const BlockTemplateLibrary& library,
+		ItemId rootTemplateId,
+		const GameSimulation& simulation,
+		Set<ItemId> ids_selected,
+		Set<ItemId> ids_hovered
+	) {
+		// clear buffers.
+		clear_buffers(false);
+		// create root render block.
+		const BlockTemplate& btmp = library.templates.at(rootTemplateId);
+		const Block rootBlock(ItemDim(0, 0, btmp.innerW, btmp.innerH, 0), rootTemplateId);
+		const RenderBlock renderblock(&library, rootBlock, Transformation2D(), 0);
+		// get simulation pointer.
+		const GameSimulation::SimulationPointer simptr = simulation.get_simtree_root_pointer();
+		// draw root block contents.
+		draw_block(renderblock, 0, 3, simptr, ids_selected, ids_hovered);
+		// TODO
+	}
+
+};

@@ -1,10 +1,13 @@
 //#define NDEBUG
 #include <cassert>
 
+#include <cstdint>
 #include <cstdio>
 
 #include "../content/BlockTemplateLibrary.cpp"
 #include "../simulation/GameSimulation.cpp"
+#include "../interface/GameRenderer.cpp"
+#include "../WebGL/FontEngine.cpp"
 
 // NOTE: this function is omitted when compiling with "--no-entry" flag.
 /*
@@ -118,7 +121,61 @@ struct GameServer_wasm {
 	// ============================================================
 	// Renderer
 	// ------------------------------------------------------------
+	GameRenderer renderer;
+	using Char = FontRenderer::Char;
 
+	// font renderer init.
+	int get_font_renderer_num_missing_glyphs() {
+		return renderer.fontRenderer.missingGlyphs.size();
+	}
+	int get_font_renderer_next_missing_glyph(int index) {
+		for(const Char c : renderer.fontRenderer.missingGlyphs) if(index == 0) return c; else index--;
+		return 0;
+	}
+	void set_font_renderer_tex_dim(float tw, float th) {
+		renderer.fontRenderer.setTextureImageDimensions(tw, th);
+		renderer.fontRenderer.glyphmap.clear();
+		renderer.fontRenderer.missingGlyphs.clear();
+	}
+	void set_font_renderer_glyph(int c_int, float tx, float ty, float tw, float th) {
+		Char c = c_int;
+		//printf("set_font_renderer_glyph(%i, %f, %f, %f, %f)\n", c, tx, ty, tw, th);
+		renderer.fontRenderer.glyphmap[c] = FontRenderer::FontRendererGlyph(tx, ty, tw, th);
+		//renderer.fontRenderer.glyphmap[c] = FontRenderer::FontRendererGlyph(0,0,1,1);
+		renderer.fontRenderer.missingGlyphs.erase(c);
+	}
+
+	// draw
+	void draw_all(
+		String rootTemplateId
+	) {
+		Set<ItemId> ids_selected;
+		Set<ItemId> ids_hovered;
+		renderer.draw_all(library, rootTemplateId, simulation, ids_selected, ids_hovered);
+	}
+
+	// buffer data.
+	// https://stackoverflow.com/questions/65566923/is-there-a-more-efficient-way-to-return-arrays-from-c-to-javascript
+	struct Embuffer {
+		size_t data;
+		size_t size;
+		size_t hptr;
+		Embuffer(size_t data, size_t size, size_t sizeof_t) {
+			this->data = data;
+			this->size = size;
+			this->hptr = data / sizeof_t;
+		}
+	};
+	Embuffer triangles_ind() { const auto& arr = renderer.triangles_ind; return Embuffer((size_t)arr.data(), arr.size()*1, sizeof(u32)); }
+	Embuffer triangles_pos() { const auto& arr = renderer.triangles_pos; return Embuffer((size_t)arr.data(), arr.size()*3, sizeof(f32)); }
+	Embuffer triangles_clr() { const auto& arr = renderer.triangles_clr; return Embuffer((size_t)arr.data(), arr.size()*1, sizeof(u32)); }
+	Embuffer lines_ind() { const auto& arr = renderer.lines_ind; return Embuffer((size_t)arr.data(), arr.size()*1, sizeof(u32)); }
+	Embuffer lines_pos() { const auto& arr = renderer.lines_pos; return Embuffer((size_t)arr.data(), arr.size()*3, sizeof(f32)); }
+	Embuffer lines_clr() { const auto& arr = renderer.lines_clr; return Embuffer((size_t)arr.data(), arr.size()*1, sizeof(u32)); }
+	Embuffer font_ind() { const auto& arr = renderer.font_ind; return Embuffer((size_t)arr.data(), arr.size()*1, sizeof(u32)); }
+	Embuffer font_pos() { const auto& arr = renderer.font_pos; return Embuffer((size_t)arr.data(), arr.size()*3, sizeof(f32)); }
+	Embuffer font_clr() { const auto& arr = renderer.font_clr; return Embuffer((size_t)arr.data(), arr.size()*1, sizeof(u32)); }
+	Embuffer font_tex() { const auto& arr = renderer.font_tex; return Embuffer((size_t)arr.data(), arr.size()*2, sizeof(f32)); }
 	// TODO
 
 	// ============================================================
@@ -137,19 +194,43 @@ struct GameServer_wasm {
 using namespace emscripten;
 
 EMSCRIPTEN_BINDINGS() {
+	class_<GameServer_wasm::Embuffer>("Embuffer")
+		.property("data", &GameServer_wasm::Embuffer::data)
+		.property("size", &GameServer_wasm::Embuffer::size)
+		.property("hptr", &GameServer_wasm::Embuffer::hptr)
+	;
+
 	class_<GameServer_wasm>("GameServer")
 		.constructor<>()
+		// template library.
 		.property("library", &GameServer_wasm::library)
 		.function("new_template", &GameServer_wasm::new_template)
 		.function("add_cell" , &GameServer_wasm::add_cell)
 		.function("add_link" , &GameServer_wasm::add_link)
 		.function("add_block", &GameServer_wasm::add_block)
 		.function("print_template_counts", &GameServer_wasm::print_template_counts)
+		// simulation.
 		.function("simulation_rebuild", &GameServer_wasm::simulation_rebuild)
 		.function("simulation_update", &GameServer_wasm::simulation_update)
 		.function("simulation_get_cell_value", &GameServer_wasm::simulation_get_cell_value)
 		.function("simulation_get_child_simblock", &GameServer_wasm::simulation_get_child_simblock)
 		.function("simulation_set_cell_value", &GameServer_wasm::simulation_set_cell_value)
+		// rendering.
+		.function("get_font_renderer_num_missing_glyphs", &GameServer_wasm::get_font_renderer_num_missing_glyphs)
+		.function("get_font_renderer_next_missing_glyph", &GameServer_wasm::get_font_renderer_next_missing_glyph)
+		.function("set_font_renderer_tex_dim", &GameServer_wasm::set_font_renderer_tex_dim)
+		.function("set_font_renderer_glyph", &GameServer_wasm::set_font_renderer_glyph)
+		.function("draw_all", &GameServer_wasm::draw_all)
+		.function("triangles_ind", &GameServer_wasm::triangles_ind)
+		.function("triangles_pos", &GameServer_wasm::triangles_pos)
+		.function("triangles_clr", &GameServer_wasm::triangles_clr)
+		.function("lines_ind", &GameServer_wasm::lines_ind)
+		.function("lines_pos", &GameServer_wasm::lines_pos)
+		.function("lines_clr", &GameServer_wasm::lines_clr)
+		.function("font_ind", &GameServer_wasm::font_ind)
+		.function("font_pos", &GameServer_wasm::font_pos)
+		.function("font_clr", &GameServer_wasm::font_clr)
+		.function("font_tex", &GameServer_wasm::font_tex)
 	;
 
 	class_<BlockTemplateLibrary>("BlockTemplateLibrary")

@@ -207,7 +207,6 @@ as this will allow writing tree-structs without major performance problems.
 
 > misc simulator improvements
 - make queue in simtree heap-allocated instead of stack-allocated (stack overflow avoidance)
-- write safe_get function for c++ Map wrapper.
 
 
 > misc renderer improvements:
@@ -226,6 +225,12 @@ as this will allow writing tree-structs without major performance problems.
 ^ ex: first input, "Close", or "Cancel" should be focused by default when opening popup.
 
 
+> misc performance and simplifications
+- simplify simulation tree by having SimulationBlocks hold pointers to children (instead of indices).
+- SimulationBlocks are currently too large (120 bytes), a new traversal + cell-access scheme may be required.
+^ a pointer to a map that is nullptr if map is empty would suffice.
+*** IDEA: implement tree-marching instead of trees.
+*** (if the same library is used, then the tree will be marched in the same order).
 
 
 

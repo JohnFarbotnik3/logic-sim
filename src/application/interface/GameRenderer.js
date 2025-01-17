@@ -118,6 +118,57 @@ export class GameRenderer {
 		const renblock = this.renderBlock;
 		if(!renblock) throw("!renblock");
 		const t1 = Date.now();
+		// call server renderer.
+		/*
+		const server = main.gameServer;
+		if(server) {
+			// check for missing glyphs.
+			const n_missing = server.get_font_renderer_num_missing_glyphs();
+			console.log("n_missing", n_missing);
+			if(n_missing > 0) {
+				const fontren = this.fontRenderer_0;
+				const s_missing = new Set();
+				for(let x=0;x<n_missing;x++)
+						if(!fontren.glyphmap.has(x))
+							s_missing.add(String.fromCharCode(server.get_font_renderer_next_missing_glyph(x)));
+				console.log("s_missing", s_missing, [...s_missing.keys()].map(s => s.charCodeAt(0)));
+				if(s_missing.size > 0) {
+					fontren.addRequiredGlyphs(s_missing);
+					server.set_font_renderer_tex_dim(fontren.texW, fontren.texH);
+					for(const [c,g] of fontren.glyphmap.entries()) {
+						const tc = g.texCoords;
+						server.set_font_renderer_glyph(c.charCodeAt(0), tc[0], tc[1], tc[2], tc[3]);
+					}
+				}
+			}
+			// draw and push vertex data.
+			server.draw_all(
+				main.blockLibrary.rootBlock.templateId,
+			);
+			{
+				let idata = server.triangles_ind();
+				let vdata = server.triangles_pos();
+				let cdata = server.triangles_clr();
+				this.triangles_reserve(idata.length, vdata.length, cdata.length);
+				this.triangles_push(idata, vdata, cdata);
+			}
+			{
+				let idata = server.lines_ind();
+				let vdata = server.lines_pos();
+				let cdata = server.lines_clr();
+				this.lines_reserve(idata.length, vdata.length, cdata.length);
+				this.lines_push(idata, vdata, cdata);
+			}
+			{
+				let idata = server.font_ind();
+				let vdata = server.font_pos();
+				let cdata = server.font_clr();
+				let tdata = server.font_tex();
+				this.lines_reserve(idata.length, vdata.length, cdata.length, tdata.length);
+				this.lines_push(idata, vdata, cdata, tdata);
+			}
+		}
+		*/
 		this.drawBlock(renblock, renblock.get_render_data_block(main.blockLibrary.rootBlock), INDEX_ROOT_SB);
 		this.drawCursor();
 		if(main.gameUI.cursor_isSelecting) this.drawDragArea();

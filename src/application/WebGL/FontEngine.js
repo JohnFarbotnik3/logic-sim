@@ -159,6 +159,8 @@ export class FontRenderer {
 		this.height		= height;	// font height (in pixels)
 		this.family		= family;	// font family
 		this.style		= style;	// font style
+		this.texW		= 0;
+		this.texH		= 0;
 		this.initialize(charset);
 	}
 	initialize(charset) {
@@ -203,8 +205,8 @@ export class FontRenderer {
 			}
 		}
 		// configure canvas
-		canvasWrapper.canvas.width = texW;
-		canvasWrapper.canvas.height = texH;
+		canvasWrapper.canvas.width  = this.texW = texW;
+		canvasWrapper.canvas.height = this.texH = texH;
 		canvasWrapper.setFont(this.height, this.family, this.style, FONT_BASELINE.BOTTOM);
 		// add canvas to DOM (for testing)
 		/*

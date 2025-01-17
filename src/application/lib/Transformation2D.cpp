@@ -2,6 +2,7 @@
 #define _Transformation2D
 
 #include <cmath>
+#include <cstdio>
 #include <cstring>
 #include "../Constants.cpp"
 
@@ -9,7 +10,7 @@ struct Transformation2D {
 	float data[6];
 
 	// apply offset and basis vectors.
-	void apply(float* points, int beg, int end, int stride) {
+	void apply(float* points, int beg, int end, int stride) const {
 		for(int i=beg;i<end;i+=stride) {
 			const float x = points[i+0];
 			const float y = points[i+1];
@@ -17,25 +18,51 @@ struct Transformation2D {
 			points[i+1] = x*data[1] + y*data[3] + data[5];
 		}
 	}
+	template<class V>
+	void apply(V* vecs, int beg, int end) const {
+		for(int i=beg;i<end;i++) {
+			const float x = vecs[i].x;
+			const float y = vecs[i].y;
+			vecs[i].x = x*data[0] + y*data[2] + data[4];
+			vecs[i].y = x*data[1] + y*data[3] + data[5];
+		}
+	}
+	template<class V>
+	V apply(V vec) const {
+		const float x = vec.x;
+		const float y = vec.y;
+		vec.x = x*data[0] + y*data[2] + data[4];
+		vec.y = x*data[1] + y*data[3] + data[5];
+		return vec;
+	}
 
 	// only apply the offset part of this transformation.
-	void applyOffset(float* points, int beg, int end, int stride) {
+	void applyOffset(float* points, int beg, int end, int stride) const {
 		for(int i=beg;i<end;i+=stride) {
 			const float x = points[i+0];
 			const float y = points[i+1];
-			points[i+0] = data[4];
-			points[i+1] = data[5];
+			points[i+0] = x + data[4];
+			points[i+1] = y + data[5];
 		}
 	}
 
 	// only apply the basis part of this transformation.
-	void applyBasis(float* points, int beg, int end, int stride) {
+	void applyBasis(float* points, int beg, int end, int stride) const {
 		for(int i=beg;i<end;i+=stride) {
 			const float x = points[i+0];
 			const float y = points[i+1];
 			points[i+0] = x*data[0] + y*data[2];
 			points[i+1] = x*data[1] + y*data[3];
 		}
+	}
+
+	Transformation2D compose(const Transformation2D& b) const {
+		Transformation2D c = b;
+		// apply basis to entire matrix.
+		applyBasis (c.data, 0, 6, 2);
+		// only apply offset to offset.
+		applyOffset(c.data, 4, 6, 2);
+		return c;
 	}
 
 	Transformation2D() {
@@ -61,15 +88,6 @@ struct Transformation2D {
 		// offset
 		this->data[4] = x;
 		this->data[5] = y;
-	}
-	Transformation2D(Transformation2D& a, Transformation2D& b) {
-		memcpy(this->data, b.data, 6 * sizeof(float));
-		a.applyBasis (this->data, 0, 6, 2);// apply basis to entire matrix.
-		a.applyOffset(this->data, 4, 6, 2);// only apply offset to offset.
-	}
-
-	Transformation2D compose(Transformation2D b) {
-		return Transformation2D(*this, b);
 	}
 };
 

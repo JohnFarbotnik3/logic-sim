@@ -1,3 +1,6 @@
+#ifndef SimulationTree_h
+#define SimulationTree_h
+
 #include "../Imports.cpp"
 #include "../content/ItemId.cpp"
 #include "../content/BlockTemplateLibrary.cpp"
@@ -38,6 +41,7 @@ struct SimulationTree {
 	/* Root template this tree was generated with. */
 	ItemId rootTemplateId;
 
+	// TODO: remove these.
 	static const u32 INDEX_NONE = 0xffffffff;
 	static const u32 INDEX_ROOT = 0x0;
 
@@ -62,13 +66,20 @@ struct SimulationTree {
 		return this->simblocks[simblock.parentIndex];
 	}
 
+	const SimulationBlock& root() const {
+		return this->simblocks[0];
+	}
+	SimulationBlock& root() {
+		return this->simblocks[0];
+	}
+
 	void initNode(const u32 index) {
 		// create and push child simblocks.
 		const SimulationBlock& simblock = this->simblocks[index];
 		const BlockTemplate& btmp = this->getTemplate(simblock);
 		u32 initIndex = this->simblocks.size();
 		u32 nextIndex = this->simblocks.size();
-		for(const Block& block : btmp.blocks) {
+		for(const auto& [id, block] : btmp.blocks) {
 			this->simblocks.push_back(SimulationBlock(block.templateId, block.id, index));
 			this->simblocks[index].bmap[block.id] = nextIndex++;
 		}
@@ -125,5 +136,4 @@ struct SimulationTree {
 
 };
 
-
-
+#endif

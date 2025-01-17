@@ -1,3 +1,6 @@
+#ifndef SimulationLink_h
+#define SimulationLink_h
+
 #include "../Imports.cpp"
 
 struct SimulationLink {
@@ -13,3 +16,4 @@ struct SimulationLink {
 	// NOTE: the extra ^const above is to indicate that item contents wont be mutated.
 };
 
+#endif

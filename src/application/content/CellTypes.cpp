@@ -49,7 +49,7 @@ struct _CELL_TYPES {
 	const CellType RSHIFT	= addCellType("RSH"	, 3, NEXT_TASK_ORDER++, 0xffffffff);
 	// arithmetic & comparison
 	// TODO: add NOTEQUALS
-	const CellType ADD		= addCellType("+"	, 3, NEXT_TASK_ORDER++, 0xffffffff);
+	const CellType ADD		= addCellType("+"	, 3, NEXT_TASK_ORDER++, 0xeee8eeff);
 	const CellType SUB		= addCellType("-"	, 3, NEXT_TASK_ORDER++, 0xffffffff);
 	const CellType MULT		= addCellType("x"	, 3, NEXT_TASK_ORDER++, 0xffffffff);
 	const CellType DIV		= addCellType("÷",247,3, NEXT_TASK_ORDER++, 0xffffffff);

@@ -3,8 +3,6 @@
 
 #include "./ItemId.cpp"
 #include "./BlockTemplate.cpp"
-#include "CellTypes.cpp"
-#include "ItemDim.cpp"
 #include "Link.cpp"
 
 /*
@@ -85,58 +83,6 @@ struct BlockTemplateLibrary {
 			}
 		}
 		return map;
-	}
-
-	// ============================================================
-	// Content modification
-	// ------------------------------------------------------------
-
-	void new_template(String templateId, String name, String desc, float innerW, float innerH, float placeW, float placeH) {
-		BlockTemplate btmp;
-		btmp.templateId = templateId;
-		btmp.name = name;
-		btmp.desc = desc;
-		btmp.innerW = innerW;
-		btmp.innerH = innerH;
-		btmp.placeW = placeW;
-		btmp.placeH = placeH;
-		this->templates[templateId] = btmp;
-	}
-
-	void add_cell(String templateId, String id, ItemDim dim, u32 type, u32 value) {
-		BlockTemplate& btmp = this->templates[templateId];
-		Cell item;
-		item.id = id;
-		item.dim = dim;
-		item.type = type;
-		item.value = value;
-		item.initProperties();
-		assert(item.taskOrder < NUM_CELL_TYPES);
-		this->templates[templateId].cells[id] = item;
-	}
-
-	void add_link(
-		String templateId,
-		String id,
-		LinkAddress src,
-		LinkAddress dst,
-		u32 clr
-	) {
-		BlockTemplate& btmp = this->templates[templateId];
-		Link item;
-		item.id = id;
-		item.src = src;
-		item.dst = dst;
-		item.clr = clr;
-		this->templates[templateId].links[id] = item;
-	}
-
-	void add_block(String templateId, String id, String tid, ItemDim dim) {
-		Block item;
-		item.id = id;
-		item.templateId = tid;
-		item.dim = dim;
-		this->templates[templateId].blocks[id] = item;
 	}
 };
 

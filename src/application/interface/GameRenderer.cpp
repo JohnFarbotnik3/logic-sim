@@ -99,7 +99,7 @@ struct GameRenderer {
 		const Vector<Clr>& cdata,
 		const Vector<Tex>& tdata
 	) {
-		const Ind iofs = lines_pos.size();
+		const Ind iofs = font_pos.size();
 		for(int x=0;x<idata.size();x++) font_ind.push_back(idata[x] + iofs);
 		for(int x=0;x<vdata.size();x++) font_pos.push_back(vdata[x]);
 		for(int x=0;x<cdata.size();x++) font_clr.push_back(cdata[x]);
@@ -211,12 +211,11 @@ struct GameRenderer {
 		String str, float fontHeight, Clr fontColour, Rectangle boundingRect, Vector2D textAlign, Vector2D rectOrigin, bool wrap
 	) {
 		// generate data
-		const float widthMult = 1.0;
 		const Vector3D offset = {0.0, 0.0, 0.0};
 		const Vector3D xbasis = {1.0, 0.0, 0.0};
 		const Vector3D ybasis = {0.0, 1.0, 0.0};
 		auto data = fontRenderer.generateVertexData3d<Ind, Pos, Tex>(
-			str, fontHeight, widthMult, wrap, boundingRect, textAlign, rectOrigin, offset, xbasis, ybasis
+			str, fontHeight, wrap, boundingRect, textAlign, rectOrigin, offset, xbasis, ybasis
 		);
 		Vector<Clr> cdata;
 		for(int x=0;x<data.vdata.size();x++) cdata.push_back(fontColour);
@@ -230,9 +229,8 @@ struct GameRenderer {
 		String str, float fontHeight, Clr fontColour, Vector2D unitRectPoint, float dist
 	) {
 		// get width.
-		const float widthMult = 1.0;
 		const float strh = fontHeight;
-		const float strw = fontRenderer.getTotalWidth(str, fontHeight) * widthMult;
+		const float strw = fontRenderer.getTotalWidth(str, fontHeight);
 		// get box position.
 		const bool wrap = false;
 		const float rx = unitRectPoint.x;
@@ -248,7 +246,7 @@ struct GameRenderer {
 		const Vector3D xbasis = {1.0, 0.0, 0.0};
 		const Vector3D ybasis = {0.0, 1.0, 0.0};
 		auto data = fontRenderer.generateVertexData3d<Ind, Pos, Tex>(
-			str, fontHeight, widthMult, wrap, boundingRect, textAlign, rectOrigin, offset, xbasis, ybasis
+			str, fontHeight, wrap, boundingRect, textAlign, rectOrigin, offset, xbasis, ybasis
 		);
 		Vector<Clr> cdata;
 		for(int x=0;x<data.vdata.size();x++) cdata.push_back(fontColour);
@@ -276,10 +274,10 @@ struct GameRenderer {
 			(uint8_t)(cell.clr.b / 2),
 			(uint8_t)(cell.clr.a)
 		);
-		for(int i=0;i<3;i++) tri_rects_push(tran, depth, RenderBlock::CELL_AREA_RECTS[i], vals[i] ? clr_on : clr_off);
+		for(int i=0;i<3;i++) tri_rects_push(tran, depth, RenderTree::CELL_AREA_RECTS[i], vals[i] ? clr_on : clr_off);
 		// draw link points.
 		const int N = cell.numTargets;
-		for(int i=0;i<N;i++) tri_rects_push(tran, depth, RenderBlock::LINK_POINT_RECTS[i], 0xffeeccff);
+		for(int i=0;i<N;i++) tri_rects_push(tran, depth, RenderTree::LINK_POINT_RECTS[i], 0xffeeccff);
 		// draw text.
 		/* TODO - go back to using average scale factor of containing block instead of applying basis vectors. */
 		if(shouldDrawText) {
@@ -298,14 +296,14 @@ struct GameRenderer {
 			// draw values.
 			const Array<String, 3> labels = {"OUT", "A", "B"};
 			for(int i=0;i<cell.numTargets;i++) {
-				// TODO - http://localhost:4000/cpp/io/c/printf.html
-				char buf[256];
-				sprintf(buf, "%s:%#X", labels[i].c_str(), vals[i]);
+				char buf[16];
+				sprintf(buf, "%s:0x%08.0X", labels[i].c_str(), vals[i]);
+				for(int x=0;x<16;x++) if(buf[x] == ' ') buf[x] = '0';
 				const String str = String(buf);
 				const Clr clr = (vals[i] == 0 ? 0x777777ff : fclr);
 				const Vector2D unitRectPoint = {
-					RenderBlock::LINK_POINTS[i].x,
-					RenderBlock::LINK_POINTS[i].y,
+					RenderTree::LINK_POINTS[i].x,
+					RenderTree::LINK_POINTS[i].y,
 				};
 				push_content_text_box_against_circle(tran, textDepth, str, fontHeight, bclr, unitRectPoint, dist);
 				push_content_text_box_against_circle(tran, textDepth, str, fontHeight,  clr, unitRectPoint, dist);
@@ -352,70 +350,70 @@ struct GameRenderer {
 		}
 	}
 
-	void draw_block_background(const RenderBlock& renderblock) {
-		const float depth = renderblock.depth - 0.5;
-		const Transformation2D itran = renderblock.itemTran;
+	void draw_block_background(const RenderTree& rendertree) {
+		const float depth = rendertree.depth - 0.5;
+		const Transformation2D itran = rendertree.itemTran;
 		// draw underlay.
 		tri_rects_push(itran, depth, Rectangle{0,0,1,1}, 0x00000033);
 		// draw grid.
-		if(renderblock.depth == 0) {
-			const float w = renderblock.blockTemplate->innerW;
-			const float h = renderblock.blockTemplate->innerH;
+		if(rendertree.depth == 0) {
+			const float w = rendertree.blockTemplate->innerW;
+			const float h = rendertree.blockTemplate->innerH;
 			push_content_line_grid(itran, depth, Rectangle{0,0,1,1}, 0x77aaff99, w, h);
 		} else {
 			line_rects_push(itran, depth, Rectangle{0,0,1,1}, 0x77aaff99);
 		}
 	}
-	void draw_block_placeholder(const RenderBlock& renderblock, const Block& block) {
-		const Transformation2D& tran = renderblock.itemTrans.at(block.id);
-		const float depth = renderblock.depth;
+	void draw_block_placeholder(const RenderTree& rendertree, const Block& block) {
+		const Transformation2D& tran = rendertree.itemTrans.at(block.id);
+		const float depth = rendertree.depth;
 		// draw background.
 		tri_rects_push(tran, depth, Rectangle{0,0,1,1}, 0x00000033);
 		// draw outline.
 		line_rects_push(tran, depth, Rectangle{0,0,1,1}, 0x77aaff99);
 	}
 	void draw_block(
-		const RenderBlock& renderblock,
+		const RenderTree& rendertree,
 		float depth,
 		float maxDepth,
 		GameSimulation::SimulationPointer simptr,
-		Set<ItemId> ids_selected = Set<ItemId>(),
-		Set<ItemId> ids_hovered  = Set<ItemId>()
+		const Set<ItemId>& ids_selected = Set<ItemId>(),
+		const Set<ItemId>& ids_hovered  = Set<ItemId>()
 	) {
 		// draw background.
-		draw_block_background(renderblock);
+		draw_block_background(rendertree);
 		// draw texts.
-		for(const auto& [id,text] : renderblock.blockTemplate->texts) {
-			const Transformation2D& tran = renderblock.itemTrans.at(text.id);
-			const float depth = renderblock.depth;
+		for(const auto& [id,text] : rendertree.blockTemplate->texts) {
+			const Transformation2D& tran = rendertree.itemTrans.at(text.id);
+			const float depth = rendertree.depth;
 			draw_text(text, tran, depth);
 		}
 		// draw cells.
-		const bool block_sel = ids_selected.contains(renderblock.block.id);
-		const bool block_hvr = ids_hovered .contains(renderblock.block.id);
-		for(const auto& [id,cell] : renderblock.blockTemplate->cells) {
-			const Transformation2D& tran = renderblock.itemTrans.at(cell.id);
-			const float depth = renderblock.depth;
+		const bool block_sel = ids_selected.contains(rendertree.block.id);
+		const bool block_hvr = ids_hovered .contains(rendertree.block.id);
+		for(const auto& [id,cell] : rendertree.blockTemplate->cells) {
+			const Transformation2D& tran = rendertree.itemTrans.at(cell.id);
+			const float depth = rendertree.depth;
 			const Array<u32, 3> vals = simptr.get_cell_values(id);
 			const bool cell_sel = ids_selected.contains(id);
 			const bool cell_hvr = ids_hovered.contains(id);
-			const bool shouldDrawText = block_sel | block_hvr | cell_sel | cell_hvr | true/*TODO: TESTING*/;
+			const bool shouldDrawText = block_sel | block_hvr | cell_sel | cell_hvr;
 			draw_cell(cell, tran, depth, vals, shouldDrawText);
 		}
 		// draw links.
-		for(const auto& [id,link] : renderblock.blockTemplate->links) {
-			const Optional<Pos> p0 = renderblock.get_link_point(link.src);
-			const Optional<Pos> p1 = renderblock.get_link_point(link.dst);
-			if(p0.has_value() && p1.has_value()) draw_link(p0.value(), p1.value(), link.clr, renderblock.depth);
+		for(const auto& [id,link] : rendertree.blockTemplate->links) {
+			const Pos p0 = rendertree.get_link_point(link.src);
+			const Pos p1 = rendertree.get_link_point(link.dst);
+			draw_link(p0, p1, link.clr, rendertree.depth);
 		}
 		// draw blocks.
 		if(depth < maxDepth)
-				for(const auto& [id,child_block] : renderblock.blockTemplate->blocks)
-					draw_block(renderblock.get_child(child_block), depth+1, maxDepth, simptr.get_child_pointer(id));
-		else	for(const auto& [id,child_block] : renderblock.blockTemplate->blocks)
-					draw_block_placeholder(renderblock, child_block);
+				for(const auto& [id,child_block] : rendertree.blockTemplate->blocks)
+					draw_block(rendertree.get_child(child_block), depth+1, maxDepth, simptr.get_child_pointer(id), ids_selected, ids_hovered);
+		else	for(const auto& [id,child_block] : rendertree.blockTemplate->blocks)
+					draw_block_placeholder(rendertree, child_block);
 	}
-	void draw_block_preview(const RenderBlock& previewblock) {
+	void draw_block_preview(const RenderTree& previewblock) {
 		const float depth		= 1;
 		const float maxDepth	= 3;
 		draw_block(previewblock, depth, maxDepth, GameSimulation::SimulationPointer());
@@ -436,18 +434,18 @@ struct GameRenderer {
 		tri_rects_push(Transformation2D(), DEPTH_ON_TOP, rect, clr);
 	}
 
-	void drawSelection(const RenderBlock& renderblock, Set<ItemId> ids) {
+	void drawSelection(const RenderTree& rendertree, Set<ItemId> ids) {
 		const float s = 0.03;
 		const Rectangle rect {0.0f - s, 0.0f - s, 1.0f + s*2, 1.0f + s*2};
 		const Clr clr = 0xffff55ff;
-		for(const ItemId id : ids) { line_rects_push(renderblock.itemTrans.at(id), DEPTH_ON_TOP, rect, clr); }
+		for(const ItemId id : ids) { line_rects_push(rendertree.itemTrans.at(id), DEPTH_ON_TOP, rect, clr); }
 	}
 
-	void drawHovered(const RenderBlock& renderblock, Set<ItemId> ids) {
+	void drawHovered(const RenderTree& rendertree, Set<ItemId> ids) {
 		const float s = 0.00;
 		const Rectangle rect {0.0f - s, 0.0f - s, 1.0f + s*2, 1.0f + s*2};
 		const Clr clr = 0xaaccffff;
-		for(const ItemId id : ids) { line_rects_push(renderblock.itemTrans.at(id), DEPTH_ON_TOP, rect, clr); }
+		for(const ItemId id : ids) { line_rects_push(rendertree.itemTrans.at(id), DEPTH_ON_TOP, rect, clr); }
 	}
 
 	// ============================================================
@@ -470,12 +468,14 @@ struct GameRenderer {
 		// create root render block.
 		const BlockTemplate& btmp = library.templates.at(rootTemplateId);
 		const Block rootBlock(ItemDim(0, 0, btmp.innerW, btmp.innerH, 0), rootTemplateId);
-		const RenderBlock renderblock(&library, rootBlock, Transformation2D(), 0);
+		const RenderTree rendertree(&library, rootBlock, Transformation2D(), 0);
 		// get simulation pointer.
 		const GameSimulation::SimulationPointer simptr = simulation.get_simtree_root_pointer();
 		// draw root block contents.
-		draw_block(renderblock, 0, 3, simptr, ids_selected, ids_hovered);
+		draw_block(rendertree, 0, 3, simptr, ids_selected, ids_hovered);
+		// draw selection.
 		// TODO
+
 	}
 
 };

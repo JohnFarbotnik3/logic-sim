@@ -124,14 +124,14 @@ export class GameRenderer {
 		if(server) {
 			// check for missing glyphs.
 			const n_missing = server.get_font_renderer_num_missing_glyphs();
-			console.log("n_missing", n_missing);
+			//console.log("n_missing", n_missing);
 			if(n_missing > 0) {
 				const fontren = this.fontRenderer_0;
 				const s_missing = new Set();
 				for(let x=0;x<n_missing;x++)
 						if(!fontren.glyphmap.has(x))
 							s_missing.add(String.fromCharCode(server.get_font_renderer_next_missing_glyph(x)));
-				console.log("s_missing", s_missing, [...s_missing.keys()].map(s => s.charCodeAt(0)));
+				//console.log("s_missing", s_missing, [...s_missing.keys()].map(s => s.charCodeAt(0)));
 				if(s_missing.size > 0) {
 					fontren.addRequiredGlyphs(s_missing);
 					server.set_font_renderer_tex_dim(fontren.texW, fontren.texH);
@@ -174,7 +174,7 @@ export class GameRenderer {
 			}
 		}
 		//*/
-		this.drawBlock(renblock, renblock.get_render_data_block(main.blockLibrary.rootBlock), INDEX_ROOT_SB);
+		//this.drawBlock(renblock, renblock.get_render_data_block(main.blockLibrary.rootBlock), INDEX_ROOT_SB);
 		this.drawCursor();
 		if(main.gameUI.cursor_isSelecting) this.drawDragArea();
 		this.drawSelection();

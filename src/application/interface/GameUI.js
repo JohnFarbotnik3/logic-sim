@@ -435,8 +435,8 @@ export class GameUI {
 	// Content modification.
 	// ------------------------------------------------------------
 
-	changedContent  () { CachedValue_Rendering  .onChange(); }
-	changedRendering() { CachedValue_Rendering.onChange(); }
+	changedContent  () { CachedValue_Rendering.onChange(); main.renderChange = true; }
+	changedRendering() { CachedValue_Rendering.onChange(); main.renderChange = true; }
 
 	add_cell (item) { main.blockLibrary.rootBlock.insertCell (item); }
 	add_link (item) { main.blockLibrary.rootBlock.insertLink (item); }

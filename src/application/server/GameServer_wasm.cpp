@@ -1,13 +1,11 @@
 //#define NDEBUG
 #include <cassert>
-
-#include <cstdint>
 #include <cstdio>
-
 #include "../content/BlockTemplateLibrary.cpp"
 #include "../simulation/GameSimulation.cpp"
 #include "../interface/GameRenderer.cpp"
 #include "../WebGL/FontEngine.cpp"
+#include "../lib/StringMessage.cpp"
 
 // NOTE: this function is omitted when compiling with "--no-entry" flag.
 /*
@@ -27,11 +25,20 @@ struct GameServer_wasm {
 	// Library
 	// ------------------------------------------------------------
 	BlockTemplateLibrary library;
+	Block rootBlock;
 
 	void new_template(String templateId, String name, String desc, float innerW, float innerH, float placeW, float placeH) {
 		try {
 			printf("new_template: %llu\n", ItemId(templateId).value);
-			this->library.new_template(templateId, name, desc, innerW, innerH, placeW, placeH);
+			BlockTemplate btmp;
+			btmp.templateId = templateId;
+			btmp.name = name;
+			btmp.desc = desc;
+			btmp.innerW = innerW;
+			btmp.innerH = innerH;
+			btmp.placeW = placeW;
+			btmp.placeH = placeH;
+			this->library.templates[templateId] = btmp;
 		} catch(std::exception& err) {
 			printf("%s\n", err.what());
 		}
@@ -43,7 +50,15 @@ struct GameServer_wasm {
 		float x, float y, float w, float h, float r
 	) {
 		try {
-			this->library.add_cell(templateId, id, ItemDim(x,y,w,h,r), type, value);
+			BlockTemplate& btmp = this->library.templates[templateId];
+			Cell item;
+			item.id = id;
+			item.dim = ItemDim(x,y,w,h,r);
+			item.type = type;
+			item.value = value;
+			item.initProperties();
+			assert(item.taskOrder < NUM_CELL_TYPES);
+			this->library.templates[templateId].cells[id] = item;
 		} catch(std::exception& err) {
 			printf("%s\n", err.what());
 		}
@@ -59,7 +74,13 @@ struct GameServer_wasm {
 		try {
 			LinkAddress src(src_bid, src_cid, src_tgt);
 			LinkAddress dst(dst_bid, dst_cid, dst_tgt);
-			this->library.add_link(templateId, id, src, dst, clr);
+			BlockTemplate& btmp = this->library.templates[templateId];
+			Link item;
+			item.id = id;
+			item.src = src;
+			item.dst = dst;
+			item.clr = clr;
+			this->library.templates[templateId].links[id] = item;
 		} catch(std::exception& err) {
 			printf("%s\n", err.what());
 		}
@@ -72,10 +93,21 @@ struct GameServer_wasm {
 		float x, float y, float w, float h, float r
 	) {
 		try {
-			this->library.add_block(templateId, id, tid, ItemDim(x,y,w,h,r));
+			Block item;
+			item.id = id;
+			item.templateId = tid;
+			item.dim = ItemDim(x,y,w,h,r);
+			this->library.templates[templateId].blocks[id] = item;
 		} catch(std::exception& err) {
 			printf("%s\n", err.what());
 		}
+	}
+
+	void set_root_block(String rootTemplateId) {
+		const BlockTemplate& btmp = library.templates.at(rootTemplateId);
+		ItemDim dim(0, 0, btmp.innerW, btmp.innerH, 0);
+		rootBlock = Block(dim, rootTemplateId);
+		// TODO: update other stuff when doing this?
 	}
 
 	void print_template_counts(String templateId) {
@@ -90,9 +122,9 @@ struct GameServer_wasm {
 	// ------------------------------------------------------------
 	GameSimulation simulation;
 
-	void simulation_rebuild(String rootTemplateId, bool keepCellValues) {
+	void simulation_rebuild(bool keepCellValues) {
 		try {
-			simulation.rebuild(this->library, rootTemplateId, keepCellValues);
+			simulation.rebuild(this->library, rootBlock.templateId, keepCellValues);
 		} catch(std::exception& err) {
 			printf("%s\n", err.what());
 		}
@@ -145,14 +177,23 @@ struct GameServer_wasm {
 		renderer.fontRenderer.missingGlyphs.erase(c);
 	}
 
-	// draw
-	void draw_all(
-		String rootTemplateId
-	) {
-		Set<ItemId> ids_selected;
-		Set<ItemId> ids_hovered;
-		renderer.draw_all(library, rootTemplateId, simulation, ids_selected, ids_hovered);
+	// draw primary block content.
+	void draw_all(String msg_sel, String msg_hvr) {
+		const StringMessage parse_sel(msg_sel);
+		const StringMessage parse_hvr(msg_hvr);
+		Set<ItemId> ids_sel;
+		Set<ItemId> ids_hvr;
+		for(int x=0;x<parse_sel.list.size();x++) ids_sel.insert(parse_sel.read_number<u64>(x));
+		for(int x=0;x<parse_hvr.list.size();x++) ids_hvr.insert(parse_hvr.read_number<u64>(x));
+		renderer.draw_all(library, rootBlock.templateId, simulation, ids_sel, ids_hvr);
 	}
+
+	// draw previews.
+	// NOTE: the dimensions of preview items are shifted to compensate for the unit square transformation.
+	void draw_preview_cell() {}
+	void draw_preview_link() {}
+	void draw_preview_block() {}
+
 
 	// buffer data.
 	// https://stackoverflow.com/questions/65566923/is-there-a-more-efficient-way-to-return-arrays-from-c-to-javascript
@@ -208,6 +249,7 @@ EMSCRIPTEN_BINDINGS() {
 		.function("add_cell" , &GameServer_wasm::add_cell)
 		.function("add_link" , &GameServer_wasm::add_link)
 		.function("add_block", &GameServer_wasm::add_block)
+		.function("set_root_block", &GameServer_wasm::set_root_block)
 		.function("print_template_counts", &GameServer_wasm::print_template_counts)
 		// simulation.
 		.function("simulation_rebuild", &GameServer_wasm::simulation_rebuild)

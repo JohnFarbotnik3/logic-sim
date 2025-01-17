@@ -40,5 +40,12 @@ export class ItemCollection {
 		for(const item of this.blocks) if(collection.blocks.has(item)) intersection.blocks.add(item);
 		return intersection;
 	}
+	getAllItemIds() {
+		const ids = [];
+		for(const item of this.cells ) ids.push(item.id);
+		for(const item of this.texts ) ids.push(item.id);
+		for(const item of this.blocks) ids.push(item.id);
+		return ids;
+	}
 };
 

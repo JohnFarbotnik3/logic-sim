@@ -205,17 +205,8 @@ as this will allow writing tree-structs without major performance problems.
 - "Values" mode: allow targeting cells in child-blocks.
 
 
-> misc simulator improvements
-- make queue in simtree heap-allocated instead of stack-allocated (stack overflow avoidance)
-
-
 > misc renderer improvements:
-* most of these can just be done on the c++ side.
 * draw lines using triangles.
-- give cells a Colour class for easier value editing (for feature parity with c++).
-- create second text-texture with same letters but slightly thicker, so that
-	it can be drawn in black underneath regular text to improve contrast.
-	(can use 1px blur to get thicker letters).
 - draw cell values using average scale of parent block (or cell) rather than using the cell transformation.
 (the text would be easier to read if it was all horizontal and not stretched in weird ways).
 
@@ -231,6 +222,28 @@ as this will allow writing tree-structs without major performance problems.
 ^ a pointer to a map that is nullptr if map is empty would suffice.
 *** IDEA: implement tree-marching instead of trees.
 *** (if the same library is used, then the tree will be marched in the same order).
+
+
+> C++ JSON parse and stringify.
+- transmit template library as JSON instead of with a bunch of seperate functions.
+
+
+- investigate JS -> C++/WASM string conversion.
+- compare differences between renderers (colours dont seem to match).
+- finish implementing renderer stuff (such as previews).
+	^ once finished, render data will be generated in c++ renderer instead,
+	so glbuffers should directly move data instead of making an extra copy of it first.
+	(add a direct buffering function)
+- do profile guided optimization of c++ renderer.
+- allow c++ FontRenderer to make JS calls, so that it can re-generate glyph map a string contains some characters it is missing
+	^ this will allow mostly removing JS font-renderer, and getting rid of missing glyphs map.
+- investigate if Embuffer's embind definition significantly increases WASM filesize! (85 KiB -> 115 KiB)
+- make ItemIDs 32-bit
+	^ when adding a new item or template, we will want to check for collisions.
+
+
+
+
 
 
 

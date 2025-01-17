@@ -1,4 +1,6 @@
 import createEmModule from "./em_index";
+import { StringMessageUtil } from "../lib/StringMessageUtil";
+import { main } from "../Main";
 
 /* Functions for interacting with c++ implementation. */
 export class GameServer_wasm {
@@ -47,6 +49,7 @@ export class GameServer_wasm {
 				server.add_block(templateId, block.id+"", block.templateId+"", x, y, w, h, r);
 			}
 		}
+		server.set_root_block(rootTemplateId + "");
 		for(const [templateId_num, temp] of library) server.print_template_counts(templateId_num + "");
 	}
 
@@ -54,8 +57,8 @@ export class GameServer_wasm {
 	// Simulation
 	// ------------------------------------------------------------
 	
-	simulation_rebuild(rootTemplateId, keepCellValues) {
-		this.server.simulation_rebuild(rootTemplateId+"", keepCellValues);
+	simulation_rebuild(keepCellValues) {
+		this.server.simulation_rebuild(keepCellValues);
 	}
 
 	simulation_update(numSteps) {
@@ -94,15 +97,14 @@ export class GameServer_wasm {
 	}
 
 	// draw
-	draw_all(
-		rootTemplateId
-	) {
+	draw_all() {
 		// get selection.
-		// TODO
-		const ids_selected = [];
-		const ids_hovered = [];
+		const ids_sel = new Set(main.gameUI.collectionSelected.getAllItemIds());
+		const ids_hvr = new Set(main.gameUI.collectionHovered .getAllItemIds());
+		const msg_sel = StringMessageUtil.number_set_to_str(ids_sel);
+		const msg_hvr = StringMessageUtil.number_set_to_str(ids_hvr);
 		// draw.
-		this.server.draw_all(rootTemplateId+"");
+		this.server.draw_all(msg_sel, msg_hvr);
 	}
 
 	// buffer data.

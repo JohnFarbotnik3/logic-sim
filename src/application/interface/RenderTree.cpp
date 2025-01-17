@@ -4,9 +4,7 @@
 #include "../content/BlockTemplate.cpp"
 #include "../content/BlockTemplateLibrary.cpp"
 
-// TODO:
-// - inline this into renderer.
-struct RenderBlock {
+struct RenderTree {
 
 	// ============================================================
 	// Constants.
@@ -90,7 +88,7 @@ struct RenderBlock {
 	// Structors.
 	// ------------------------------------------------------------
 
-	RenderBlock(
+	RenderTree(
 		const BlockTemplateLibrary* library,
 		const Block block,
 		const Transformation2D etran,
@@ -109,8 +107,8 @@ struct RenderBlock {
 		for(const auto& [id, item] : blockTemplate->blocks) itemTrans[id] = get_item_transformation(item.dim, contTran);
 	}
 
-	RenderBlock get_child(const Block childBlock) const {
-		return RenderBlock(library, childBlock, this->contTran, depth+1);
+	RenderTree get_child(const Block childBlock) const {
+		return RenderTree(library, childBlock, this->contTran, depth+1);
 	}
 
 };

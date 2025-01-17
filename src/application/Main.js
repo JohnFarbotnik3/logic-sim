@@ -75,7 +75,7 @@ class Main {
 				console.log("REBUILDING SIMULATION");
 				const keepCellValues = !this.simulationShouldReset;
 				this.gameServer.send_templates(blocklib.templates, rootTemplateId);
-				this.gameServer.simulation_rebuild(rootTemplateId, keepCellValues);
+				this.gameServer.simulation_rebuild(keepCellValues);
 				this.simulationShouldRebuild = false;
 				this.simulationShouldReset = false;
 			}
@@ -87,12 +87,16 @@ class Main {
 			if(this.simulationIsRunning) this.gameServer.simulation_update(numSteps);
 			this.simulationDatePrev = Date.now();
 			const t_s2 = Date.now();
+			if(this.renderChange) {
+				this.gameServer.send_templates(blocklib.templates, rootTemplateId);
+				this.renderChange = false;
+			}
 			this.gameRenderer.render();
 			const t1 = Date.now();
 			Performance.increment_time("sim.rebuild", t_s1-t_s0);
 			Performance.increment_time("sim.update ", t_s2-t_s1);
 			Performance.increment_time("main.update", t1-t0);
-			//Performance.log_all();
+			Performance.log_all();
 			requestAnimationFrame((t) => this.update.call(this, t));
 		} catch(error) {
 			this.gameUI.showCrashPopup(error, "application crashed during Main.update()");

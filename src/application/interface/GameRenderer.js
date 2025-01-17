@@ -119,7 +119,7 @@ export class GameRenderer {
 		if(!renblock) throw("!renblock");
 		const t1 = Date.now();
 		// call server renderer.
-		/*
+		///*
 		const server = main.gameServer;
 		if(server) {
 			// check for missing glyphs.
@@ -164,11 +164,16 @@ export class GameRenderer {
 				let vdata = server.font_pos();
 				let cdata = server.font_clr();
 				let tdata = server.font_tex();
-				this.lines_reserve(idata.length, vdata.length, cdata.length, tdata.length);
-				this.lines_push(idata, vdata, cdata, tdata);
+				//this.font_reserve(idata.length, vdata.length, cdata.length, tdata.length);
+				//this.font_push(idata, vdata, cdata, tdata);
+				const voffset = 0;
+				this.font_buffer_ind.reserveAndPushData(idata, 0, idata.length, voffset);
+				this.font_buffer_pos.reserveAndPushData(vdata, 0, vdata.length);
+				this.font_buffer_clr.reserveAndPushData(cdata, 0, cdata.length);
+				this.font_buffer_tex.reserveAndPushData(tdata, 0, tdata.length);
 			}
 		}
-		*/
+		//*/
 		this.drawBlock(renblock, renblock.get_render_data_block(main.blockLibrary.rootBlock), INDEX_ROOT_SB);
 		this.drawCursor();
 		if(main.gameUI.cursor_isSelecting) this.drawDragArea();

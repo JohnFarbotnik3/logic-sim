@@ -269,8 +269,19 @@ export class FontRenderer {
 		return x;
 	}
 	
+	TEST_DRAW = 0;
+
 	// generate 2d text then apply 3d transformation.
 	generateVertexData3d(str, height, widthMult, boundingRect, textAlignment, rectOrigin, wrap, vecOffset, vecBasisX, vecBasisY) {
+		if(str === "CNST" && this.TEST_DRAW < 100) {
+			console.log("<>str", str);
+			console.log("<>hgt", height);
+			console.log("<>wid", widthMult);
+			console.log("<>rect", boundingRect);
+			console.log("<>offset", vecOffset);
+			console.log("<>xbasis", vecBasisX);
+			console.log("<>ybasis", vecBasisY);
+		}
 		// move bounding rectangle to origin so that basis vectors apply correctly.
 		vecOffset = new Float32Array(vecOffset);// clone so that original is not mutated.
 		vecOffset[0] += boundingRect.x;
@@ -298,6 +309,10 @@ export class FontRenderer {
 		for(let i=0;i<str.length;i++) {
 			const c = str[i];
 			const g = this.glyphmap.get(c);
+			if(str == "CNST" && this.TEST_DRAW < 100 && g.w != 0) {
+				if(i == str.length-1) this.TEST_DRAW = 101;
+				console.log("<>str[i], glyph (x,y,w,h)", i, str[i], [...g.texCoords]);
+			}
 			const w = height * g.widthRatio * widthMult;
 			const h = height;
 			// start new line if needed

@@ -77,8 +77,8 @@ struct Transformation2D {
 		this->data[5] = 0;
 	}
 	Transformation2D(float x, float y, float w, float h, float r) {
-		const float s = std::sinf(r * PI_2);
-		const float c = std::cosf(r * PI_2);
+		const float s = (r == 0.0f) ? 0.0f : std::sinf(r * PI_2);
+		const float c = (r == 0.0f) ? 1.0f : std::cosf(r * PI_2);
 		// xbasis
 		this->data[0] = c*w;
 		this->data[1] = s*w;

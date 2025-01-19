@@ -25,7 +25,7 @@ struct GameServer_wasm {
 	// Library
 	// ------------------------------------------------------------
 	BlockTemplateLibrary library;
-	Block rootBlock;
+	BlockWT rootBlock;
 
 	void send_templates(String message) {
 		try {
@@ -41,7 +41,7 @@ struct GameServer_wasm {
 	void set_root_block(String rootTemplateId) {
 		const BlockTemplate& btmp = library.templates.at(rootTemplateId);
 		ItemDim dim(0, 0, btmp.innerW, btmp.innerH, 0);
-		rootBlock = Block(dim, rootTemplateId);
+		rootBlock = BlockWT(&library, rootTemplateId, dim);
 		// TODO: update other stuff when doing this?
 	}
 
@@ -50,82 +50,6 @@ struct GameServer_wasm {
 		printf("total cells:  %i\n", library.totalCellsInTree(templateId));
 		printf("total links:  %i\n", library.totalLinksInTree(templateId));
 		printf("total blocks: %i\n", library.totalBlocksInTree(templateId));
-	}
-
-
-	void new_template(String templateId, String name, String desc, float innerW, float innerH, float placeW, float placeH) {
-		try {
-			printf("new_template: %llu\n", ItemId(templateId).value);
-			BlockTemplate btmp;
-			btmp.templateId = templateId;
-			btmp.name = name;
-			btmp.desc = desc;
-			btmp.innerW = innerW;
-			btmp.innerH = innerH;
-			btmp.placeW = placeW;
-			btmp.placeH = placeH;
-			this->library.templates[templateId] = btmp;
-		} catch(std::exception& err) {
-			printf("%s\n", err.what());
-		}
-	}
-
-	void add_cell(
-		String templateId,
-		String id, u32 type, u32 value,
-		float x, float y, float w, float h, float r
-	) {
-		try {
-			BlockTemplate& btmp = this->library.templates[templateId];
-			Cell item;
-			item.id = id;
-			item.dim = ItemDim(x,y,w,h,r);
-			item.type = type;
-			item.value = value;
-			assert(item.taskOrder < NUM_CELL_TYPES);
-			this->library.templates[templateId].cells[id] = item;
-		} catch(std::exception& err) {
-			printf("%s\n", err.what());
-		}
-	}
-
-	void add_link(
-		String templateId,
-		String id,
-		String src_bid, String src_cid, u32 src_tgt,
-		String dst_bid, String dst_cid, u32 dst_tgt,
-		u32 clr
-	) {
-		try {
-			LinkAddress src(src_bid, src_cid, src_tgt);
-			LinkAddress dst(dst_bid, dst_cid, dst_tgt);
-			BlockTemplate& btmp = this->library.templates[templateId];
-			Link item;
-			item.id = id;
-			item.src = src;
-			item.dst = dst;
-			item.clr = clr;
-			this->library.templates[templateId].links[id] = item;
-		} catch(std::exception& err) {
-			printf("%s\n", err.what());
-		}
-	}
-
-	void add_block(
-		String templateId,
-		String id,
-		String tid,
-		float x, float y, float w, float h, float r
-	) {
-		try {
-			Block item;
-			item.id = id;
-			item.templateId = tid;
-			item.dim = ItemDim(x,y,w,h,r);
-			this->library.templates[templateId].blocks[id] = item;
-		} catch(std::exception& err) {
-			printf("%s\n", err.what());
-		}
 	}
 
 	// ============================================================
@@ -199,7 +123,7 @@ struct GameServer_wasm {
 		Set<ItemId> ids_hvr;
 		for(int x=0;x<parse_sel.list.size();x++) ids_sel.insert(parse_sel.read_number<u64>());
 		for(int x=0;x<parse_hvr.list.size();x++) ids_hvr.insert(parse_hvr.read_number<u64>());
-		renderer.draw_all(library, rootBlock.templateId, simulation, ids_sel, ids_hvr);
+		renderer.draw_all(rootBlock, simulation, ids_sel, ids_hvr);
 	}
 	void draw_cursor(float cx, float cy, float cr) {
 		VertexPos cursor_pos{cx, cy, 0};
@@ -209,13 +133,28 @@ struct GameServer_wasm {
 		Rectangle drag_area{dx0, dy0, dx1-dx0, dy1-dy0};
 		renderer.drawDragArea(drag_area);
 	}
-
-	// draw previews.
-	// NOTE: the dimensions of preview items are shifted to compensate for the unit square transformation.
-	void draw_preview_cell() {}
-	void draw_preview_link() {}
-	void draw_preview_block() {}
-
+	void draw_cell_preview(String msg) {
+		ItemSerializer parser(msg);
+		const Cell cell = parser.read_cell();
+		renderer.draw_cell_preview(rootBlock, cell);
+	}
+	void draw_link_preview(String msg) {
+		ItemSerializer parser(msg);
+		int num = parser.read_number<int>();
+		Vector<VertexPos> points;
+		for(int i=0;i<num;i++) {
+			float x = parser.read_number<float>();
+			float y = parser.read_number<float>();
+			points.push_back(VertexPos{x,y,0});
+		}
+		VertexClr clr = parser.read_item_clr();
+		renderer.draw_link_preview(points, clr);
+	}
+	void draw_block_preview(String msg) {
+		ItemSerializer parser(msg);
+		const Block block = parser.read_block();
+		renderer.draw_block_preview(rootBlock, BlockWT(&library, block));
+	}
 
 	// buffer data.
 	// https://stackoverflow.com/questions/65566923/is-there-a-more-efficient-way-to-return-arrays-from-c-to-javascript
@@ -268,10 +207,6 @@ EMSCRIPTEN_BINDINGS() {
 		// template library.
 		.property("library", &GameServer_wasm::library)
 		.function("send_templates", &GameServer_wasm::send_templates)
-		.function("new_template", &GameServer_wasm::new_template)
-		.function("add_cell" , &GameServer_wasm::add_cell)
-		.function("add_link" , &GameServer_wasm::add_link)
-		.function("add_block", &GameServer_wasm::add_block)
 		.function("set_root_block", &GameServer_wasm::set_root_block)
 		.function("print_template_counts", &GameServer_wasm::print_template_counts)
 		// simulation.
@@ -288,6 +223,9 @@ EMSCRIPTEN_BINDINGS() {
 		.function("draw_all", &GameServer_wasm::draw_all)
 		.function("draw_cursor", &GameServer_wasm::draw_cursor)
 		.function("draw_drag_area", &GameServer_wasm::draw_drag_area)
+		.function("draw_cell_preview", &GameServer_wasm::draw_cell_preview)
+		.function("draw_link_preview", &GameServer_wasm::draw_link_preview)
+		.function("draw_block_preview", &GameServer_wasm::draw_block_preview)
 		.function("triangles_ind", &GameServer_wasm::triangles_ind)
 		.function("triangles_pos", &GameServer_wasm::triangles_pos)
 		.function("triangles_clr", &GameServer_wasm::triangles_clr)

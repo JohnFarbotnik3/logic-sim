@@ -136,7 +136,6 @@ struct ItemSerializer : StringSerializer {
 		for(const auto& [id, item] : btmp.blocks) push_block(item);
 	}
 	BlockTemplate read_block_template() {
-		printf("read_block_template (start)\n");
 		BlockTemplate btmp;
 		btmp.templateId = read_item_id();
 		btmp.name = read_string();
@@ -149,15 +148,10 @@ struct ItemSerializer : StringSerializer {
 		int n_l = read_number<u32>();
 		int n_t = read_number<u32>();
 		int n_b = read_number<u32>();
-		printf("cells: %lu\n", n_c);
 		for(int x=0;x<n_c;x++) { const auto item = read_cell (); btmp.cells [item.id] = item; }
-		printf("links: %lu\n", n_l);
 		for(int x=0;x<n_l;x++) { const auto item = read_link (); btmp.links [item.id] = item; }
-		printf("texts: %lu\n", n_t);
 		for(int x=0;x<n_t;x++) { const auto item = read_text (); btmp.texts [item.id] = item; }
-		printf("blocks: %lu\n", n_b);
 		for(int x=0;x<n_b;x++) { const auto item = read_block(); btmp.blocks[item.id] = item; }
-		printf("read_block_template (finish): %llu, %s\n", btmp.templateId, btmp.name.c_str());
 		return btmp;
 	}
 

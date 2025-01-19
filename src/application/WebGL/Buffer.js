@@ -35,8 +35,8 @@ export class BufferUtil {
 		gl.bindBuffer(target, buffer);
 		return gl.getBufferParameter(target, param);
 	}
-	static getBufferSize (gl, target, buffer) { return Buffer.getBufferParam(gl, target, buffer, BUFFER_PARAM.BUFFER_SIZE); }
-	static getBufferUsage(gl, target, buffer) { return Buffer.getBufferParam(gl, target, buffer, BUFFER_PARAM.BUFFER_USAGE); }
+	static getBufferSize (gl, target, buffer) { return BufferUtil.getBufferParam(gl, target, buffer, BUFFER_PARAM.BUFFER_SIZE); }
+	static getBufferUsage(gl, target, buffer) { return BufferUtil.getBufferParam(gl, target, buffer, BUFFER_PARAM.BUFFER_USAGE); }
 	static createBuffer(gl, byteLength, target, usage) {
 		const buffer = gl.createBuffer();
 		gl.bindBuffer(target, buffer);
@@ -55,6 +55,7 @@ export class Buffer {
 		this.buffer			= BufferUtil.createBuffer(glContext, this.data.byteLength, target, usage);
 		this.writePos		= 0;// amount of data (and current write position) in the data stack.
 		this.bufferPos		= 0;// amount of data that has been committed to backing buffer.
+		this.bufferSize		= this.data.byteLength;// size of gpu-side buffer (bytes).
 	}
 	get BYTES_PER_ELEMENT() {
 		return this.arrayType.BYTES_PER_ELEMENT;
@@ -62,9 +63,14 @@ export class Buffer {
 	get GL_ENUM_TYPE() {
 		return GL_ARRAY_ENUM_TYPE(this.arrayType);
 	}
+	resize_buffer(new_size) {
+		this.buffer = BufferUtil.createBuffer(this.glContext, new_size, this.target, this.usage);
+		this.bufferSize = new_size;
+	}
 	resize(newLength, copy) {
 		const oldLength = this.data.length;
 		this.data = ArrayUtil.resize(this.data, Math.ceil(newLength), copy);
+
 		this.buffer = BufferUtil.createBuffer(this.glContext, this.data.byteLength, this.target, this.usage);
 		this.writePos = copy ? Math.min(this.writePos, oldLength) : 0;
 		this.bufferPos = 0;// data will need to be re-added to buffer since it was cleared when re-allocated.
@@ -90,17 +96,33 @@ export class Buffer {
 	}
 	// commit all new data to buffer.
 	commitNewDataToBuffer() {
+		const gl = this.glContext;
 		const ofs = this.bufferPos;
 		const len = this.writePos - this.bufferPos;
 		const src = this.data;
 		const dst_offset = ofs  * this.BYTES_PER_ELEMENT;
 		const src_offset = ofs;
-		const gl = this.glContext;
 		// https://developer.mozilla.org/en-US/docs/Web/API/WebGL2RenderingContext/bufferData
 		// https://developer.mozilla.org/en-US/docs/Web/API/WebGL2RenderingContext/bufferSubData
 		gl.bindBuffer(this.target, this.buffer);
 		gl.bufferSubData(this.target, dst_offset, src, src_offset, len);
 		this.bufferPos = this.writePos;
+	}
+	// commit data from external source directly.
+	commitSrcDataToBuffer(src, ofs, len) {
+		const gl = this.glContext;
+		// ensure gpu-side buffer is large enough.
+		const old_size = this.bufferSize;
+		const new_size = (ofs + len) * this.BYTES_PER_ELEMENT;
+		if(new_size > old_size) this.resize_buffer(new_size);
+		// commit data.
+		const dst_offset = ofs * this.BYTES_PER_ELEMENT;
+		const src_offset = ofs;
+		// https://developer.mozilla.org/en-US/docs/Web/API/WebGL2RenderingContext/bufferData
+		// https://developer.mozilla.org/en-US/docs/Web/API/WebGL2RenderingContext/bufferSubData
+		gl.bindBuffer(this.target, this.buffer);
+		gl.bufferSubData(this.target, dst_offset, src, src_offset, len);
+		this.bufferPos = this.writePos = ofs + len;// TODO: remove
 	}
 };
 

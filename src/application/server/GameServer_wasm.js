@@ -18,6 +18,7 @@ export class GameServer_wasm {
 	// ============================================================
 	// BlockTemplate library
 	// ------------------------------------------------------------
+
 	send_templates(library, rootTemplateId) {
 		const server = this.server;
 		const serializer = new ItemSerializer();
@@ -26,43 +27,6 @@ export class GameServer_wasm {
 		server.send_templates(serializer.to_string());
 		server.set_root_block(rootTemplateId + "");
 		for(const [templateId_num, temp] of library.templates.entries()) server.print_template_counts(templateId_num + "");
-	}
-
-	send_templates_old(library, rootTemplateId) {
-		const server = this.server;
-		const templates = library.templates;
-		for(const [templateId_num, temp] of templates.entries()) {
-			const templateId = templateId_num + "";
-			{
-				const {name, desc, width, height, placeW, placeH} = temp;
-				server.new_template(templateId, name, desc, width, height, placeW, placeH);
-			}
-			for(const cell of temp.cells) {
-				const {x,y,w,h,r} = cell.dimensions;
-				server.add_cell(templateId, cell.id+"", cell.type, cell.value, x, y, w, h, r);
-			}
-			for(const link of temp.links) {
-				const {
-					id,
-					bid_src, cid_src, tgt_src,
-					bid_dst, cid_dst, tgt_dst,
-					clr
-				} = link;
-				const _clr = new Uint32Array([clr]);
-				server.add_link(
-					templateId, id+"",
-					bid_src+"", cid_src+"", tgt_src,
-					bid_dst+"", cid_dst+"", tgt_dst,
-					_clr[0]
-				);
-			}
-			for(const block of temp.blocks) {
-				const {x,y,w,h,r} = block.dimensions;
-				server.add_block(templateId, block.id+"", block.templateId+"", x, y, w, h, r);
-			}
-		}
-		server.set_root_block(rootTemplateId + "");
-		for(const [templateId_num, temp] of templates.entries()) server.print_template_counts(templateId_num + "");
 	}
 
 	// ============================================================
@@ -113,10 +77,10 @@ export class GameServer_wasm {
 		// get selection.
 		const ids_sel = main.gameUI.collectionSelected.getAllItemIds();
 		const ids_hvr = main.gameUI.collectionHovered .getAllItemIds();
-		const msg_sel = new StringSerializer();
-		const msg_hvr = new StringSerializer();
-		for(const id of ids_sel) msg_sel.push_number(id);
-		for(const id of ids_hvr) msg_hvr.push_number(id);
+		const msg_sel = new ItemSerializer();
+		const msg_hvr = new ItemSerializer();
+		for(const id of ids_sel) msg_sel.push_item_id(id);
+		for(const id of ids_hvr) msg_hvr.push_item_id(id);
 		// draw.
 		this.server.draw_all(
 			msg_sel.to_string(),
@@ -131,6 +95,26 @@ export class GameServer_wasm {
 	draw_drag_area() {
 		const [dx0, dy0, dx1, dy1] = main.gameUI.cursor_dragAABB;
 		this.server.draw_drag_area(dx0, dy0, dx1, dy1);
+	}
+	draw_cell_preview(cell) {
+		const parser = new ItemSerializer();
+		parser.push_cell(cell);
+		this.server.draw_cell_preview(parser.to_string());
+	}
+	draw_block_preview(block) {
+		const parser = new ItemSerializer();
+		parser.push_block(block);
+		this.server.draw_block_preview(parser.to_string());
+	}
+	draw_link_preview(points, clr) {
+		const parser = new ItemSerializer();
+		parser.push_number(points.length);
+		for(const [x,y] of points) {
+			parser.push_number(x);
+			parser.push_number(y);
+		}
+		parser.push_item_clr(clr);
+		this.server.draw_link_preview(parser.to_string());
 	}
 
 	// buffer data.

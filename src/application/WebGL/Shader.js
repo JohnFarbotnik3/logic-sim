@@ -150,21 +150,22 @@ export class ShaderPipeline {
 			this.bindAttributes(attribBuffer.target, attribBuffer.buffer, layout);
 		}
 	}
-	drawElements() {
+	drawElementsRange(beg, end) {
 		this.bindAttributeBuffers();
 		this.useProgram();
 		const gl = this.glContext;
 		const indexBuffer = this.indexBuffer;
 		const indexType = indexBuffer.GL_ENUM_TYPE;// NOTE: only GL.UNSIGNED_SHORT is supported in webGL version 1
 		const indexDrawMax = GL_MAX_DRAW_INDEX_ELEMENTS;
-		const beg = 0;
-		const end = indexBuffer.indexCount;
 		gl.bindBuffer(GL.ELEMENT_ARRAY_BUFFER, indexBuffer.buffer);
 		for(let i=beg;i<end;i+=indexDrawMax) {
 			const indexCount = Math.min(end-i, indexDrawMax);
 			const indexOffset = i * indexBuffer.BYTES_PER_ELEMENT;
 			gl.drawElements(this.drawMode, indexCount, indexType, indexOffset);
 		}
+	}
+	drawElements() {
+		this.drawElementsRange(0, this.indexBuffer.indexCount);
 	}
 };
 

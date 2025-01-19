@@ -1,6 +1,6 @@
 #include "../lib/VectorND.cpp"
 #include "../lib/Rectangle.cpp"
-#include "../content/Block.cpp"
+#include "../content/BlockWT.cpp"
 #include "../content/BlockTemplate.cpp"
 #include "../content/BlockTemplateLibrary.cpp"
 
@@ -33,8 +33,7 @@ struct RenderTree {
 	// ------------------------------------------------------------
 
 	const BlockTemplateLibrary* library;
-	const BlockTemplate* blockTemplate;
-	Block	block;
+	BlockWT	block;
 	float	depth;
 	// item transformation.
 	Transformation2D itemTran;
@@ -52,10 +51,9 @@ struct RenderTree {
 		return externalTran.compose(dim.getTransformation()).compose(UNIT_SQUARE);
 	}
 
-	Transformation2D get_content_transformation(const Block& block, const BlockTemplate& btmp, Transformation2D externalTran) const {
-		const Transformation2D normalize(0, 0, 1.0f/btmp.innerW, 1.0f/btmp.innerH, 0);
-		const Transformation2D itemTran = get_item_transformation(block.dim, externalTran);
-		return itemTran.compose(normalize);
+	static Transformation2D get_content_transformation(const BlockWT& block, Transformation2D externalTran) {
+		const Transformation2D normalize(0, 0, 1.0f/block.blockTemplate->innerW, 1.0f/block.blockTemplate->innerH, 0);
+		return get_item_transformation(block.dim, externalTran).compose(normalize);
 	}
 
 	// returns link points of given cell in render-block.
@@ -75,10 +73,9 @@ struct RenderTree {
 		}
 		// link point is in child block. (rare)
 		else {
-			const Block& block = blockTemplate->blocks.at(addr.bid);
-			const BlockTemplate& btmp = this->library->templates.at(block.templateId);
-			const ItemDim& dim = btmp.cells.at(addr.cid).dim;
-			Transformation2D ctran = get_content_transformation(block, btmp, this->contTran);
+			const BlockWT& child = block.get_child(addr.bid);
+			const ItemDim& dim = child.blockTemplate->cells.at(addr.cid).dim;
+			Transformation2D ctran = get_content_transformation(child, this->contTran);
 			Transformation2D itran = get_item_transformation(dim, ctran);
 			return itran.apply(LINK_POINTS[addr.tgt]);
 		}
@@ -89,26 +86,22 @@ struct RenderTree {
 	// ------------------------------------------------------------
 
 	RenderTree(
-		const BlockTemplateLibrary* library,
-		const Block block,
+		const BlockWT block,
 		const Transformation2D etran,
 		const int depth
 	) {
 		// populate fields.
-		this->library = library;
-		this->blockTemplate = &(library->templates.at(block.templateId));
 		this->block = block;
 		this->depth = depth;
 		this->itemTran = get_item_transformation(block.dim, etran);
-		this->contTran = get_content_transformation(block, *blockTemplate, etran);
+		this->contTran = get_content_transformation(block, etran);
 		// init item transformations.
-		for(const auto& [id, item] : blockTemplate->cells ) itemTrans[id] = get_item_transformation(item.dim, contTran);
-		for(const auto& [id, item] : blockTemplate->texts ) itemTrans[id] = get_item_transformation(item.dim, contTran);
-		for(const auto& [id, item] : blockTemplate->blocks) itemTrans[id] = get_item_transformation(item.dim, contTran);
+		for(const auto& [id, item] : block.blockTemplate->cells ) itemTrans[id] = get_item_transformation(item.dim, contTran);
+		for(const auto& [id, item] : block.blockTemplate->texts ) itemTrans[id] = get_item_transformation(item.dim, contTran);
+		for(const auto& [id, item] : block.blockTemplate->blocks) itemTrans[id] = get_item_transformation(item.dim, contTran);
 	}
 
-	RenderTree get_child(const Block childBlock) const {
-		return RenderTree(library, childBlock, this->contTran, depth+1);
+	RenderTree get_child(ItemId bid) const {
+		return RenderTree(block.get_child(bid), this->contTran, depth+1);
 	}
-
 };

@@ -320,12 +320,16 @@ struct GameRenderer {
 			}
 		}
 	}
-	void draw_cell_preview(Cell cell) {
-		const Transformation2D& tran = cell.dim.getTransformation();
+	void draw_cell_preview(
+		const BlockWT& rootBlock,
+		const Cell& cell
+	) {
+		const Transformation2D etran = RenderTree::get_content_transformation(rootBlock, Transformation2D());
+		const Transformation2D itran = RenderTree::get_item_transformation(cell.dim, etran);
 		const float depth = 0;
 		const Array<u32, 3> vals = {0,0,0};
 		const bool shouldDrawText = false;
-		draw_cell(cell, tran, depth, vals, shouldDrawText);
+		draw_cell(cell, itran, depth, vals, shouldDrawText);
 	}
 
 	void draw_link(Pos p0, Pos p1, Clr clr, float depth=0) {
@@ -367,8 +371,8 @@ struct GameRenderer {
 		tri_rects_push(itran, depth, Rectangle{0,0,1,1}, 0x00000033);
 		// draw grid.
 		if(rendertree.depth == 0) {
-			const float w = rendertree.blockTemplate->innerW;
-			const float h = rendertree.blockTemplate->innerH;
+			const float w = rendertree.block.blockTemplate->innerW;
+			const float h = rendertree.block.blockTemplate->innerH;
 			push_content_line_grid(itran, depth, Rectangle{0,0,1,1}, 0x77aaff99, w, h);
 		} else {
 			line_rects_push(itran, depth, Rectangle{0,0,1,1}, 0x77aaff99);
@@ -390,10 +394,11 @@ struct GameRenderer {
 		const Set<ItemId>& ids_selected = Set<ItemId>(),
 		const Set<ItemId>& ids_hovered  = Set<ItemId>()
 	) {
+		const BlockTemplate& btmp = *rendertree.block.blockTemplate;
 		// draw background.
 		draw_block_background(rendertree);
 		// draw texts.
-		for(const auto& [id,text] : rendertree.blockTemplate->texts) {
+		for(const auto& [id, text] : btmp.texts) {
 			const Transformation2D& tran = rendertree.itemTrans.at(text.id);
 			const float depth = rendertree.depth;
 			draw_text(text, tran, depth);
@@ -401,7 +406,7 @@ struct GameRenderer {
 		// draw cells.
 		const bool block_sel = ids_selected.contains(rendertree.block.id);
 		const bool block_hvr = ids_hovered .contains(rendertree.block.id);
-		for(const auto& [id,cell] : rendertree.blockTemplate->cells) {
+		for(const auto& [id, cell] : btmp.cells) {
 			const Transformation2D& tran = rendertree.itemTrans.at(cell.id);
 			const float depth = rendertree.depth;
 			const Array<u32, 3> vals = simptr.get_cell_values(id);
@@ -411,21 +416,26 @@ struct GameRenderer {
 			draw_cell(cell, tran, depth, vals, shouldDrawText);
 		}
 		// draw links.
-		for(const auto& [id,link] : rendertree.blockTemplate->links) {
+		for(const auto& [id, link] : btmp.links) {
 			const Pos p0 = rendertree.get_link_point(link.src);
 			const Pos p1 = rendertree.get_link_point(link.dst);
 			draw_link(p0, p1, link.clr, rendertree.depth);
 		}
 		// draw blocks.
 		if(depth < maxDepth)
-				for(const auto& [id,child_block] : rendertree.blockTemplate->blocks)
-					draw_block(rendertree.get_child(child_block), depth+1, maxDepth, simptr.get_child_pointer(id), ids_selected, ids_hovered);
-		else	for(const auto& [id,child_block] : rendertree.blockTemplate->blocks)
+				for(const auto& [id,child_block] : btmp.blocks)
+					draw_block(rendertree.get_child(child_block.id), depth+1, maxDepth, simptr.get_child_pointer(id), ids_selected, ids_hovered);
+		else	for(const auto& [id,child_block] : btmp.blocks)
 					draw_block_placeholder(rendertree, child_block);
 	}
-	void draw_block_preview(const RenderTree& previewblock) {
+	void draw_block_preview(
+		const BlockWT& rootBlock,
+		const BlockWT& block
+	) {
+		const Transformation2D etran = RenderTree::get_content_transformation(rootBlock, Transformation2D());
 		const float depth		= 1;
 		const float maxDepth	= 3;
+		const RenderTree previewblock(block, etran, depth);
 		draw_block(previewblock, depth, maxDepth, GameSimulation::SimulationPointer());
 	}
 
@@ -462,23 +472,16 @@ struct GameRenderer {
 	// Combined draw function.
 	// ------------------------------------------------------------
 
-	/*
-		this function draws contents as well as previews,
-		taking a very long list of arguments from the javascript side to do all the needed rendering.
-	*/
 	void draw_all(
-		const BlockTemplateLibrary& library,
-		ItemId rootTemplateId,
+		const BlockWT& rootBlock,
 		const GameSimulation& simulation,
 		Set<ItemId> ids_selected,
 		Set<ItemId> ids_hovered
 	) {
 		// clear buffers.
-		clear_buffers(false);
+		clear_buffers(true);
 		// create root render block.
-		const BlockTemplate& btmp = library.templates.at(rootTemplateId);
-		const Block rootBlock(ItemDim(0, 0, btmp.innerW, btmp.innerH, 0), rootTemplateId);
-		const RenderTree rendertree(&library, rootBlock, Transformation2D(), 0);
+		const RenderTree rendertree(rootBlock, Transformation2D(), 0);
 		// get simulation pointer.
 		const GameSimulation::SimulationPointer simptr = simulation.get_simtree_root_pointer();
 		// draw root block contents.
@@ -487,5 +490,38 @@ struct GameRenderer {
 		drawSelection(rendertree, ids_selected);
 		drawHovered(rendertree, ids_hovered);
 	}
+
+	// ============================================================
+	// Extra rendering + geometry related helpers.
+	// ------------------------------------------------------------
+
+	// TODO
+	Vector<ItemId> getItemsInDrawArea() {}
+	Vector<ItemId> getItemsHovered() {}
+	Vector<ItemId> getLinksHovered(ItemId id) {}
+
+	/*
+	isItemInDragArea(item) {
+		const aabb = main.gameRenderer.renderBlock.get_axis_aligned_bounding_box(item);
+		VerificationUtil.verifyType_throw(aabb, Float32Array);
+		return VectorUtil.collision_aabb_aabb_2d(aabb, this.cursor_dragAABB);
+	}
+	isItemHovered(item) {
+		const aabb = main.gameRenderer.renderBlock.get_axis_aligned_bounding_box(item);
+		VerificationUtil.verifyType_throw(aabb, Float32Array);
+		return VectorUtil.collision_aabb_point_2d(aabb, this.cursor_pos);
+	}
+	isLinkHovered(link) {
+		const points = main.gameRenderer.renderBlock.l_points.get(link.id);
+		const pointC = new Vector2D(this.cursor_pos.slice(0,2));
+		const pointA = new Vector2D(points.slice(0,2));
+		const pointB = new Vector2D(points.slice(3,5));
+		const nearest = VectorUtil.nearestPoint_point_line_segment_2d(pointC, pointA, pointB);
+		const nearest3d = new Vector3D([nearest[0], nearest[1], 0.0]);
+		const distance = nearest3d.add(this.cursor_pos, -1.0).hypot();
+		return distance <= this.cursor_radius;
+	}
+	*/
+
 
 };

@@ -8,20 +8,21 @@
 	A Block is a virtual instance of some BlockTemplate.
 */
 struct Block {
-	ItemDim	dim;
 	ItemId	id;
 	ItemId	templateId;
-	
+	ItemDim	dim;
+
 	Block() = default;
 	Block(ItemDim dim, ItemId templateId) {
-		this->dim			= dim;
 		this->id			= ItemId::next();
 		this->templateId	= templateId;
+		this->dim			= dim;
 	}
 	Block(ItemId id, ItemId templateId, ItemDim dim) {
-		this->dim			= dim;
 		this->id			= id;
 		this->templateId	= templateId;
+		this->dim			= dim;
+
 	}
 };
 

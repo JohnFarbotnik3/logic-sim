@@ -134,10 +134,10 @@ struct SimulationTask {
 		int counts [NUM_CELL_TYPES];
 		for(int i=0;i<NUM_CELL_TYPES;i++) offsets[i] = 0;
 		for(int i=0;i<NUM_CELL_TYPES;i++) counts [i] = 0;
-		
+
 		const int num = this->update_map.count;
 		int sorted_inds[num];
-		
+
 		//for(int i=0;i<num;i++) printf("stack: %i\n", update_map.stack[i]);
 		//for(int i=0;i<cell_buffer.size();i++) printf("order: %i\n", cell_buffer[i].task_order);
 
@@ -147,7 +147,7 @@ struct SimulationTask {
 			assert(bucket <NUM_CELL_TYPES);
 			counts[bucket]++;
 		}
-		
+
 		int sum=0;
 		for(int x=0;x<NUM_CELL_TYPES;x++) { offsets[x]=sum; sum+=counts[x]; }
 		

@@ -5,7 +5,7 @@
 #include "../simulation/GameSimulation.cpp"
 #include "../interface/GameRenderer.cpp"
 #include "../WebGL/FontEngine.cpp"
-#include "../lib/StringMessage.cpp"
+#include "../content/ItemSerializer.cpp"
 
 // NOTE: this function is omitted when compiling with "--no-entry" flag.
 /*
@@ -26,6 +26,32 @@ struct GameServer_wasm {
 	// ------------------------------------------------------------
 	BlockTemplateLibrary library;
 	Block rootBlock;
+
+	void send_templates(String message) {
+		try {
+			ItemSerializer serializer(message);
+			printf("serializer loaded, items: %lu\n", serializer.list.size());
+			library = serializer.read_block_library();
+			printf("set library\n");
+		} catch(std::exception& err) {
+			printf("%s\n", err.what());
+		}
+	}
+
+	void set_root_block(String rootTemplateId) {
+		const BlockTemplate& btmp = library.templates.at(rootTemplateId);
+		ItemDim dim(0, 0, btmp.innerW, btmp.innerH, 0);
+		rootBlock = Block(dim, rootTemplateId);
+		// TODO: update other stuff when doing this?
+	}
+
+	void print_template_counts(String templateId) {
+		printf("----- template counts: %llu -----\n", library.templates[templateId].templateId.value);
+		printf("total cells:  %i\n", library.totalCellsInTree(templateId));
+		printf("total links:  %i\n", library.totalLinksInTree(templateId));
+		printf("total blocks: %i\n", library.totalBlocksInTree(templateId));
+	}
+
 
 	void new_template(String templateId, String name, String desc, float innerW, float innerH, float placeW, float placeH) {
 		try {
@@ -56,7 +82,6 @@ struct GameServer_wasm {
 			item.dim = ItemDim(x,y,w,h,r);
 			item.type = type;
 			item.value = value;
-			item.initProperties();
 			assert(item.taskOrder < NUM_CELL_TYPES);
 			this->library.templates[templateId].cells[id] = item;
 		} catch(std::exception& err) {
@@ -101,20 +126,6 @@ struct GameServer_wasm {
 		} catch(std::exception& err) {
 			printf("%s\n", err.what());
 		}
-	}
-
-	void set_root_block(String rootTemplateId) {
-		const BlockTemplate& btmp = library.templates.at(rootTemplateId);
-		ItemDim dim(0, 0, btmp.innerW, btmp.innerH, 0);
-		rootBlock = Block(dim, rootTemplateId);
-		// TODO: update other stuff when doing this?
-	}
-
-	void print_template_counts(String templateId) {
-		printf("----- template counts: %llu -----\n", library.templates[templateId].templateId.value);
-		printf("total cells:  %i\n", library.totalCellsInTree(templateId));
-		printf("total links:  %i\n", library.totalLinksInTree(templateId));
-		printf("total blocks: %i\n", library.totalBlocksInTree(templateId));
 	}
 
 	// ============================================================
@@ -179,12 +190,12 @@ struct GameServer_wasm {
 
 	// draw primary block content.
 	void draw_all(String msg_sel, String msg_hvr) {
-		const StringMessage parse_sel(msg_sel);
-		const StringMessage parse_hvr(msg_hvr);
+		ItemSerializer parse_sel(msg_sel);
+		ItemSerializer parse_hvr(msg_hvr);
 		Set<ItemId> ids_sel;
 		Set<ItemId> ids_hvr;
-		for(int x=0;x<parse_sel.list.size();x++) ids_sel.insert(parse_sel.read_number<u64>(x));
-		for(int x=0;x<parse_hvr.list.size();x++) ids_hvr.insert(parse_hvr.read_number<u64>(x));
+		for(int x=0;x<parse_sel.list.size();x++) ids_sel.insert(parse_sel.read_number<u64>());
+		for(int x=0;x<parse_hvr.list.size();x++) ids_hvr.insert(parse_hvr.read_number<u64>());
 		renderer.draw_all(library, rootBlock.templateId, simulation, ids_sel, ids_hvr);
 	}
 
@@ -245,6 +256,7 @@ EMSCRIPTEN_BINDINGS() {
 		.constructor<>()
 		// template library.
 		.property("library", &GameServer_wasm::library)
+		.function("send_templates", &GameServer_wasm::send_templates)
 		.function("new_template", &GameServer_wasm::new_template)
 		.function("add_cell" , &GameServer_wasm::add_cell)
 		.function("add_link" , &GameServer_wasm::add_link)

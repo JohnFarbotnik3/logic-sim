@@ -1,6 +1,7 @@
 import createEmModule from "./em_index";
-import { StringMessageUtil } from "../lib/StringMessageUtil";
 import { main } from "../Main";
+import { StringSerializer } from "../lib/StringSerializer";
+import { ItemSerializer } from "../content/exports";
 
 /* Functions for interacting with c++ implementation. */
 export class GameServer_wasm {
@@ -19,7 +20,18 @@ export class GameServer_wasm {
 	// ------------------------------------------------------------
 	send_templates(library, rootTemplateId) {
 		const server = this.server;
-		for(const [templateId_num, temp] of library) {
+		const serializer = new ItemSerializer();
+		serializer.push_block_library(library);
+		console.log("serializer items:", serializer.list);
+		server.send_templates(serializer.to_string());
+		server.set_root_block(rootTemplateId + "");
+		for(const [templateId_num, temp] of library.templates.entries()) server.print_template_counts(templateId_num + "");
+	}
+
+	send_templates_old(library, rootTemplateId) {
+		const server = this.server;
+		const templates = library.templates;
+		for(const [templateId_num, temp] of templates.entries()) {
 			const templateId = templateId_num + "";
 			{
 				const {name, desc, width, height, placeW, placeH} = temp;
@@ -50,7 +62,7 @@ export class GameServer_wasm {
 			}
 		}
 		server.set_root_block(rootTemplateId + "");
-		for(const [templateId_num, temp] of library) server.print_template_counts(templateId_num + "");
+		for(const [templateId_num, temp] of templates.entries()) server.print_template_counts(templateId_num + "");
 	}
 
 	// ============================================================
@@ -99,12 +111,17 @@ export class GameServer_wasm {
 	// draw
 	draw_all() {
 		// get selection.
-		const ids_sel = new Set(main.gameUI.collectionSelected.getAllItemIds());
-		const ids_hvr = new Set(main.gameUI.collectionHovered .getAllItemIds());
-		const msg_sel = StringMessageUtil.number_set_to_str(ids_sel);
-		const msg_hvr = StringMessageUtil.number_set_to_str(ids_hvr);
+		const ids_sel = main.gameUI.collectionSelected.getAllItemIds();
+		const ids_hvr = main.gameUI.collectionHovered .getAllItemIds();
+		const msg_sel = new StringSerializer();
+		const msg_hvr = new StringSerializer();
+		for(const id of ids_sel) msg_sel.push_number(id);
+		for(const id of ids_hvr) msg_hvr.push_number(id);
 		// draw.
-		this.server.draw_all(msg_sel, msg_hvr);
+		this.server.draw_all(
+			msg_sel.to_string(),
+			msg_hvr.to_string()
+		);
 	}
 
 	// buffer data.

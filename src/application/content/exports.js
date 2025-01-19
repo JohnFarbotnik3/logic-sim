@@ -8,3 +8,4 @@ export { Text } from "./Text";
 export { Block } from "./Block";
 export { BlockTemplate } from "./BlockTemplate";
 export { BlockTemplateLibrary } from "./BlockTemplateLibrary";
+export { ItemSerializer } from "./ItemSerializer";

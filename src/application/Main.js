@@ -74,7 +74,7 @@ class Main {
 			if(this.simulationShouldRebuild | this.simulationShouldReset) {
 				console.log("REBUILDING SIMULATION");
 				const keepCellValues = !this.simulationShouldReset;
-				this.gameServer.send_templates(blocklib.templates, rootTemplateId);
+				this.gameServer.send_templates(blocklib, rootTemplateId);
 				this.gameServer.simulation_rebuild(keepCellValues);
 				this.simulationShouldRebuild = false;
 				this.simulationShouldReset = false;
@@ -88,7 +88,7 @@ class Main {
 			this.simulationDatePrev = Date.now();
 			const t_s2 = Date.now();
 			if(this.renderChange) {
-				this.gameServer.send_templates(blocklib.templates, rootTemplateId);
+				this.gameServer.send_templates(blocklib, rootTemplateId);
 				this.renderChange = false;
 			}
 			this.gameRenderer.render();

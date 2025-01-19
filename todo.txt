@@ -238,8 +238,6 @@ as this will allow writing tree-structs without major performance problems.
 - allow c++ FontRenderer to make JS calls, so that it can re-generate glyph map a string contains some characters it is missing
 	^ this will allow mostly removing JS font-renderer, and getting rid of missing glyphs map.
 - investigate if Embuffer's embind definition significantly increases WASM filesize! (85 KiB -> 115 KiB)
-- make ItemIDs 32-bit
-	^ when adding a new item or template, we will want to check for collisions.
 
 
 

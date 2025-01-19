@@ -1,15 +1,15 @@
 #include <cstdio>
 #include <string>
-#include "./StringMessage.cpp"
+#include "./StringSerializer.cpp"
 
 int main(const int argc, const char** argv) {
 	using String = std::string;
-	using i32 = StringMessage::i32;
-	using i64 = StringMessage::i64;
-	using f32 = StringMessage::f32;
-	using f64 = StringMessage::f64;
-	using u32 = StringMessage::u32;
-	using u64 = StringMessage::u64;
+	using i32 = StringSerializer::i32;
+	using i64 = StringSerializer::i64;
+	using f32 = StringSerializer::f32;
+	using f64 = StringSerializer::f64;
+	using u32 = StringSerializer::u32;
+	using u64 = StringSerializer::u64;
 
 	i32 vi32 = 1;
 	i64 vi64 = -1000200030004000;
@@ -21,7 +21,7 @@ int main(const int argc, const char** argv) {
 
 	// write message.
 	printf("\n");
-	StringMessage message;
+	StringSerializer message;
 	message.push_value(vi32);
 	message.push_value(vi64);
 	message.push_value(vf64);
@@ -35,16 +35,15 @@ int main(const int argc, const char** argv) {
 
 	// read message.
 	printf("\n");
-	int i=0;
-	StringMessage message2(msg);
+	StringSerializer message2(msg);
 	for(const String str : message2.list) printf("list item: %s\n", str.c_str());
-	i32 ri32 = message2.read_number<i32>(i++);
-	i64 ri64 = message2.read_number<i64>(i++);
-	f64 rf64 = message2.read_number<f64>(i++);
-	f32 rf32 = message2.read_number<f32>(i++);
-	String rstr = message2.read_string(i++);
-	u32 ru32 = message2.read_number<u32>(i++);
-	u64 ru64 = message2.read_number<u64>(i++);
+	i32 ri32 = message2.read_number<i32>();
+	i64 ri64 = message2.read_number<i64>();
+	f64 rf64 = message2.read_number<f64>();
+	f32 rf32 = message2.read_number<f32>();
+	String rstr = message2.read_string();
+	u32 ru32 = message2.read_number<u32>();
+	u64 ru64 = message2.read_number<u64>();
 
 	printf("\n");
 	printf("value: [%i] %i \n", ri32==vi32, ri32);

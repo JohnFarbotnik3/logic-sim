@@ -21,27 +21,24 @@ export class BlockTemplate {
 	// ------------------------------------------------------------
 	
 	constructor(...args) {
-		this.cells		= null;				// Cell[]
-		this.links		= null;				// Link[]
-		this.texts		= null;				// Text[]
-		this.blocks		= null;				// Block[]
 		this.templateId	= ComponentId.NONE;	// ComponentId	id uniquely identifying BlockTemplate.
+		this.name		= "";				// String
+		this.desc		= "";				// String
 		this.width		= 0;				// u32			internal width  of template.
 		this.height		= 0;				// u32			internal height of template.
 		this.placeW		= 0;				// u32			default width  of block when placed.
 		this.placeH		= 0;				// u32			default height of block when placed.
-		this.name		= null;				// String
-		this.desc		= null;				// String
+		this.cells		= [];				// Cell[]
+		this.links		= [];				// Link[]
+		this.texts		= [];				// Text[]
+		this.blocks		= [];				// Block[]
 		// constructor overloads.
 		const _INDEX = VerificationUtil.getConstructorOverloadIndex_throw(args, [
+			[],
 			[Number, Number],
 		]);
-		if(_INDEX === 0) {
+		if(_INDEX === 1) {
 			const [width, height] = args;
-			this.cells		= [];
-			this.links		= [];
-			this.texts		= [];
-			this.blocks		= [];
 			this.templateId	= ComponentId.next();
 			this.width		= width;
 			this.height		= height;

@@ -6,15 +6,15 @@
 #include <cassert>
 
 struct CellType {
-	String		typecode;
+	String		typeString;
 	u32			type;
 	u32			numTargets;
 	u32			taskOrder;
 	ItemClr 	clr;
 
 	CellType() {}
-	CellType(std::string typecode, u32 type, u32 numTargets, u32 taskOrder, ItemClr clr) {
-		this->typecode		= typecode;
+	CellType(std::string typeString, u32 type, u32 numTargets, u32 taskOrder, ItemClr clr) {
+		this->typeString	= typeString;
 		this->type			= type;
 		this->clr			= clr;
 		this->numTargets	= numTargets;

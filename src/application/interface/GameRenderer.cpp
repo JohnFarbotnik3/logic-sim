@@ -1,5 +1,4 @@
 #include <cstdint>
-#include <cstdlib>
 #include "../Imports.cpp"
 #include "./VertexTypes.cpp"
 #include "../lib/Transformation2D.cpp"
@@ -259,6 +258,7 @@ struct GameRenderer {
 	// Item generators.
 	// ------------------------------------------------------------
 
+	const Array<String, 3> cell_output_labels = {"OUT", "A", "B"};
 	void draw_cell(
 		const Cell& cell,
 		const Transformation2D& tran,
@@ -267,12 +267,13 @@ struct GameRenderer {
 		bool shouldDrawText
 	) {
 		// draw cell areas.
-		const Clr clr_on	= Clr(cell.clr);
+		const ItemClr cell_clr	= cell.clr;
+		const Clr clr_on	= Clr(cell_clr);
 		const Clr clr_off	= Clr(
-			(uint8_t)(cell.clr.r / 2),
-			(uint8_t)(cell.clr.g / 2),
-			(uint8_t)(cell.clr.b / 2),
-			(uint8_t)(cell.clr.a)
+			(uint8_t)(cell_clr.r / 2),
+			(uint8_t)(cell_clr.g / 2),
+			(uint8_t)(cell_clr.b / 2),
+			(uint8_t)(cell_clr.a)
 		);
 		for(int i=0;i<3;i++) tri_rects_push(tran, depth, RenderTree::CELL_AREA_RECTS[i], vals[i] ? clr_on : clr_off);
 		// draw link points.
@@ -288,16 +289,15 @@ struct GameRenderer {
 			const Clr fclr = 0xffffffff;
 			// draw type code.
 			{
-				const String str = cell.typecode;
+				const String str = cell.typeString;
 				const Vector2D unitRectPoint {0.5, 1.0};
 				push_content_text_box_against_circle(tran, textDepth, str, fontHeight, bclr, unitRectPoint, dist);
 				push_content_text_box_against_circle(tran, textDepth, str, fontHeight, fclr, unitRectPoint, dist);
 			}
 			// draw values.
-			const Array<String, 3> labels = {"OUT", "A", "B"};
 			for(int i=0;i<cell.numTargets;i++) {
 				char buf[16];
-				sprintf(buf, "%s:0x%08.0X", labels[i].c_str(), vals[i]);
+				sprintf(buf, "%s:0x%08.0X", cell_output_labels[i].c_str(), vals[i]);
 				for(int x=0;x<16;x++) if(buf[x] == ' ') buf[x] = '0';
 				const String str = String(buf);
 				const Clr clr = (vals[i] == 0 ? 0x777777ff : fclr);

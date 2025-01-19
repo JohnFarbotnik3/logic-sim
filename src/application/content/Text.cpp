@@ -19,10 +19,19 @@ struct Text {
 	/* Outline colour. */
 	ItemClr	oclr;
 	
-	Text() {}
+	Text() = default;
 	Text(ItemDim dim, String str, f32 fhgt, ItemClr fclr, ItemClr bclr, ItemClr oclr) {
 		this->dim	= dim;
 		this->id	= ItemId::next();
+		this->str	= str;
+		this->fhgt	= fhgt;
+		this->fclr	= fclr;
+		this->bclr	= bclr;
+		this->oclr	= oclr;
+	}
+	Text(ItemDim dim, ItemId id, String str, f32 fhgt, ItemClr fclr, ItemClr bclr, ItemClr oclr) {
+		this->dim	= dim;
+		this->id	= id;
 		this->str	= str;
 		this->fhgt	= fhgt;
 		this->fclr	= fclr;

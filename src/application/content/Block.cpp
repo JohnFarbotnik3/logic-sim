@@ -12,10 +12,15 @@ struct Block {
 	ItemId	id;
 	ItemId	templateId;
 	
-	Block() {}
+	Block() = default;
 	Block(ItemDim dim, ItemId templateId) {
 		this->dim			= dim;
 		this->id			= ItemId::next();
+		this->templateId	= templateId;
+	}
+	Block(ItemId id, ItemId templateId, ItemDim dim) {
+		this->dim			= dim;
+		this->id			= id;
 		this->templateId	= templateId;
 	}
 };

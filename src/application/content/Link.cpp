@@ -23,7 +23,7 @@ struct LinkAddress {
 	/* Target on linked cell. */
 	LinkTarget tgt;
 	
-	LinkAddress() {}
+	LinkAddress() = default;
 	LinkAddress(ItemId bid, ItemId cid, LinkTarget tgt) {
 		this->bid = bid;
 		this->cid = cid;
@@ -49,9 +49,15 @@ struct Link {
 	LinkAddress dst;
 	ItemClr clr;
 	
-	Link() {}
+	Link() = default;
 	Link(LinkAddress src, LinkAddress dst, ItemClr clr) {
 		this->id	= ItemId::next();
+		this->src	= src;
+		this->dst	= dst;
+		this->clr	= clr;
+	}
+	Link(ItemId id, LinkAddress src, LinkAddress dst, ItemClr clr) {
+		this->id	= id;
 		this->src	= src;
 		this->dst	= dst;
 		this->clr	= clr;

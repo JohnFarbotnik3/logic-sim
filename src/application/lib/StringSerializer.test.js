@@ -1,5 +1,5 @@
 
-function StringMessage_test() {
+function StringSerializer_test() {
 
 	let vi32 = 1;
 	let vi64 = -1000200030004000;
@@ -10,7 +10,7 @@ function StringMessage_test() {
 	let vstr = "abc,\\,\n,def,\\,\n,❤❥❦❴❵➀➇❡,ghi";
 
 	// write message.
-	let message = new StringMessage();
+	let message = new StringSerializer();
 	message.push_number(vi32);
 	message.push_number(vi64);
 	message.push_number(vf64);
@@ -24,7 +24,7 @@ function StringMessage_test() {
 
 	// read message.
 	let i=0;
-	let message2 = new StringMessage(msg);
+	let message2 = new StringSerializer(msg);
 	for(const str of message2.list) console.log("list item: %s", str);
 	let ri32 = message2.read_number(i++);
 	let ri64 = message2.read_number(i++);

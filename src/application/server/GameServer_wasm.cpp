@@ -21,9 +21,20 @@ int main(int argc, char** argv) {
 //*/
 
 struct GameServer_wasm {
+
+	// ============================================================
+	// Structors
+	// ------------------------------------------------------------
+
+	// NOTE: to create, call:		var server = new Module.GameServer_wasm();
+	// NOTE: call delete, call:		server.delete();
+	 GameServer_wasm() { printf("GameServer_wasm::constructor\n"); }
+	~GameServer_wasm() { printf("GameServer_wasm::destructor\n"); }
+
 	// ============================================================
 	// Library
 	// ------------------------------------------------------------
+
 	BlockTemplateLibrary library;
 	BlockWT rootBlock;
 
@@ -33,6 +44,15 @@ struct GameServer_wasm {
 			printf("serializer loaded, items: %lu\n", serializer.list.size());
 			library = serializer.read_block_library();
 			printf("set library\n");
+			/*
+			// print template info.
+			for(const auto& [tid, btmp] : library.templates) {
+				printf("----- template counts: %llu -----\n", library.templates[tid].templateId.value);
+				printf("total cells:  %i\n", library.totalCellsInTree(tid));
+				printf("total links:  %i\n", library.totalLinksInTree(tid));
+				printf("total blocks: %i\n", library.totalBlocksInTree(tid));
+			}
+			//*/
 		} catch(std::exception& err) {
 			printf("%s\n", err.what());
 		}
@@ -42,14 +62,6 @@ struct GameServer_wasm {
 		const BlockTemplate& btmp = library.templates.at(rootTemplateId);
 		ItemDim dim(0, 0, btmp.innerW, btmp.innerH, 0);
 		rootBlock = BlockWT(&library, rootTemplateId, dim);
-		// TODO: update other stuff when doing this?
-	}
-
-	void print_template_counts(String templateId) {
-		printf("----- template counts: %llu -----\n", library.templates[templateId].templateId.value);
-		printf("total cells:  %i\n", library.totalCellsInTree(templateId));
-		printf("total links:  %i\n", library.totalLinksInTree(templateId));
-		printf("total blocks: %i\n", library.totalBlocksInTree(templateId));
 	}
 
 	// ============================================================
@@ -71,14 +83,6 @@ struct GameServer_wasm {
 		} catch(std::exception& err) {
 			printf("%s\n", err.what());
 		}
-	}
-
-	u32 simulation_get_cell_value(String cellId, u32 sb, u32 tgt) {
-		return simulation.getCellValue(cellId, sb, tgt);
-	}
-
-	u32 simulation_get_child_simblock(String blockId, u32 sb) {
-		return simulation.getChildSimblock(blockId, sb);
 	}
 
 	void simulation_set_cell_value(String blockId, String cellId, u32 val) {
@@ -178,17 +182,28 @@ struct GameServer_wasm {
 	Embuffer font_pos() { const auto& arr = renderer.font_pos; return Embuffer((size_t)arr.data(), arr.size()*3, sizeof(f32)); }
 	Embuffer font_clr() { const auto& arr = renderer.font_clr; return Embuffer((size_t)arr.data(), arr.size()*1, sizeof(u32)); }
 	Embuffer font_tex() { const auto& arr = renderer.font_tex; return Embuffer((size_t)arr.data(), arr.size()*2, sizeof(f32)); }
-	// TODO
 
-	// ============================================================
-	// Structors
-	// ------------------------------------------------------------
-
-	// NOTE: to create, call:		var server = new Module.GameServer_wasm();
-	// NOTE: call delete, call:		server.delete();
-	 GameServer_wasm() { printf("GameServer_wasm::constructor\n"); }
-	~GameServer_wasm() { printf("GameServer_wasm::destructor\n"); }
-
+	String get_nearst_cell_target(String msg) {
+		ItemSerializer reader(msg);
+		float x = reader.read_number<float>();
+		float y = reader.read_number<float>();
+		float z = reader.read_number<float>();
+		Vector3D cursor_pos {x, y, z};
+		LinkTarget first_tgt = reader.read_number<int>();
+		RenderTree rendertree(rootBlock, Transformation2D(), 0);
+		const auto tp_opt = rendertree.get_nearst_cell_target(cursor_pos, first_tgt);
+		if(tp_opt.has_value()) {
+			const auto tp_val = tp_opt.value();
+			ItemSerializer writer;
+			writer.push_number(tp_val.point.x);
+			writer.push_number(tp_val.point.y);
+			writer.push_number(tp_val.point.z);
+			writer.push_link_address(tp_val.addr);
+			return writer.to_string();
+		} else {
+			return "";
+		}
+	}
 };
 
 #include <emscripten.h>
@@ -208,12 +223,9 @@ EMSCRIPTEN_BINDINGS() {
 		.property("library", &GameServer_wasm::library)
 		.function("send_templates", &GameServer_wasm::send_templates)
 		.function("set_root_block", &GameServer_wasm::set_root_block)
-		.function("print_template_counts", &GameServer_wasm::print_template_counts)
 		// simulation.
 		.function("simulation_rebuild", &GameServer_wasm::simulation_rebuild)
 		.function("simulation_update", &GameServer_wasm::simulation_update)
-		.function("simulation_get_cell_value", &GameServer_wasm::simulation_get_cell_value)
-		.function("simulation_get_child_simblock", &GameServer_wasm::simulation_get_child_simblock)
 		.function("simulation_set_cell_value", &GameServer_wasm::simulation_set_cell_value)
 		// rendering.
 		.function("get_font_renderer_num_missing_glyphs", &GameServer_wasm::get_font_renderer_num_missing_glyphs)
@@ -236,6 +248,8 @@ EMSCRIPTEN_BINDINGS() {
 		.function("font_pos", &GameServer_wasm::font_pos)
 		.function("font_clr", &GameServer_wasm::font_clr)
 		.function("font_tex", &GameServer_wasm::font_tex)
+		.function("get_nearst_cell_target", &GameServer_wasm::get_nearst_cell_target)
+
 	;
 
 	class_<BlockTemplateLibrary>("BlockTemplateLibrary")

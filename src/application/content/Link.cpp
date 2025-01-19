@@ -7,12 +7,19 @@
 
 using LinkTarget = u32;
 
+// TODO: make this less awkward.
+// NOTE: make sure this matches LinkTarget definition in js.
 struct _LINK_TARGETS {
 	const LinkTarget OUTPUT  = 0;
 	const LinkTarget INPUT_A = 1;
 	const LinkTarget INPUT_B = 2;
-};
+	const LinkTarget NONE    = 7;
 
+	static bool canLinkTargets(LinkTarget tgtA, LinkTarget tgtB) {
+		const u32 code = (0x1 << tgtA) | (0x1 << tgtB);
+		return (code == /*OUT -> INA*/ 0b011) | (code == /*OUT -> INB*/ 0b101);
+	}
+};
 static const _LINK_TARGETS LINK_TARGETS;
 
 struct LinkAddress {

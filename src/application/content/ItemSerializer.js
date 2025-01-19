@@ -17,6 +17,9 @@ export class ItemSerializer extends StringSerializer {
 		super(msg);
 	}
 
+	read_item_id() {
+		return this.read_number();
+	}
 	push_item_id(id) {
 		this.push_number(id);
 	}
@@ -46,6 +49,12 @@ export class ItemSerializer extends StringSerializer {
 		this.push_item_dim	(cell.dimensions);
 	}
 
+	read_link_address() {
+		const bid = this.read_item_id();
+		const cid = this.read_item_id();
+		const tgt = this.read_number();
+		return {bid, cid, tgt};
+	}
 	push_link_address(addr) {
 		this.push_item_id(addr.bid);
 		this.push_item_id(addr.cid);

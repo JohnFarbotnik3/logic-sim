@@ -68,6 +68,7 @@ export class Cell {
 	// Link helpers
 	// ------------------------------------------------------------
 	
+	// NOTE: make sure this matches LinkTarget definition in cpp.
 	static LINK_TARGET = ({
 		OUTPUT		: 0,
 		INPUT_A		: 1,

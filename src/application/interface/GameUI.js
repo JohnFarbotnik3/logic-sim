@@ -801,10 +801,9 @@ export class GameUI {
 	// ------------------------------------------------------------
 
 	wire_buttonStep			= 0;
-	wire_cell_targets		= [];// Array<[point, bid, cid, tgt]>
-	wire_cell_target_nearest= null;
-	wire_target1			= null;
-	wire_target2			= null;
+	wire_cell_target_nearest= null;// [point, bid, cid, tgt]
+	wire_target1			= null;// [point, bid, cid, tgt]
+	wire_target2			= null;// [point, bid, cid, tgt]
 	wire_colour_r = 255;
 	wire_colour_g = 255;
 	wire_colour_b = 200;
@@ -818,19 +817,18 @@ export class GameUI {
 	update_mode_place_links() {
 		// highlight nearest link-point.
 		const blocklib = main.blockLibrary;
-		const targets = blocklib.get_all_cell_targets();
-		this.wire_cell_targets = targets;
 		const first_target = (this.wire_buttonStep > 0) ? this.wire_target1[3] : Cell.LINK_TARGET.NONE;
-		this.wire_cell_target_nearest = blocklib.get_nearst_cell_target(targets, this.cursor_pos, first_target);
+		const nearest = main.gameServer.get_nearst_cell_target(this.cursor_pos, first_target);
+		this.wire_cell_target_nearest = nearest;
 		// bind nearest cell link-point.
 		if(this.wire_buttonStep === 0 && this.dragBegan) {
-			this.wire_target1 = this.wire_cell_target_nearest;
+			this.wire_target1 = nearest;
 			const success = this.wire_target1 !== null;
 			if(success) this.wire_buttonStep = 1;
 		}
 		// bind nearest cell link-point if compatible with the first.
 		if(this.wire_buttonStep === 1 && this.dragBegan) {
-			this.wire_target2 = this.wire_cell_target_nearest;
+			this.wire_target2 = nearest;
 			const tgt1 = this.wire_target1[3];
 			const tgt2 = this.wire_target2[3];
 			const OUTPUT = Cell.LINK_TARGET.OUTPUT;

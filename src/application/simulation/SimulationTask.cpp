@@ -78,7 +78,7 @@ struct SimulationTask {
 		this->cell_buffer[x].setValue(tgt, val);
 		this->update_map.add(x);
 	}
-	void pushCellUpdate(SimulationUpdate& upd) {
+	void pushCellUpdate(const SimulationUpdate& upd) {
 		const u32 x = toLocalIndex(upd.get_ind());
 		this->cell_buffer[x].setValue(upd.get_tgt(), upd.val);
 		this->update_map.add(x);

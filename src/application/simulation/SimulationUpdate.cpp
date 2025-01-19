@@ -13,8 +13,8 @@ struct SimulationUpdate {
 		this->val = val;
 	}
 	
-	u32 get_ind() { return this->data >> 2; }
-	u32 get_tgt() { return this->data & 0b11; }
+	u32 get_ind() const { return this->data >> 2; }
+	u32 get_tgt() const { return this->data & 0b11; }
 };
 
 #endif

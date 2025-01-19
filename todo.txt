@@ -224,20 +224,28 @@ as this will allow writing tree-structs without major performance problems.
 *** (if the same library is used, then the tree will be marched in the same order).
 
 
-> C++ JSON parse and stringify.
-- transmit template library as JSON instead of with a bunch of seperate functions.
-
-
 - investigate JS -> C++/WASM string conversion.
-- compare differences between renderers (colours dont seem to match).
-- finish implementing renderer stuff (such as previews).
-	^ once finished, render data will be generated in c++ renderer instead,
-	so glbuffers should directly move data instead of making an extra copy of it first.
-	(add a direct buffering function)
 - do profile guided optimization of c++ renderer.
 - allow c++ FontRenderer to make JS calls, so that it can re-generate glyph map a string contains some characters it is missing
 	^ this will allow mostly removing JS font-renderer, and getting rid of missing glyphs map.
-- investigate if Embuffer's embind definition significantly increases WASM filesize! (85 KiB -> 115 KiB)
+
+
+- search for empty constructors and "default" them.
+* write SQLite server endpoint, and allow users to save their block-library using a username and password.
+	^ combine and hash usn & pwd together to get DB key.
+	^ keep a local mirror of DB contents (local storage).
+	^ add buttons "Save (remote)" and "Load (remote)".
+	^ allow multiple profiles for each user.
+	^ if key not found when fetching, notify user, and offer to create new profile.
+- fix bug: submitting new block template size doesnt update server templates/rendering.
+- GLBuffers: try to inline some Buffer and Shader class-stuff to make GameRenderer-buffers more direct.
+
+> move from JS to CPP:
+- GameUI:
+	isItemInDragArea
+	isItemHovered
+- RenderTree
+
 
 
 

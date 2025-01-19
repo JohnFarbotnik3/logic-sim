@@ -26,23 +26,8 @@ struct GameSimulation {
 	// Helpers.
 	// ------------------------------------------------------------
 	
-	void pushCellUpdate(u32 ind, u32 tgt, u32 val) {
-		this->tasks[ind / CELLS_PER_TASK].pushCellUpdate(ind, tgt, val);
-	}
 	void pushCellUpdate(SimulationUpdate& upd) {
 		this->tasks[upd.get_ind() / CELLS_PER_TASK].pushCellUpdate(upd);
-	}
-
-	u32 getCellValue(String cellId, u32 sb, u32 tgt) {
-		if(sb == SimulationTree::INDEX_NONE) return 0x0;
-		const u32 ind = this->simtree.simblocks[sb].cmap[cellId];
-		const SimulationTask& task = this->tasks[ind / CELLS_PER_TASK];
-		return task.cell_buffer[task.toLocalIndex(ind)].values[tgt];
-	}
-
-	u32 getChildSimblock(String blockId, u32 sb) {
-		if(sb == SimulationTree::INDEX_NONE) return SimulationTree::INDEX_NONE;
-		return this->simtree.simblocks[sb].bmap[blockId];
 	}
 
 	/* Call this to initialize cell value in root simblock, or one of its immediate children. */

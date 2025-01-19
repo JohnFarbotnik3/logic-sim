@@ -111,40 +111,4 @@ export class BlockTemplate {
 	removeText (item) { this.removeItem(this.texts , item); }
 	removeBlock(item) { this.removeItem(this.blocks, item); }
 	
-	// ============================================================
-	// Link helpers
-	// ------------------------------------------------------------
-	
-	getValidCellTargets(isRootBlock) {
-		const out = new Set();// Set<cell>
-		const ina = new Set();// Set<cell>
-		const inb = new Set();// Set<cell>
-		const cmap = new Map();// Map<cellId, cell>
-		for(const cell of this.cells) {
-			out.add(cell);
-			ina.add(cell);
-			inb.add(cell);
-			cmap.set(cell.id, cell);
-		}
-		// some cells dont have certain inputs.
-		for(const cell of this.cells) {
-			const n = cell.numTargets;
-			if(n < 2) ina.delete(cell);
-			if(n < 3) inb.delete(cell);
-		}
-		// if this is a child block, then used link-inputs are immutable.
-		// (link-outputs are fine though.)
-		const OUT = Cell.LINK_TARGET.OUTPUT;
-		const INA = Cell.LINK_TARGET.INPUT_A;
-		const INB = Cell.LINK_TARGET.INPUT_B;
-		if(!isRootBlock) {
-			for(const link of this.links) {
-				const {bid_src, bid_dst, cid_src, cid_dst, tgt_src, tgt_dst} = link;
-				if(tgt_dst === OUT) out.delete(cmap.get(cid_dst));
-				if(tgt_dst === INA) ina.delete(cmap.get(cid_dst));
-				if(tgt_dst === INB) inb.delete(cmap.get(cid_dst));
-			}
-		}
-		return {out, ina, inb};
-	}
 };

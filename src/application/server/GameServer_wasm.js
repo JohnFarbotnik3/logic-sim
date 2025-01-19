@@ -26,7 +26,6 @@ export class GameServer_wasm {
 		console.log("serializer items:", serializer.list);
 		server.send_templates(serializer.to_string());
 		server.set_root_block(rootTemplateId + "");
-		for(const [templateId_num, temp] of library.templates.entries()) server.print_template_counts(templateId_num + "");
 	}
 
 	// ============================================================
@@ -39,14 +38,6 @@ export class GameServer_wasm {
 
 	simulation_update(numSteps) {
 		this.server.simulation_update(numSteps);
-	}
-
-	simulation_get_cell_value(cellId, sb, tgt) {
-		return this.server.simulation_get_cell_value(cellId+"", sb, tgt);
-	}
-
-	simulation_get_child_simblock(blockId, sb) {
-		return this.server.simulation_get_child_simblock(blockId+"", sb);
 	}
 
 	simulation_set_cell_value(blockId, cellId, val) {
@@ -129,4 +120,23 @@ export class GameServer_wasm {
 	font_clr() { const obj = this.server.font_clr(); return this.module.HEAPU32.subarray(obj.hptr, obj.hptr + obj.size); }
 	font_tex() { const obj = this.server.font_tex(); return this.module.HEAPF32.subarray(obj.hptr, obj.hptr + obj.size); }
 	
+	get_nearst_cell_target(cursor_pos, first_tgt) {
+		const [x,y,z] = cursor_pos;
+		const writer = new ItemSerializer();
+		writer.push_number(x);
+		writer.push_number(y);
+		writer.push_number(z);
+		writer.push_number(first_tgt);
+		const msg = this.server.get_nearst_cell_target(writer.to_string());
+		if(msg.length > 0) {
+			const reader = new ItemSerializer(msg);
+			const nx = reader.read_number();
+			const ny = reader.read_number();
+			const nz = reader.read_number();
+			const {bid, cid, tgt} = reader.read_link_address();
+			return [[nx, ny, nz], bid, cid, tgt];
+		} else {
+			return null;
+		}
+	}
 }

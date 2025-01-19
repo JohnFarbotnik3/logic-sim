@@ -3,6 +3,7 @@
 #include "../content/BlockWT.cpp"
 #include "../content/BlockTemplate.cpp"
 #include "../content/BlockTemplateLibrary.cpp"
+#include "../content/Link.cpp"
 
 struct RenderTree {
 
@@ -103,5 +104,82 @@ struct RenderTree {
 
 	RenderTree get_child(ItemId bid) const {
 		return RenderTree(block.get_child(bid), this->contTran, depth+1);
+	}
+
+	// ============================================================
+	// Link Utils
+	// ------------------------------------------------------------
+
+	struct TargetIdSet {
+		Set<ItemId> out;
+		Set<ItemId> ina;
+		Set<ItemId> inb;
+	};
+	TargetIdSet getValidCellTargets(const BlockTemplate& btmp, bool isRootBlock) const {
+		// add cell targets.
+		TargetIdSet targets;
+		for(const auto& [id, cell] : btmp.cells) {
+			targets.out.insert(cell.id);
+			const int n = cell.numTargets;
+			if(n >= 2) targets.ina.insert(cell.id);
+			if(n >= 3) targets.inb.insert(cell.id);
+		}
+		// remove targets that are already bound by links in this block.
+		// (this prevents parent from connecting a second output to an already linked input.)
+		if(!isRootBlock) {
+			for(const auto& [id, link] : btmp.links) {
+				const LinkTarget tgt = link.dst.tgt;
+				const ItemId cid = link.dst.cid;
+				if(tgt == LINK_TARGETS.OUTPUT ) targets.out.erase(cid);
+				if(tgt == LINK_TARGETS.INPUT_A) targets.ina.erase(cid);
+				if(tgt == LINK_TARGETS.INPUT_B) targets.inb.erase(cid);
+			}
+		}
+		return targets;
+	}
+
+	struct TargetPoint {
+		Vector3D point;
+		LinkAddress addr;
+	};
+	Optional<TargetPoint> get_nearst_cell_target(Vector3D cursor_pos, LinkTarget first_tgt) {
+		Vector<TargetPoint> tgtpoints;
+		const LinkTarget OUT = LINK_TARGETS.OUTPUT;
+		const LinkTarget INA = LINK_TARGETS.INPUT_A;
+		const LinkTarget INB = LINK_TARGETS.INPUT_B;
+		// cell targets in rootBlock can be modified (all targets are valid).
+		{
+			const ItemId bid = ItemId::THIS_BLOCK;
+			const BlockWT blockwt = this->block;
+			const auto tgtset = getValidCellTargets(*blockwt.blockTemplate, true);
+			for(const ItemId& cid : tgtset.out) { LinkAddress addr(bid, cid, OUT); tgtpoints.push_back(TargetPoint{get_link_point(addr), addr}); }
+			for(const ItemId& cid : tgtset.ina) { LinkAddress addr(bid, cid, INA); tgtpoints.push_back(TargetPoint{get_link_point(addr), addr}); }
+			for(const ItemId& cid : tgtset.inb) { LinkAddress addr(bid, cid, INB); tgtpoints.push_back(TargetPoint{get_link_point(addr), addr}); }
+		}
+		// used cell inputs in child-blocks are immutable.
+		for(const auto& [id, block] : this->block.blockTemplate->blocks) {
+			const ItemId bid = block.id;
+			const BlockWT blockwt = this->block.get_child(bid);
+			const auto tgtset = getValidCellTargets(*blockwt.blockTemplate, false);
+			for(const ItemId& cid : tgtset.out) { LinkAddress addr(bid, cid, OUT); tgtpoints.push_back(TargetPoint{get_link_point(addr), addr}); }
+			for(const ItemId& cid : tgtset.ina) { LinkAddress addr(bid, cid, INA); tgtpoints.push_back(TargetPoint{get_link_point(addr), addr}); }
+			for(const ItemId& cid : tgtset.inb) { LinkAddress addr(bid, cid, INB); tgtpoints.push_back(TargetPoint{get_link_point(addr), addr}); }
+		}
+		// find target closest to cursor.
+		Optional<TargetPoint> nearest;
+		float dist = 1.0e20f;// NOTE: large magic float.
+		for(const TargetPoint& tp :tgtpoints) {
+			if(first_tgt == LINK_TARGETS.NONE || LINK_TARGETS.canLinkTargets(first_tgt, tp.addr.tgt)) {
+				float dx = tp.point.x - cursor_pos.x;
+				float dy = tp.point.y - cursor_pos.y;
+				float dz = tp.point.z - cursor_pos.z;
+				float dd = dx*dx + dy*dy + dz*dz;
+				if(dd < dist) {
+					nearest = tp;
+					dist = dd;
+				}
+			}
+		}
+		return nearest;
 	}
 };

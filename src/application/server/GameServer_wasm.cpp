@@ -189,7 +189,10 @@ struct GameServer_wasm {
 	}
 
 	// draw primary block content.
-	void draw_all(String msg_sel, String msg_hvr) {
+	void draw_all(
+		String msg_sel,
+		String msg_hvr
+	) {
 		ItemSerializer parse_sel(msg_sel);
 		ItemSerializer parse_hvr(msg_hvr);
 		Set<ItemId> ids_sel;
@@ -197,6 +200,14 @@ struct GameServer_wasm {
 		for(int x=0;x<parse_sel.list.size();x++) ids_sel.insert(parse_sel.read_number<u64>());
 		for(int x=0;x<parse_hvr.list.size();x++) ids_hvr.insert(parse_hvr.read_number<u64>());
 		renderer.draw_all(library, rootBlock.templateId, simulation, ids_sel, ids_hvr);
+	}
+	void draw_cursor(float cx, float cy, float cr) {
+		VertexPos cursor_pos{cx, cy, 0};
+		renderer.drawCursor(cursor_pos, cr);
+	}
+	void draw_drag_area(float dx0, float dy0, float dx1, float dy1) {
+		Rectangle drag_area{dx0, dy0, dx1-dx0, dy1-dy0};
+		renderer.drawDragArea(drag_area);
 	}
 
 	// draw previews.
@@ -275,6 +286,8 @@ EMSCRIPTEN_BINDINGS() {
 		.function("set_font_renderer_tex_dim", &GameServer_wasm::set_font_renderer_tex_dim)
 		.function("set_font_renderer_glyph", &GameServer_wasm::set_font_renderer_glyph)
 		.function("draw_all", &GameServer_wasm::draw_all)
+		.function("draw_cursor", &GameServer_wasm::draw_cursor)
+		.function("draw_drag_area", &GameServer_wasm::draw_drag_area)
 		.function("triangles_ind", &GameServer_wasm::triangles_ind)
 		.function("triangles_pos", &GameServer_wasm::triangles_pos)
 		.function("triangles_clr", &GameServer_wasm::triangles_clr)

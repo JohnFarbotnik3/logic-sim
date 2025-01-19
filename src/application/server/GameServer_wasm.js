@@ -120,8 +120,17 @@ export class GameServer_wasm {
 		// draw.
 		this.server.draw_all(
 			msg_sel.to_string(),
-			msg_hvr.to_string()
+			msg_hvr.to_string(),
 		);
+	}
+	draw_cursor() {
+		const [cx, cy, cz] = main.gameUI.cursor_pos;
+		const cr = main.gameUI.cursor_radius;
+		this.server.draw_cursor(cx, cy, cr);
+	}
+	draw_drag_area() {
+		const [dx0, dy0, dx1, dy1] = main.gameUI.cursor_dragAABB;
+		this.server.draw_drag_area(dx0, dy0, dx1, dy1);
 	}
 
 	// buffer data.

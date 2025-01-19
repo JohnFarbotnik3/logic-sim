@@ -206,8 +206,15 @@ struct GameRenderer {
 	}
 
 	void push_content_text_box(
-		Transformation2D tran, float depth,
-		String str, float fontHeight, Clr fontColour, Rectangle boundingRect, Vector2D textAlign, Vector2D rectOrigin, bool wrap
+		const Transformation2D& tran,
+		const String& str,
+		float depth,
+		float fontHeight,
+		Clr fontColour,
+		Rectangle boundingRect,
+		Vector2D textAlign,
+		Vector2D rectOrigin,
+		bool wrap
 	) {
 		// generate data
 		const Vector3D offset = {0.0, 0.0, 0.0};
@@ -224,8 +231,13 @@ struct GameRenderer {
 	}
 
 	void push_content_text_box_against_circle(
-		Transformation2D tran, float depth,
-		String str, float fontHeight, Clr fontColour, Vector2D unitRectPoint, float dist
+		const Transformation2D& tran,
+		const String& str,
+		float depth,
+		float fontHeight,
+		Clr fontColour,
+		Vector2D unitRectPoint,
+		float dist
 	) {
 		// get width.
 		const float strh = fontHeight;
@@ -267,13 +279,12 @@ struct GameRenderer {
 		bool shouldDrawText
 	) {
 		// draw cell areas.
-		const ItemClr cell_clr	= cell.clr;
-		const Clr clr_on	= Clr(cell_clr);
+		const Clr clr_on	= Clr(cell.clr);
 		const Clr clr_off	= Clr(
-			(uint8_t)(cell_clr.r / 2),
-			(uint8_t)(cell_clr.g / 2),
-			(uint8_t)(cell_clr.b / 2),
-			(uint8_t)(cell_clr.a)
+			cell.clr.r >> 1,
+			cell.clr.g >> 1,
+			cell.clr.b >> 1,
+			cell.clr.a
 		);
 		for(int i=0;i<3;i++) tri_rects_push(tran, depth, RenderTree::CELL_AREA_RECTS[i], vals[i] ? clr_on : clr_off);
 		// draw link points.
@@ -289,10 +300,9 @@ struct GameRenderer {
 			const Clr fclr = 0xffffffff;
 			// draw type code.
 			{
-				const String str = cell.typeString;
 				const Vector2D unitRectPoint {0.5, 1.0};
-				push_content_text_box_against_circle(tran, textDepth, str, fontHeight, bclr, unitRectPoint, dist);
-				push_content_text_box_against_circle(tran, textDepth, str, fontHeight, fclr, unitRectPoint, dist);
+				push_content_text_box_against_circle(tran, cell.typeString, textDepth, fontHeight, bclr, unitRectPoint, dist);
+				push_content_text_box_against_circle(tran, cell.typeString, textDepth, fontHeight, fclr, unitRectPoint, dist);
 			}
 			// draw values.
 			for(int i=0;i<cell.numTargets;i++) {
@@ -305,8 +315,8 @@ struct GameRenderer {
 					RenderTree::LINK_POINTS[i].x,
 					RenderTree::LINK_POINTS[i].y,
 				};
-				push_content_text_box_against_circle(tran, textDepth, str, fontHeight, bclr, unitRectPoint, dist);
-				push_content_text_box_against_circle(tran, textDepth, str, fontHeight,  clr, unitRectPoint, dist);
+				push_content_text_box_against_circle(tran, str, textDepth, fontHeight, bclr, unitRectPoint, dist);
+				push_content_text_box_against_circle(tran, str, textDepth, fontHeight,  clr, unitRectPoint, dist);
 			}
 		}
 	}
@@ -346,7 +356,7 @@ struct GameRenderer {
 			const Vector2D textAlign {0.0, 0.0};
 			const Vector2D rectOrigin {0.0, 0.0};
 			const bool wrap = true;
-			push_content_text_box(tran, depth, text.str, fontHeight, fontColour, boundingRect, textAlign, rectOrigin, wrap);
+			push_content_text_box(tran, text.str, depth, fontHeight, fontColour, boundingRect, textAlign, rectOrigin, wrap);
 		}
 	}
 
@@ -434,14 +444,14 @@ struct GameRenderer {
 		tri_rects_push(Transformation2D(), DEPTH_ON_TOP, rect, clr);
 	}
 
-	void drawSelection(const RenderTree& rendertree, Set<ItemId> ids) {
+	void drawSelection(const RenderTree& rendertree, const Set<ItemId>& ids) {
 		const float s = 0.03;
 		const Rectangle rect {0.0f - s, 0.0f - s, 1.0f + s*2, 1.0f + s*2};
 		const Clr clr = 0xffff55ff;
 		for(const ItemId id : ids) { line_rects_push(rendertree.itemTrans.at(id), DEPTH_ON_TOP, rect, clr); }
 	}
 
-	void drawHovered(const RenderTree& rendertree, Set<ItemId> ids) {
+	void drawHovered(const RenderTree& rendertree, const Set<ItemId>& ids) {
 		const float s = 0.00;
 		const Rectangle rect {0.0f - s, 0.0f - s, 1.0f + s*2, 1.0f + s*2};
 		const Clr clr = 0xaaccffff;
@@ -474,8 +484,8 @@ struct GameRenderer {
 		// draw root block contents.
 		draw_block(rendertree, 0, 3, simptr, ids_selected, ids_hovered);
 		// draw selection.
-		// TODO
-
+		drawSelection(rendertree, ids_selected);
+		drawHovered(rendertree, ids_hovered);
 	}
 
 };

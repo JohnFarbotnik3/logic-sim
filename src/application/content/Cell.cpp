@@ -18,7 +18,6 @@ struct Cell {
 	u32 	numTargets;
 	u32		taskOrder;
 	void initTypeProperties() {
-		//printf("CTYPE: %u\n", this->type);
 		assert(CELL_TYPES_MAP.contains(this->type));
 		const CellType ctype = CELL_TYPES_MAP.at(this->type);
 		this->typeString	= ctype.typeString;

@@ -141,10 +141,11 @@ export class GameRenderer {
 					}
 				}
 			}
-			// draw and push vertex data.
-			server.draw_all(
-				main.blockLibrary.rootBlock.templateId,
-			);
+			// draw.
+			server.draw_all(main.blockLibrary.rootBlock.templateId,);
+			server.draw_cursor();
+			if(main.gameUI.cursor_isSelecting) server.draw_drag_area();
+			// get and push vertex data.
 			{
 				let idata = server.triangles_ind();
 				let vdata = server.triangles_pos();
@@ -175,13 +176,13 @@ export class GameRenderer {
 		}
 		//*/
 		//this.drawBlock(renblock, renblock.get_render_data_block(main.blockLibrary.rootBlock), INDEX_ROOT_SB);
-		this.drawCursor();
-		if(main.gameUI.cursor_isSelecting) this.drawDragArea();
-		this.drawSelection();
+		//this.drawCursor();
+		//if(main.gameUI.cursor_isSelecting) this.drawDragArea();
+		//this.drawSelection();
 		this.drawPreviewCell();
 		this.drawPreviewLink();
 		this.drawPreviewBlock();
-		this.drawHovered();
+		//this.drawHovered();
 		// commit data to buffers.
 		const t2 = Date.now();
 		this.commit_buffers();

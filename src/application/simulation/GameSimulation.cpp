@@ -15,7 +15,7 @@
 	simulation-step when an input-value changes.
 */
 struct GameSimulation {
-	/* The simulation tree created by expanding root block template. */
+	/* Simulation tree based on library and root block template. */
 	SimulationTree simtree;
 	/* List of task objects. */
 	Vector<SimulationTask> tasks;

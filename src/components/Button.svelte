@@ -22,7 +22,6 @@
 		cursor: pointer;
 	}
 	button[toggled=true] {
-		background: #333 !important;
 		filter: brightness(1.5);
 	}
 	button:hover {

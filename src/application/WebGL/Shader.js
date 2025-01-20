@@ -141,17 +141,15 @@ export class ShaderPipeline {
 		gl.bindTexture(gl.TEXTURE_2D, textureBuffer.texture);
 		gl.uniform1i(location, 0);
 	}
-	// drawing
-	bindAttributeBuffers() {
+	// drawing.
+	drawElementsRange(beg, end) {
+		// bind attribute buffers.
 		// in WebGL, buffer bindings are shared across the entire GL instance,
 		// rather than being per-pipeline (like in the Vulkan API).
 		for(const attribBuffer of this.attributeBuffers) {
 			const layout = this.config.createAttributeLayout(attribBuffer.attributeNames);
 			this.bindAttributes(attribBuffer.target, attribBuffer.buffer, layout);
 		}
-	}
-	drawElementsRange(beg, end) {
-		this.bindAttributeBuffers();
 		this.useProgram();
 		const gl = this.glContext;
 		const indexBuffer = this.indexBuffer;
@@ -163,9 +161,6 @@ export class ShaderPipeline {
 			const indexOffset = i * indexBuffer.BYTES_PER_ELEMENT;
 			gl.drawElements(this.drawMode, indexCount, indexType, indexOffset);
 		}
-	}
-	drawElements() {
-		this.drawElementsRange(0, this.indexBuffer.indexCount);
 	}
 };
 

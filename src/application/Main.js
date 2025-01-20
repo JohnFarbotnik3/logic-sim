@@ -119,14 +119,16 @@ class Main {
 	// ------------------------------------------------------------
 
 	set_root_block_template(templateId) {
+		this.renderChange = true;
+		this.simulationShouldRebuild = true;
 		this.blockLibrary.set_root_block_template(templateId);
 		CachedValue_Rendering.onChange();
-		this.simulationShouldRebuild = true;
 		this.gameUI.on_major_blocklib_change();
 		this.gameUI.root_template_reset_inputs();
 		this.gameUI.onclick_block_type(null, ComponentId.NONE);
 	}
 	refresh_root_block_template() {
+		this.renderChange = true;
 		this.blockLibrary.refresh_root_block_template();
 		CachedValue_Rendering.onChange();
 		this.gameUI.on_minor_blocklib_change();

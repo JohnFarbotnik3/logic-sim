@@ -12,17 +12,6 @@ export const GL_SIZEOF = (type) => {
 	return 0;
 };
 
-export const GL_ARRAY_ENUM_TYPE = (type) => {
-	if(type === Float32Array)	return GL.FLOAT;
-	if(type ===  Uint32Array)	return GL.UNSIGNED_INT;
-	if(type ===  Uint16Array)	return GL.UNSIGNED_SHORT;
-	if(type ===   Uint8Array)	return GL.UNSIGNED_BYTE;
-	if(type ===   Int32Array)	return GL.INT;
-	if(type ===   Int16Array)	return GL.SHORT;
-	if(type ===    Int8Array)	return GL.BYTE;
-	return GL.NONE;
-};
-
 export const GL_IS_FLOAT_TYPE = (type) => {
 	return [
 		GL.FLOAT,

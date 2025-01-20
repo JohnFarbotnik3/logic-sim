@@ -7,6 +7,13 @@
 #include "../WebGL/FontEngine.cpp"
 #include "../content/ItemSerializer.cpp"
 
+/*
+- to detect if building with emscripten (for example to use different threading model in WASM then C++),
+	the __EMSCRIPTEN__ is defined by emcc/em++, see:
+	https://emscripten.org/docs/compiling/Building-Projects.html
+- WARNING: emscripten is a 32-bit platform, so size_t is also 32-bit!
+*/
+
 // NOTE: this function is omitted when compiling with "--no-entry" flag.
 /*
 int main(int argc, char** argv) {

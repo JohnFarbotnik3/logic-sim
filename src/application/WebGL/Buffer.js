@@ -1,9 +1,16 @@
-import { ArrayUtil } from "../lib/exports";
-import { GL_ARRAY_ENUM_TYPE } from "./exports";
 
 export const GL = WebGL2RenderingContext;
 
-
+export const GL_ARRAY_ENUM_TYPE = (type) => {
+	if(type === Float32Array)	return GL.FLOAT;
+	if(type ===  Uint32Array)	return GL.UNSIGNED_INT;
+	if(type ===  Uint16Array)	return GL.UNSIGNED_SHORT;
+	if(type ===   Uint8Array)	return GL.UNSIGNED_BYTE;
+	if(type ===   Int32Array)	return GL.INT;
+	if(type ===   Int16Array)	return GL.SHORT;
+	if(type ===    Int8Array)	return GL.BYTE;
+	return GL.NONE;
+};
 
 export const BUFFER_TARGET = {
 	// Buffer containing vertex attributes, such as vertex coordinates,
@@ -30,32 +37,33 @@ export const BUFFER_PARAM = {
 	BUFFER_USAGE:	GL.BUFFER_USAGE,
 };
 
-export class BufferUtil {
+export class Buffer {
+	// ============================================================
+	// utils.
+	// ------------------------------------------------------------
+
 	static getBufferParam(gl, target, buffer, param) {
 		gl.bindBuffer(target, buffer);
 		return gl.getBufferParameter(target, param);
 	}
-	static getBufferSize (gl, target, buffer) { return BufferUtil.getBufferParam(gl, target, buffer, BUFFER_PARAM.BUFFER_SIZE); }
-	static getBufferUsage(gl, target, buffer) { return BufferUtil.getBufferParam(gl, target, buffer, BUFFER_PARAM.BUFFER_USAGE); }
 	static createBuffer(gl, byteLength, target, usage) {
 		const buffer = gl.createBuffer();
 		gl.bindBuffer(target, buffer);
 		gl.bufferData(target, byteLength, usage);
 		return buffer;
 	}
-};
 
-export class Buffer {
-	constructor(glContext, arrayType, arrayLength, target, usage) {
+	// ============================================================
+	// structors
+	// ------------------------------------------------------------
+
+	constructor(glContext, arrayType, target, usage) {
 		this.glContext		= glContext;
 		this.target			= target;
 		this.usage			= usage;
 		this.arrayType		= arrayType;
-		this.data			= new arrayType(arrayLength);// client-side data to be sent to buffer.
-		this.buffer			= BufferUtil.createBuffer(glContext, this.data.byteLength, target, usage);
-		this.writePos		= 0;// amount of data (and current write position) in the data stack.
-		this.bufferPos		= 0;// amount of data that has been committed to backing buffer.
-		this.bufferSize		= this.data.byteLength;// size of gpu-side buffer (bytes).
+		this.buffer			= null;
+		this.bufferSize		= 0;// size of gpu-side buffer (bytes).
 	}
 	get BYTES_PER_ELEMENT() {
 		return this.arrayType.BYTES_PER_ELEMENT;
@@ -63,55 +71,16 @@ export class Buffer {
 	get GL_ENUM_TYPE() {
 		return GL_ARRAY_ENUM_TYPE(this.arrayType);
 	}
+	// resize gpu-side buffer.
 	resize_buffer(new_size) {
-		this.buffer = BufferUtil.createBuffer(this.glContext, new_size, this.target, this.usage);
+		this.buffer = Buffer.createBuffer(this.glContext, new_size, this.target, this.usage);
 		this.bufferSize = new_size;
-	}
-	resize(newLength, copy) {
-		const oldLength = this.data.length;
-		this.data = ArrayUtil.resize(this.data, Math.ceil(newLength), copy);
-
-		this.buffer = BufferUtil.createBuffer(this.glContext, this.data.byteLength, this.target, this.usage);
-		this.writePos = copy ? Math.min(this.writePos, oldLength) : 0;
-		this.bufferPos = 0;// data will need to be re-added to buffer since it was cleared when re-allocated.
-		return true;
-	}
-	clear() {
-		this.writePos = 0;
-		this.bufferPos = 0;
-	}
-	// add data from external sources.
-	reserve(reqLength) {
-		const newLength = this.writePos + reqLength;
-		if(newLength > this.data.length) this.resize((newLength*3)/2 + 32, true);
-	}
-	pushData(src, isrc, len) {
-		ArrayUtil.memcopy(this.data, this.writePos, src, isrc, len);
-		this.writePos += len;
-		return this.writePos;
-	}
-	reserveAndPushData(src, isrc, len) {
-		this.reserve(len);
-		this.pushData(src, isrc, len);
-	}
-	// commit all new data to buffer.
-	commitNewDataToBuffer() {
-		const gl = this.glContext;
-		const ofs = this.bufferPos;
-		const len = this.writePos - this.bufferPos;
-		const src = this.data;
-		const dst_offset = ofs  * this.BYTES_PER_ELEMENT;
-		const src_offset = ofs;
-		// https://developer.mozilla.org/en-US/docs/Web/API/WebGL2RenderingContext/bufferData
-		// https://developer.mozilla.org/en-US/docs/Web/API/WebGL2RenderingContext/bufferSubData
-		gl.bindBuffer(this.target, this.buffer);
-		gl.bufferSubData(this.target, dst_offset, src, src_offset, len);
-		this.bufferPos = this.writePos;
 	}
 	// commit data from external source directly.
 	commitSrcDataToBuffer(src, ofs, len) {
 		const gl = this.glContext;
 		// ensure gpu-side buffer is large enough.
+		// NOTE: data in old buffer is lost if new one is allocated.
 		const old_size = this.bufferSize;
 		const new_size = (ofs + len) * this.BYTES_PER_ELEMENT;
 		if(new_size > old_size) this.resize_buffer(new_size);
@@ -122,38 +91,18 @@ export class Buffer {
 		// https://developer.mozilla.org/en-US/docs/Web/API/WebGL2RenderingContext/bufferSubData
 		gl.bindBuffer(this.target, this.buffer);
 		gl.bufferSubData(this.target, dst_offset, src, src_offset, len);
-		this.bufferPos = this.writePos = ofs + len;// TODO: remove
 	}
 };
 
 export class AttributeBuffer extends Buffer {
-	constructor(glContext, arrayType, arrayLength, usage, shaderConfig, attributeNames) {
-		super(glContext, arrayType, arrayLength, BUFFER_TARGET.ARRAY_BUFFER, usage);
+	constructor(glContext, arrayType, usage, shaderConfig, attributeNames) {
+		super(glContext, arrayType, BUFFER_TARGET.ARRAY_BUFFER, usage);
 		this.attributeNames	= attributeNames;
-		this.vertexSize		= shaderConfig.getAttributeLayoutStride(attributeNames);
-		this.vertexLength	= this.vertexSize / this.BYTES_PER_ELEMENT;
-	}
-	get vertexCount() {
-		return this.writePos / this.vertexLength;
 	}
 };
 
 export class IndexBuffer extends Buffer {
-	constructor(glContext, arrayType, arrayLength, usage) {
-		super(glContext, arrayType, arrayLength, BUFFER_TARGET.INDEX_BUFFER, usage);
-	}
-	get indexCount() {
-		return this.writePos;
-	}
-	pushData(src, isrc, len, vertexOffset=0) {
-		const beg = this.writePos;// write position before pushing data.
-		super.pushData(src, isrc, len);
-		const end = this.writePos;// write position after pushing data.
-		if(vertexOffset !== 0) for(let i=beg;i<end;i++) this.data[i] += vertexOffset;
-	}
-	reserveAndPushData(src, isrc, len, vertexOffset=0) {
-		this.reserve(len);
-		this.pushData(src, isrc, len, vertexOffset);
+	constructor(glContext, arrayType, usage) {
+		super(glContext, arrayType, BUFFER_TARGET.INDEX_BUFFER, usage);
 	}
 };
-

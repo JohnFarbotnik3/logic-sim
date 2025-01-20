@@ -30,24 +30,6 @@ Long term.
 	by laying out unconnected wire.
 
 
-> Implement string-based Chunked-Merge-Radix sort (off-topic):
-- string returns 0 if out-of-range char is requested.
-- break main array into 32 (example) sub-arrays.
-- each subarray performs string-radix sort,
-	starting from length of longest string in subarray
-	(we break data into subarrays so that length-outliers
-	dont cause whole sort operation to be in that length.)
-- afterwards, the sorted subarrays are merged by merge-sorts.
-* lots of multithreading potential.
-
-
-> Implement memory pool in C++
-* different types could potentially be allocated from
-the same pool - in particular, a struct and its child-structs
-could be contiguous.
-
-
-
 > WireSim
 * a successor to this application, using electrical components instead of logical ones.
 * wires connect by touching, and voltage/current is sent between blocks by
@@ -71,31 +53,10 @@ placing wire along the perimiter (make sure to support both point-contact and li
 	with only a little bit of glue code for interface.
 
 
-> Optimization: Leaf node collapsing (Template tree)
-- leaf nodes in the template tree with a small number of cells can be collapsed into their parents
-before building a simulation-tree or render-tree to reduce block overhead by 1 level.
-- note that generating a seperate CollapsedBlockLibrary will introduce a bunch of complexity,
-but if build/render performance is a problem, this is one potential solution.
-
-
-
 
 ============================================================
 Near-term.
 ------------------------------------------------------------
-
-> Multithreading notes:
-* C++: it would be strongly advised to create memory pools to allocate various
-fixed or variable length structs to prevent an absurd levels of heap-memory fragmentation,
-as this will allow writing tree-structs without major performance problems.
-^ learn about C++ memory allocators, to see if it is related to what I am trying to do.
-? performance: seperate task-internal and task-external links?
-* potential method to make cell+link building multithreaded:
-	- when generating simblock tree, assign cell indices (c_id -> c_index),
-		but also emit a list of {c_id, simblock_index} tuples.
-	- send a list/queue of pairs to each thread.
-	- given each thread has shared (read-only) access to the simblock tree,
-	this should be enough information to allow generating cell data and link data.
 
 > Multithreading plan:
 - service workers will act as threads
@@ -111,21 +72,6 @@ as this will allow writing tree-structs without major performance problems.
 	2. [s] gather and spread ('gather': request updated cell values, 'spread': send updated values to destination tasks)
 - rendering:
 	TODO
-
-> c++ server
-* most of the update loop can happen in c++
-- the browser sends updated blockTemplates on change.
-- the browser sends request to update simulation by N steps.
-- the browser sends request to get render data for cells, links, etc. (which will get cell data from simulation)
-* first objective: find way to communicate with a local c++ compute server (requires basic networking in c++)
-* the same code that is used to implement the c++ compute server can be used for WASM calls,
-	allowing some parts of javascript implementation to be deprecated.
-	(c++:"GameServer.cpp", wasm:"GameServer.js")
-* to detect if building with emscripten (for example to use different threading model in WASM then C++),
-	the __EMSCRIPTEN__ is defined by emcc/em++, see:
-	https://emscripten.org/docs/compiling/Building-Projects.html
-* WARNING: emscripten is a 32-bit platform, so size_t is also 32-bit!
-
 
 
 > User stylesheets
@@ -154,10 +100,10 @@ as this will allow writing tree-structs without major performance problems.
 	- grid snap
 	- cursor radius
 - rendering settings
-	- 1-bit mode			draw value text as just 1 or 0, instead of full 32-bit value.
-	- draw cell bits		draw all 32 bits as seperate rectangles for cells (will require optimized renderer).
+	- soft 1-bit mode		draw value text as just 1 or 0, instead of full 32-bit value.
+	- hard 1-bit mode		same as soft-1-bit, but disable placement of non bitwise operators.
+	- draw cell bits		draw all 32 bits as seperate rectangles for cells.
 	- draw depth			maximum recursive drawing depth for blocks nested inside blocks.
-	- max drawn blocks		maximum number of blocks allowed to be drawn (safety value to prevent program from freezing).
 
 
 > add list management features for BlockTemplates
@@ -206,7 +152,7 @@ as this will allow writing tree-structs without major performance problems.
 
 
 > misc renderer improvements:
-* draw lines using triangles.
+* draw lines with thickness using triangles.
 - draw cell values using average scale of parent block (or cell) rather than using the cell transformation.
 (the text would be easier to read if it was all horizontal and not stretched in weird ways).
 
@@ -217,6 +163,7 @@ as this will allow writing tree-structs without major performance problems.
 
 
 > misc performance and simplifications
+- when building caches in BlockTemplateLibrary, (sometimes) we do not need to generate data for templates not used in tree.
 - simplify simulation tree by having SimulationBlocks hold pointers to children (instead of indices).
 - SimulationBlocks are currently too large (120 bytes), a new traversal + cell-access scheme may be required.
 ^ a pointer to a map that is nullptr if map is empty would suffice.
@@ -237,7 +184,7 @@ as this will allow writing tree-structs without major performance problems.
 	^ add buttons "Save (remote)" and "Load (remote)".
 	^ allow multiple profiles for each user.
 	^ if key not found when fetching, notify user, and offer to create new profile.
-- fix bug: submitting new block template size doesnt update server templates/rendering.
+- fix crash: when dimensions or rotation are too big, the app crashes (I suspect this is happening cpp-side).
 - GLBuffers: try to inline some Buffer and Shader class-stuff to make GameRenderer-buffers more direct.
 
 > move from JS to CPP:

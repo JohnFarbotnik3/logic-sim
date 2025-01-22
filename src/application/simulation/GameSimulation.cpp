@@ -25,10 +25,6 @@ struct GameSimulation {
 	// ============================================================
 	// Helpers.
 	// ------------------------------------------------------------
-	
-	void pushCellUpdate(SimulationUpdate& upd) {
-		this->tasks[upd.get_ind() / CELLS_PER_TASK].pushCellUpdate(upd);
-	}
 
 	/* Call this to initialize cell value in root simblock, or one of its immediate children. */
 	void modifyCellValue(ItemId blockId, ItemId cellId, u32 val) {
@@ -225,7 +221,8 @@ struct GameSimulation {
 			// perform simulation step.
 			for(SimulationTask& task : this->tasks) if(task.shouldUpdate()) task.update();
 			// gather and spread outputs.
-			for(SimulationTask& task : this->tasks) for(SimulationUpdate& upd : task.out_buffer) this->pushCellUpdate(upd);
+			for(SimulationTask& task : this->tasks) for(SimulationUpdate& upd : task.out_buffer)
+				this->tasks[upd.get_ind() / CELLS_PER_TASK].pushCellUpdate(upd);
 		}
 	}
 };

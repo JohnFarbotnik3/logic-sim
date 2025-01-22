@@ -4,6 +4,7 @@
 #include "../lib/Transformation2D.cpp"
 #include "../lib/Rectangle.cpp"
 #include "../lib/VectorND.cpp"
+#include "../lib/VectorUtil.cpp"
 #include "../WebGL/FontEngine.cpp"
 #include "./RenderTree.cpp"
 #include "../simulation/GameSimulation.cpp"
@@ -495,17 +496,29 @@ struct GameRenderer {
 	// Extra rendering + geometry related helpers.
 	// ------------------------------------------------------------
 
+	// TODO - move these to GameControls.cpp
+	using AABB = VectorUtil::AABB;
+	bool is_item_in_aabb(const RenderTree& rendertree, const AABB& drag_aabb, ItemId id) {
+		const Transformation2D& itran = rendertree.itemTrans.at(id);
+		const AABB item_aabb = VectorUtil::get_axis_aligned_bounding_box(itran);
+		return VectorUtil::collision_aabb_aabb_2d(drag_aabb, item_aabb);
+	}
+	Vector<ItemId> get_items_in_drag_area(const BlockWT& rootBlock, float x0, float y0, float x1, float y1) {
+		const AABB drag_aabb{ Vector2D{x0,y0}, Vector2D{x1,y1} };
+		const RenderTree rendertree(rootBlock, Transformation2D(), 0);
+		Vector<ItemId> ids;
+		// TODO - get seperate vectors for each item type instead.
+		for(const auto& [id, item] : rootBlock.blockTemplate->cells ) if(is_item_in_aabb(rendertree, drag_aabb, id)) ids.push_back(item.id);
+		for(const auto& [id, item] : rootBlock.blockTemplate->texts ) if(is_item_in_aabb(rendertree, drag_aabb, id)) ids.push_back(item.id);
+		for(const auto& [id, item] : rootBlock.blockTemplate->blocks) if(is_item_in_aabb(rendertree, drag_aabb, id)) ids.push_back(item.id);
+		return ids;
+	}
+
 	// TODO
-	Vector<ItemId> getItemsInDrawArea() {}
 	Vector<ItemId> getItemsHovered() {}
-	Vector<ItemId> getLinksHovered(ItemId id) {}
+	Vector<ItemId> getLinksHovered() {}
 
 	/*
-	isItemInDragArea(item) {
-		const aabb = main.gameRenderer.renderBlock.get_axis_aligned_bounding_box(item);
-		VerificationUtil.verifyType_throw(aabb, Float32Array);
-		return VectorUtil.collision_aabb_aabb_2d(aabb, this.cursor_dragAABB);
-	}
 	isItemHovered(item) {
 		const aabb = main.gameRenderer.renderBlock.get_axis_aligned_bounding_box(item);
 		VerificationUtil.verifyType_throw(aabb, Float32Array);

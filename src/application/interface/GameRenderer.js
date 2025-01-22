@@ -70,8 +70,8 @@ export class GameRenderer {
 			const config = this.triangles_config = Shader_pos_clr;
 			const usage = BUFFER_USAGE.DYNAMIC_DRAW;
 			const buf_ind = new     IndexBuffer(gl,  Uint32Array, usage);
-			const buf_pos = new AttributeBuffer(gl, Float32Array, usage, config, ["pos"]);
-			const buf_clr = new AttributeBuffer(gl,  Uint32Array, usage, config, ["clr"]);
+			const buf_pos = new AttributeBuffer(gl, Float32Array, usage, ["pos"]);
+			const buf_clr = new AttributeBuffer(gl,  Uint32Array, usage, ["clr"]);
 			this.triangles_shader = new ShaderPipeline(gl, config, [buf_pos, buf_clr], buf_ind, GL_DRAW_MODE.TRIANGLES);
 			this.triangles_buffer_ind = buf_ind;
 			this.triangles_buffer_pos = buf_pos;
@@ -81,8 +81,8 @@ export class GameRenderer {
 			const config = this.lines_config = Shader_pos_clr;
 			const usage = BUFFER_USAGE.DYNAMIC_DRAW;
 			const buf_ind = new     IndexBuffer(gl,  Uint32Array, usage);
-			const buf_pos = new AttributeBuffer(gl, Float32Array, usage, config, ["pos"]);
-			const buf_clr = new AttributeBuffer(gl,  Uint32Array, usage, config, ["clr"]);
+			const buf_pos = new AttributeBuffer(gl, Float32Array, usage, ["pos"]);
+			const buf_clr = new AttributeBuffer(gl,  Uint32Array, usage, ["clr"]);
 			this.lines_shader = new ShaderPipeline(gl, config, [buf_pos, buf_clr], buf_ind, GL_DRAW_MODE.LINES);
 			this.lines_buffer_ind = buf_ind;
 			this.lines_buffer_pos = buf_pos;
@@ -92,9 +92,9 @@ export class GameRenderer {
 			const config = this.font_config = Shader_pos_clr_tex;
 			const usage = BUFFER_USAGE.DYNAMIC_DRAW;
 			const buf_ind = new     IndexBuffer(gl,  Uint32Array, usage);
-			const buf_pos = new AttributeBuffer(gl, Float32Array, usage, config, ["pos"]);
-			const buf_clr = new AttributeBuffer(gl,  Uint32Array, usage, config, ["clr"]);
-			const buf_tex = new AttributeBuffer(gl, Float32Array, usage, config, ["tex"]);
+			const buf_pos = new AttributeBuffer(gl, Float32Array, usage, ["pos"]);
+			const buf_clr = new AttributeBuffer(gl,  Uint32Array, usage, ["clr"]);
+			const buf_tex = new AttributeBuffer(gl, Float32Array, usage, ["tex"]);
 			this.font_shader	= new ShaderPipeline(gl, config, [buf_pos, buf_clr, buf_tex], buf_ind, GL_DRAW_MODE.TRIANGLES);
 			this.font_buffer_ind = buf_ind;
 			this.font_buffer_pos = buf_pos;

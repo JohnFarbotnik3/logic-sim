@@ -64,6 +64,8 @@ export class Buffer {
 		this.arrayType		= arrayType;
 		this.buffer			= null;
 		this.bufferSize		= 0;// size of gpu-side buffer (bytes).
+		// create empty buffer.
+		this.resize_buffer(0);
 	}
 	get BYTES_PER_ELEMENT() {
 		return this.arrayType.BYTES_PER_ELEMENT;
@@ -95,7 +97,7 @@ export class Buffer {
 };
 
 export class AttributeBuffer extends Buffer {
-	constructor(glContext, arrayType, usage, shaderConfig, attributeNames) {
+	constructor(glContext, arrayType, usage, attributeNames) {
 		super(glContext, arrayType, BUFFER_TARGET.ARRAY_BUFFER, usage);
 		this.attributeNames	= attributeNames;
 	}

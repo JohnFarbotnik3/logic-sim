@@ -1,4 +1,5 @@
 //#define NDEBUG
+
 #include <cassert>
 #include <cstdio>
 #include "../content/BlockTemplateLibrary.cpp"

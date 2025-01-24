@@ -51,6 +51,13 @@ export class Camera {
 		this.updateView();
 	}
 
+	move_to(x,y,z) {
+		if(!Number.isNaN(x+0)) this.pos[0] = x;
+		if(!Number.isNaN(y+0)) this.pos[1] = y;
+		if(!Number.isNaN(z+0)) this.pos[2] = z;
+		this.updateView();
+	}
+
 	zoom(mag) {
 		// zoom should slow down as FOV approaches 180deg (i.e. 0.5 revolutions)
 		const mult = (mag - 1.0) * Math.cos((this.FOV * 2) * (2.0 * Math.PI / 4));

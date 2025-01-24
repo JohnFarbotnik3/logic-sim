@@ -9,8 +9,6 @@ import {
 import { VerificationUtil } from "../lib/exports";
 import { main } from "../Main";
 
-// TODO: move relevant code from other places into here.
-// ^ see c++ implementation for inspiration on what belongs here.
 export class BlockTemplateLibrary {
 
 	constructor() {

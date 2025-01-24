@@ -108,6 +108,7 @@
 					<FlexCol class="clickable" style="height: fit-content;">
 						{#each modes as mode}
 						<Button
+							id={"panel_button_" + mode}
 							toggled={currentPanel === mode}
 							style={currentMode === mode ? "background:#047;" : ""}
 							onclick={() => onclickSetPanelMode(mode)}
@@ -117,7 +118,10 @@
 					</FlexCol>
 					<FlexCol class="clickable" style="height: fit-content; background: #000a;">
 						{#each modes as mode}
-						<div style={currentPanel === mode ? "" : "display: none;"}>
+						<div
+							id={"panel_" + mode}
+							style={currentPanel === mode ? "" : "display: none;"}
+						>
 							{@render panels.get(mode)?.()}
 						</div>
 						{/each}

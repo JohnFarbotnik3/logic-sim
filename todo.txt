@@ -109,15 +109,6 @@ Near-term.
 > add list management features for BlockTemplates
 
 
-> UndoStack
-- add a struct which has a list of undo states consisting of:
-	- block library JSON
-	- timestamp
-	- description of operation performed (which produced the new state)
-- add "Undo" panel for moving through the list of states
-- allow saving (and loading) the entire UndoStack struct as JSON
-
-
 > troubleshoot poor performance on older devices with modest processing power
 - why is my laptop browser struggling to render even a mostly empty scene?
 ! it is a software rendering problem - empty webGL canvas already costs 65% cpu to render!
@@ -189,17 +180,12 @@ Near-term.
 .
 
 
-> E2E testing:
-	- start in initial state
-	- specific screen resolution
-	- click in specific spots (wherever user should click to get a certain circuit built)
-	- probe data structures (to verify desired circuit was build exactly correctly)
-	- take screenshots of each step (visually inspect to verify renderer hasnt changed or broken in some way).
-.
+> UndoStack
+- instead of having a mess of change-notifying functions, just implement a change detector
+that scans the entire library, setting flags (sim-change, render-change, etc.) if relevant changes are detected.
+- add "Undo" panel for moving through the list of states
+- allow saving (and loading) the entire UndoStack struct as JSON
 
-
-> misc
-- search for empty constructors and "default" them.
 
 
 - fix crash: when dimensions or rotation are too big, the app crashes (I suspect this is happening cpp-side).
@@ -207,10 +193,12 @@ Near-term.
 - do profile guided optimization of c++ renderer.
 - allow c++ FontRenderer to make JS calls, so that it can re-generate glyph map a string contains some characters it is missing
 ^ this will allow mostly removing JS font-renderer, and getting rid of missing glyphs map.
+- only draw link squares for valid targets.
+
 
 
 > move from JS to CPP:
-* migrate game-controls and collections to cpp instead, then just transmit relevant user-input states.
+*** migrate game-controls and collections to cpp instead, then just transmit relevant user-input states.
 - GameUI:
 	isItemInDragArea
 	isItemHovered

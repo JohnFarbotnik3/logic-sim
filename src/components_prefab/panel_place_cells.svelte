@@ -24,6 +24,7 @@
 		<Grid cols="1fr 1fr">
 			{#each ctypes as ct}
 			<Button
+				id={"panel_cells_button_" + ct.tstr}
 				onclick={(event) => onclick_cell_type(event, ct.type)}
 				class="outline"
 				style={`

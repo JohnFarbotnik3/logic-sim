@@ -1,5 +1,5 @@
-import { TEST_BLOCKS_OBJECT } from "./GameInit_json"
-import { GameServer_wasm } from "./server/GameServer_wasm"
+import { TEST_BLOCKS_OBJECT } from "./GameInit_json";
+import { GameServer_wasm } from "./server/GameServer_wasm";
 import { GameUI, GameRenderer } from "./interface/exports";
 import { BlockTemplateLibrary, ComponentId } from "./content/exports";
 import { CachedValue_Rendering } from "./CachedValue";
@@ -136,4 +136,7 @@ class Main {
 
 };
 export const main = new Main();
+
+// reference to main for testing.
+window["main"] = main;
 

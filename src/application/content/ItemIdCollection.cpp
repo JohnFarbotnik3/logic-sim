@@ -1,9 +1,9 @@
-#ifndef ItemCollection_h
-#define ItemCollection_h
+#ifndef ItemIdCollection_h
+#define ItemIdCollection_h
 
 #include "./ItemId.cpp"
 
-struct ItemCollection {
+struct ItemIdCollection {
 	Set<ItemId> cells;
 	Set<ItemId> links;
 	Set<ItemId> texts;

@@ -3,7 +3,7 @@
 #include "../lib/SystemOfEquations.cpp"
 #include "../Imports.cpp"
 #include "./RenderTree.cpp"
-#include "../content/ItemCollection.cpp"
+#include "../content/ItemIdCollection.cpp"
 
 struct GameControls {
 	// ============================================================
@@ -112,28 +112,28 @@ struct GameControls {
 		return collision_aabb_aabb(area_aabb, item_aabb);
 	}
 
-	ItemCollection get_items_in_aabb(const BlockWT rootBlock, const AABB_2D aabb) {
+	ItemIdCollection get_items_in_aabb(const BlockWT rootBlock, const AABB_2D aabb) {
 		const RenderTree rendertree(rootBlock, Transformation2D(), 0);
-		ItemCollection ids;
+		ItemIdCollection ids;
 		for(const auto& [id, item] : rootBlock.blockTemplate->cells ) if(is_item_in_aabb(rendertree, aabb, id)) ids.cells .insert(item.id);
 		for(const auto& [id, item] : rootBlock.blockTemplate->texts ) if(is_item_in_aabb(rendertree, aabb, id)) ids.texts .insert(item.id);
 		for(const auto& [id, item] : rootBlock.blockTemplate->blocks) if(is_item_in_aabb(rendertree, aabb, id)) ids.blocks.insert(item.id);
 		return ids;
 	}
 
-	ItemCollection get_items_in_selection_area(const BlockWT rootBlock, float x0, float y0, float x1, float y1) {
+	ItemIdCollection get_items_in_selection_area(const BlockWT rootBlock, float x0, float y0, float x1, float y1) {
 		const AABB_2D aabb(Vec2{x0,y0}, Vec2{x1,y1});
 		return get_items_in_aabb(rootBlock, aabb);
 	}
 
-	ItemCollection get_items_in_hover_area(const BlockWT rootBlock, float cx, float cy, float cr) {
+	ItemIdCollection get_items_in_hover_area(const BlockWT rootBlock, float cx, float cy, float cr) {
 		const AABB_2D aabb(Vec2{cx, cy});
 		return get_items_in_aabb(rootBlock, aabb);
 	}
 
-	ItemCollection get_links_in_within_cursor_radius(const BlockWT rootBlock, float cx, float cy, float cr) {
+	ItemIdCollection get_links_in_within_cursor_radius(const BlockWT rootBlock, float cx, float cy, float cr) {
 		const RenderTree rendertree(rootBlock, Transformation2D(), 0);
-		ItemCollection ids;
+		ItemIdCollection ids;
 		for(const auto& [id, item] : rootBlock.blockTemplate->links) {
 			const Vec3 a = rendertree.get_link_point(item.src);
 			const Vec3 b = rendertree.get_link_point(item.dst);

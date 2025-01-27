@@ -125,6 +125,7 @@ class Main {
 		this.renderChange = true;
 		this.simulationShouldRebuild = true;
 		this.blockLibrary.set_root_block_template(templateId);
+		this.gameServer.send_templates(this.blockLibrary, templateId);
 		CachedValue_Rendering.onChange();
 		this.gameUI.on_major_blocklib_change();
 		this.gameUI.root_template_reset_inputs();

@@ -110,9 +110,9 @@ export class BlockTemplate {
 	removeLink (item) { this.removeItem(this.links , item); }
 	removeText (item) { this.removeItem(this.texts , item); }
 	removeBlock(item) { this.removeItem(this.blocks, item); }
-	get_cell (id) { return this.cells .find(item => item.id === id); }
-	get_link (id) { return this.links .find(item => item.id === id); }
-	get_text (id) { return this.texts .find(item => item.id === id); }
-	get_block(id) { return this.blocks.find(item => item.id === id); }
+	get_cell (id) { const item = this.cells .find(item => item.id === id); if(!item) throw("error during get_cell(): not found"); return item; }
+	get_link (id) { const item = this.links .find(item => item.id === id); if(!item) throw("error during get_link(): not found"); return item; }
+	get_text (id) { const item = this.texts .find(item => item.id === id); if(!item) throw("error during get_text(): not found"); return item; }
+	get_block(id) { const item = this.blocks.find(item => item.id === id); if(!item) throw("error during get_block(): not found"); return item; }
 	
 };

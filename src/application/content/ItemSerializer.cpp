@@ -10,7 +10,7 @@
 #include "Block.cpp"
 #include "BlockTemplate.cpp"
 #include "BlockTemplateLibrary.cpp"
-#include "ItemCollection.cpp"
+#include "ItemIdCollection.cpp"
 
 struct ItemSerializer : StringSerializer {
 
@@ -167,7 +167,7 @@ struct ItemSerializer : StringSerializer {
 		return library;
 	}
 
-	void push_item_collection(const ItemCollection& collection) {
+	void push_item_collection(const ItemIdCollection& collection) {
 		push_number((u32)collection.cells .size());
 		push_number((u32)collection.links .size());
 		push_number((u32)collection.texts .size());
@@ -177,8 +177,8 @@ struct ItemSerializer : StringSerializer {
 		for(const auto& id : collection.texts ) push_item_id(id);
 		for(const auto& id : collection.blocks) push_item_id(id);
 	}
-	ItemCollection read_item_collection() {
-		ItemCollection collection;
+	ItemIdCollection read_item_collection() {
+		ItemIdCollection collection;
 		int n_c = read_number<u32>();
 		int n_l = read_number<u32>();
 		int n_t = read_number<u32>();

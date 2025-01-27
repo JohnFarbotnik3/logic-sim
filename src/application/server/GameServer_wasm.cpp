@@ -222,7 +222,7 @@ struct GameServer_wasm {
 
 	GameControls controls;
 
-	String item_collection_to_string_message(const ItemCollection& collection) {
+	String item_collection_to_string_message(const ItemIdCollection& collection) {
 		ItemSerializer writer;
 		writer.push_item_collection(collection);
 		return writer.to_string();

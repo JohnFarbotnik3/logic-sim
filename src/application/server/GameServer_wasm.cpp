@@ -100,6 +100,7 @@ struct GameServer_wasm {
 	// ============================================================
 	// Renderer
 	// ------------------------------------------------------------
+
 	GameRenderer renderer;
 	using Char = FontRenderer::Char;
 
@@ -196,22 +197,28 @@ struct GameServer_wasm {
 		float x = reader.read_number<float>();
 		float y = reader.read_number<float>();
 		float z = reader.read_number<float>();
-		Vector3D cursor_pos {x, y, z};
+		Vec3 cursor_pos {x, y, z};
 		LinkTarget first_tgt = reader.read_number<int>();
 		RenderTree rendertree(rootBlock, Transformation2D(), 0);
 		const auto tp_opt = rendertree.get_nearst_cell_target(cursor_pos, first_tgt);
 		if(tp_opt.has_value()) {
 			const auto tp_val = tp_opt.value();
 			ItemSerializer writer;
-			writer.push_number(tp_val.point.x);
-			writer.push_number(tp_val.point.y);
-			writer.push_number(tp_val.point.z);
+			writer.push_number(tp_val.point[0]);
+			writer.push_number(tp_val.point[1]);
+			writer.push_number(tp_val.point[2]);
 			writer.push_link_address(tp_val.addr);
 			return writer.to_string();
 		} else {
 			return "";
 		}
 	}
+
+	// ============================================================
+	// Controls
+	// ------------------------------------------------------------
+
+	// ...TODO...
 };
 
 #include <emscripten.h>

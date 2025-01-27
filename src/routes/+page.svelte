@@ -12,6 +12,7 @@
 	} from "../components/exports";
 	import * as Prefab from "../components_prefab/exports";
 	import { main } from "../application/Main.js";
+	import * as Ids from "../ElementIds.js";
 
 	// mode stuff.
 	let modes			= $state([]);
@@ -103,12 +104,12 @@
 		</FlexFit>
 		<FlexGrow id="middle">
 			<Grid cols="1fr">
-				<Canvas class="first_cell" id="canvas"></Canvas>
+				<Canvas class="first_cell" id={Ids.id_canvas}></Canvas>
 				<FlexRow class="first_cell clickthrough" style="width: fit-content; height: 100%;">
 					<FlexCol class="clickable" style="height: fit-content;">
 						{#each modes as mode}
 						<Button
-							id={"panel_button_" + mode}
+							id={Ids.id_panel_btn(mode)}
 							toggled={currentPanel === mode}
 							style={currentMode === mode ? "background:#047;" : ""}
 							onclick={() => onclickSetPanelMode(mode)}
@@ -119,7 +120,7 @@
 					<FlexCol class="clickable" style="height: fit-content; background: #000a;">
 						{#each modes as mode}
 						<div
-							id={"panel_" + mode}
+							id={Ids.id_panel(mode)}
 							style={currentPanel === mode ? "" : "display: none;"}
 						>
 							{@render panels.get(mode)?.()}

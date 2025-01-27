@@ -1,4 +1,4 @@
-#include "../lib/VectorND.cpp"
+#include "../lib/Vec.cpp"
 #include "../lib/Rectangle.cpp"
 #include "../content/BlockWT.cpp"
 #include "../content/BlockTemplate.cpp"
@@ -11,16 +11,16 @@ struct RenderTree {
 	// Constants.
 	// ------------------------------------------------------------
 
-	static constexpr Vector3D LINK_POINTS[3] {
-		Vector3D{1.00, 0.50, 0.00},	// output
-		Vector3D{0.00, 0.75, 0.00},	// input-a
-		Vector3D{0.00, 0.25, 0.00},	// input-b
+	static constexpr Vec3 LINK_POINTS[3] {
+		Vec3{1.00, 0.50, 0.00},	// output
+		Vec3{0.00, 0.75, 0.00},	// input-a
+		Vec3{0.00, 0.25, 0.00},	// input-b
 	};
 
 	static constexpr Rectangle LINK_POINT_RECTS[3] {
-		Rectangle{LINK_POINTS[0].x-0.1, LINK_POINTS[0].y-0.1, 0.2, 0.2},
-		Rectangle{LINK_POINTS[1].x-0.1, LINK_POINTS[1].y-0.1, 0.2, 0.2},
-		Rectangle{LINK_POINTS[2].x-0.1, LINK_POINTS[2].y-0.1, 0.2, 0.2},
+		Rectangle{1.00 - 0.1, 0.50 - 0.1, 0.2, 0.2},
+		Rectangle{0.00 - 0.1, 0.75 - 0.1, 0.2, 0.2},
+		Rectangle{0.00 - 0.1, 0.25 - 0.1, 0.2, 0.2},
 	};
 
 	static constexpr Rectangle CELL_AREA_RECTS[3] {
@@ -58,15 +58,15 @@ struct RenderTree {
 	}
 
 	// returns link points of given cell in render-block.
-	Array<Vector3D, 3> get_link_points(ItemId cid) const {
+	Array<Vec3, 3> get_link_points(ItemId cid) const {
 		Transformation2D itran = this->itemTrans.at(cid);
-		Array<Vector3D, 3> points = { LINK_POINTS[0], LINK_POINTS[1], LINK_POINTS[2] };
+		Array<Vec3, 3> points = { LINK_POINTS[0], LINK_POINTS[1], LINK_POINTS[2] };
 		itran.apply(points.data(), 0, 3);
 		return points;
 	}
 
 	// returns link point based on link-address in render-block.
-	Vector3D get_link_point(LinkAddress addr) const {
+	Vec3 get_link_point(LinkAddress addr) const {
 		// link point is in this block. (common)
 		if(addr.bid == ItemId::THIS_BLOCK) {
 			Transformation2D itran = this->itemTrans.at(addr.cid);
@@ -111,7 +111,7 @@ struct RenderTree {
 	// ------------------------------------------------------------
 
 	struct TargetPoint {
-		Vector3D point;
+		Vec3 point;
 		LinkAddress addr;
 	};
 	void push_target_point(Vector<TargetPoint>& tgtpoints, ItemId bid, ItemId cid, LinkTarget tgt) {
@@ -148,7 +148,7 @@ struct RenderTree {
 		for(const ItemId& cid : inb) push_target_point(tgtpoints, bid, cid, LINK_TARGETS.INPUT_B);
 	}
 
-	Optional<TargetPoint> get_nearst_cell_target(Vector3D cursor_pos, LinkTarget first_tgt) {
+	Optional<TargetPoint> get_nearst_cell_target(Vec3 cursor_pos, LinkTarget first_tgt) {
 		Vector<TargetPoint> tgtpoints;
 		push_valid_cell_targets(tgtpoints, this->block, ItemId::THIS_BLOCK, true);
 		for(const auto& [id, block] : this->block.blockTemplate->blocks) {
@@ -159,14 +159,8 @@ struct RenderTree {
 		float dist = 1.0e20f;// NOTE: large magic float.
 		for(const TargetPoint& tp :tgtpoints) {
 			if(first_tgt == LINK_TARGETS.NONE || LINK_TARGETS.canLinkTargets(first_tgt, tp.addr.tgt)) {
-				float dx = tp.point.x - cursor_pos.x;
-				float dy = tp.point.y - cursor_pos.y;
-				float dz = tp.point.z - cursor_pos.z;
-				float dd = dx*dx + dy*dy + dz*dz;
-				if(dd < dist) {
-					nearest = tp;
-					dist = dd;
-				}
+				float dd = (tp.point - cursor_pos).hypsq();
+				if(dd < dist) { dist = dd; nearest = tp; }
 			}
 		}
 		return nearest;

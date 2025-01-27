@@ -3,7 +3,7 @@
 
 #include "../Imports.cpp"
 #include "../lib/Rectangle.cpp"
-#include "../lib/VectorND.cpp"
+#include "../lib/Vec.cpp"
 
 /*
 	This class is meant to be used alongside the javascript FontRenderer,
@@ -73,19 +73,19 @@ struct FontRenderer {
 		float height,
 		bool wrap,
 		Rectangle boundingRect,
-		Vector2D textAlignment,
-		Vector2D rectOrigin,
-		Vector3D vecOffset,
-		Vector3D vecBasisX,
-		Vector3D vecBasisY
+		Vec2 textAlignment,
+		Vec2 rectOrigin,
+		Vec3 vecOffset,
+		Vec3 vecBasisX,
+		Vec3 vecBasisY
 	) {
 		FontVertexData<Ind, Pos, Tex> data;
 		Vector<Ind>& idata = data.idata;
 		Vector<Pos>& vdata = data.vdata;
 		Vector<Tex>& tdata = data.tdata;
 		// move bounding rectangle to origin so that basis vectors apply correctly.
-		vecOffset.x += boundingRect.x;
-		vecOffset.y += boundingRect.y;
+		vecOffset[0] += boundingRect.x;
+		vecOffset[1] += boundingRect.y;
 		const float x1 = 0;
 		const float y1 = 0;
 		const float x2 = boundingRect.w;
@@ -106,14 +106,14 @@ struct FontRenderer {
 			// push character data
 			const Ind INDS[] = {0,1,2,2,3,0};
 			for(int q=0;q<6;q++) idata.push_back(INDS[q] + vcount);
-			vdata.emplace_back(x		, y		, 0);
-			vdata.emplace_back(x + w	, y		, 0);
-			vdata.emplace_back(x + w	, y + h	, 0);
-			vdata.emplace_back(x		, y + h	, 0);
-			tdata.emplace_back(g.x		, g.y		);
-			tdata.emplace_back(g.x + g.w, g.y		);
-			tdata.emplace_back(g.x + g.w, g.y + g.h	);
-			tdata.emplace_back(g.x		, g.y + g.h	);
+			vdata.push_back(Pos{x		, y		, 0});
+			vdata.push_back(Pos{x + w	, y		, 0});
+			vdata.push_back(Pos{x + w	, y + h	, 0});
+			vdata.push_back(Pos{x		, y + h	, 0});
+			tdata.push_back(Tex{g.x			, g.y		});
+			tdata.push_back(Tex{g.x + g.w	, g.y		});
+			tdata.push_back(Tex{g.x + g.w	, g.y + g.h	});
+			tdata.push_back(Tex{g.x			, g.y + g.h	});
 			x += w;
 		}
 		// push last line.
@@ -127,21 +127,19 @@ struct FontRenderer {
 			const float rect_h = y2 - y1;
 			const float leftover_w = x2 - line.x;	// leftover width on line
 			const float leftover_h = y;				// leftover height on rect
-			const float xofs = +textAlignment.x * leftover_w - rectOrigin.x * rect_w;
-			const float yofs = -textAlignment.y * leftover_h - rectOrigin.y * rect_h;
+			const float xofs = +textAlignment[0] * leftover_w - rectOrigin[0] * rect_w;
+			const float yofs = -textAlignment[1] * leftover_h - rectOrigin[1] * rect_h;
 			while(vc_ind < line.vcount) {
-				vdata[vc_ind].x += xofs;
-				vdata[vc_ind].y += yofs;
+				vdata[vc_ind][0] += xofs;
+				vdata[vc_ind][1] += yofs;
 				vc_ind++;
 			}
 		}
 		// apply offset and 3d basis vectors.
 		for(int i=0;i<vdata.size();i++) {
-			const float x = vdata[i].x;
-			const float y = vdata[i].y;
-			vdata[i].x = vecOffset.x + vecBasisX.x*x + vecBasisY.x*y;
-			vdata[i].y = vecOffset.y + vecBasisX.y*x + vecBasisY.y*y;
-			vdata[i].z = vecOffset.z + vecBasisX.y*x + vecBasisY.z*y;
+			const float x = vdata[i][0];
+			const float y = vdata[i][1];
+			for(int d=0;d<3;d++) vdata[i][d] = vecOffset[d] + vecBasisX[d]*x + vecBasisY[d]*y;
 		}
 		return data;
 	}

@@ -2,6 +2,7 @@
 	import { InputTable, Button, Grid } from "../components/exports";
 	import { main } from "../application/Main";
 	import { CELL_PROPERTIES } from "../application/content/exports";
+	import * as Ids from "../ElementIds.js";
 
 	const ctypes = [...Object.values(CELL_PROPERTIES)];
 
@@ -24,7 +25,7 @@
 		<Grid cols="1fr 1fr">
 			{#each ctypes as ct}
 			<Button
-				id={"panel_cells_button_" + ct.tstr}
+				id={Ids.id_cells_type(ct.tstr)}
 				onclick={(event) => onclick_cell_type(event, ct.type)}
 				class="outline"
 				style={`

@@ -3,10 +3,10 @@
 
 #include <cstdint>
 #include <cstring>
-#include "../lib/VectorND.cpp"
+#include "../lib/Vec.cpp"
 #include "../content/ItemClr.cpp"
 
-using VertexPos = Vector3D;
+using VertexPos = Vec3;
 
 struct VertexClr {
 	uint32_t rgba;

@@ -185,7 +185,9 @@ Near-term.
 that scans the entire library, setting flags (sim-change, render-change, etc.) if relevant changes are detected.
 - add "Undo" panel for moving through the list of states
 - allow saving (and loading) the entire UndoStack struct as JSON
-
+* plan update: I wont implement this until whole block-library is kept on the cpp-side *only*.
+^	that way I dont have to implement both the js and cpp versions of UndoStack,
+	plus cpp will allow a far simpler implementation without risk of harming performance.
 
 
 - fix crash: when dimensions or rotation are too big, the app crashes (I suspect this is happening cpp-side).
@@ -196,6 +198,9 @@ that scans the entire library, setting flags (sim-change, render-change, etc.) i
 - only draw link squares for valid targets.
 
 
+> testing
+- add tests for data structures and utils as well to make sure stuff is computed correctly (remember to test edge cases!)
+
 
 > move from JS to CPP:
 *** migrate game-controls and collections to cpp instead, then just transmit relevant user-input states.
@@ -203,6 +208,9 @@ that scans the entire library, setting flags (sim-change, render-change, etc.) i
 	isItemInDragArea
 	isItemHovered
 - RenderTree
+
+
+> move New Template button to Blocks panel.
 
 
 

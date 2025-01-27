@@ -1,19 +1,14 @@
 
+/* NOTE:
+	I dont plan on finishing this is javascript,
+	as it would make much more sense to just implement it in cpp only
+	due to how type-heavy and/or serialization-heavy this is.
+
+	this will require fully moving the block-library to the cpp-side,
+	i.e. not keeping a js-side copy of the library,
+	but said migration will be quite involved.
+*/
 class LibraryVersionStack {
-	TYPE = {
-		CELL		: 1,
-		LINK		: 2,
-		TEXT		: 3,
-		BLOCK		: 4,
-		TEMPLATE	: 5,
-	};
-
-	DIFF = {
-		ADDED	: 1,
-		REMOVED	: 2,
-		MODIFIED: 3,
-	};
-
 	constructor() {
 		// stack of (saved-data) library versions. (TODO: use save/load to clone them)
 		this.lib_stack = [];
@@ -21,59 +16,55 @@ class LibraryVersionStack {
 		this.chg_stack = [];
 	}
 
-	get_template_groups(A_tmp, B_tmp) {
-		const groups = [
-			[A_tmp.cells , B_tmp.cells , this.TYPE.CELL ],
-			[A_tmp.links , B_tmp.links , this.TYPE.LINK ],
-			[A_tmp.texts , B_tmp.texts , this.TYPE.TEXT ],
-			[A_tmp.blocks, B_tmp.blocks, this.TYPE.BLOCK],
-		];
-		return groups;
+	diff_items(items_a, items_b) {
+		const changes = [];
+		for(const id of items_a.keys()) {
+			const item_a = items_a.has(id) ? items_a.get(id) : null;
+			const item_b = items_b.has(id) ? items_b.get(id) : null;
+			if(JSON.stringify(item_a) !== JSON.stringify(item_b)) changes.push([id, item_a, item_b]);
+		}
 	}
 
-	push_delta_added_ids(delta, A_items, B_items, diff, type, tid) {
-		const ids = new Set();
-		for(const item of B_items) ids.add(item.id);
-		for(const item of A_items) ids.delete(item.id);
-		for(const id of ids.keys()) delta.push([diff, type, tid, id]);
+	diff_template(tid, btmp_a, btmp_b) {
+		if(!btmp_a &&  btmp_b) return ({ id:tid, created:true });
+		if( btmp_a && !btmp_b) return ({ id:tid, removed:true });
+		if(!btmp_a && !btmp_b) throw("this function should not be called with no templates!");
+		const tmpdiff = { id:tid };
+		const props = [];
+		const prop_keys = ["name", "desc", "width", "height", "placeW", "placeH"];
+		for(const key of prop_keys) {
+			if(btmp_a[key] !== btmp_b[key]) props.push([key, btmp_a[key], btmp_b[key]]);
+		}
+		if(props)
 	}
 
-	push_delta_modded_ids(delta, A_items, B_items, diff, type, tid) {
+	/*
+		check if library has changed, and return delta if so.
+
+		delta format:			TemplateDiff[],
+		TemplateDiff format:	{
+			id			: ItemId,
+			props		: [...changes: [key, val_a, val_b]],
+			created?	: true,		(if template was created)
+			removed?	: true,		(if template was removed)
+			cells?		: [...changes: [id, json_a, json_b]],
+			links?		: [...changes],
+			texts?		: [...changes],
+			blocks?		: [...changes],
+		}
+	*/
+	detect_changes(new_library) {
+		// compare library json.
+		const json_a = this.lib_stack[this.lib_stack.length - 1];
+		const json_b = new_library.save();
+		if(json_a === json_b) return null;
+		this.lib_stack.push(json_b);
+		// if they differ, get difference between them.
+		const lib_a = BlockTemplateLibrary.load(json_a);
+		const lib_b = new_library;
 		// TODO
-		// - compare saved data of each item.
-	}
-
-	// return difference B-A between two libraries.
-	get_delta(A, B) {
-		const delta = [];// [diff, type, templateId, id][].
-		// check for template modifications.
-		// ...TODO...
-		// check for added items.
-		for(const [tid, B_tmp] of B.templates.entries()) {
-			const diff = this.DIFF.ADDED;
-			const A_tmp = A.templates.get(tid);
-			if(!A_tmp) delta.push([diff, this.TYPE.TEMPLATE, tid, null]);
-			else for(const [A_items, B_items, type] of this.get_template_groups(A_tmp, B_tmp))
-				this.push_delta_added_ids(delta, A_items, B_items, diff, type, tid);
-		}
-		// check for removed items.
-		for(const [tid, A_tmp] of A.templates.entries()) {
-			const diff = this.DIFF.REMOVED;
-			const B_tmp = B.templates.get(tid);
-			if(!B_tmp) delta.push([diff, this.TYPE.TEMPLATE, tid, null]);
-			else for(const [A_items, B_items, type] of this.get_template_groups(A_tmp, B_tmp))
-				this.push_delta_added_ids(delta, B_items, A_items, diff, type, tid);// NOTE: A_items and B_items are reversed.
-		}
-		// check for modified items.
-		// ...TODO...
-	}
-
-	// push new
-	detect_changes(library) {
-		let delta = [];
-		// TODO:
-		// - accumulate all changes into a delta.
-		if(delta.length > 0) this.stack.push(delta);
+		let delta = {};// format
+		if(delta.length > 0) this.chg_stack.push(delta);
 		return delta;
 	}
 };

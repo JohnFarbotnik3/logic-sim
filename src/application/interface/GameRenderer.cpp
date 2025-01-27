@@ -3,8 +3,7 @@
 #include "./VertexTypes.cpp"
 #include "../lib/Transformation2D.cpp"
 #include "../lib/Rectangle.cpp"
-#include "../lib/VectorND.cpp"
-#include "../lib/VectorUtil.cpp"
+#include "../lib/Vec.cpp"
 #include "../WebGL/FontEngine.cpp"
 #include "./RenderTree.cpp"
 #include "../simulation/GameSimulation.cpp"
@@ -66,9 +65,9 @@ struct GameRenderer {
 		const int vertBeg,
 		const int vertEnd
 	) {
-		tran.apply<Pos>(vdata.data(), vertBeg, vertEnd);
+		tran.apply(vdata.data(), vertBeg, vertEnd);
 		const float zofs = depth * -0.01;
-		for(int i=vertBeg;i<vertEnd;i++) vdata[i].z += zofs;
+		for(int i=vertBeg;i<vertEnd;i++) vdata[i][2] += zofs;
 	}
 
 	void triangles_push(
@@ -182,7 +181,7 @@ struct GameRenderer {
 	}
 
 	// line circle
-	void push_content_line_circle(Transformation2D tran, float depth, float x, float y, float r, int n, Clr clr) {
+	void push_content_line_circle(Transformation2D tran, float depth, Pos p, float r, int n, Clr clr) {
 		Vector<Ind> idata(n*2);
 		Vector<Pos> vdata(n);
 		Vector<Clr> cdata(n);
@@ -196,8 +195,8 @@ struct GameRenderer {
 		for(int i=0;i<n;i++) {
 			const float angle = i * aincr;
 			vdata[i] = Pos{
-				std::cosf(angle) * r + x,
-				std::sinf(angle) * r + y,
+				std::cosf(angle) * r + p[0],
+				std::sinf(angle) * r + p[1],
 				0
 			};
 		}
@@ -213,14 +212,14 @@ struct GameRenderer {
 		float fontHeight,
 		Clr fontColour,
 		Rectangle boundingRect,
-		Vector2D textAlign,
-		Vector2D rectOrigin,
+		Vec2 textAlign,
+		Vec2 rectOrigin,
 		bool wrap
 	) {
 		// generate data
-		const Vector3D offset = {0.0, 0.0, 0.0};
-		const Vector3D xbasis = {1.0, 0.0, 0.0};
-		const Vector3D ybasis = {0.0, 1.0, 0.0};
+		const Vec3 offset = {0.0, 0.0, 0.0};
+		const Vec3 xbasis = {1.0, 0.0, 0.0};
+		const Vec3 ybasis = {0.0, 1.0, 0.0};
 		auto data = fontRenderer.generateVertexData3d<Ind, Pos, Tex>(
 			str, fontHeight, wrap, boundingRect, textAlign, rectOrigin, offset, xbasis, ybasis
 		);
@@ -237,7 +236,7 @@ struct GameRenderer {
 		float depth,
 		float fontHeight,
 		Clr fontColour,
-		Vector2D unitRectPoint,
+		Vec2 unitRectPoint,
 		float dist
 	) {
 		// get width.
@@ -245,18 +244,18 @@ struct GameRenderer {
 		const float strw = fontRenderer.getTotalWidth(str, fontHeight);
 		// get box position.
 		const bool wrap = false;
-		const float rx = unitRectPoint.x;
-		const float ry = unitRectPoint.y;
-		const Vector2D rectOrigin = {
+		const float rx = unitRectPoint[0];
+		const float ry = unitRectPoint[1];
+		const Vec2 rectOrigin = {
 			1.0f - (((rx - 0.5f) * dist) + 0.5f),
 			1.0f - (((ry - 0.5f) * dist) + 0.5f),
 		};
-		const Vector2D textAlign = {0.5, 0.5};
+		const Vec2 textAlign = {0.5, 0.5};
 		const Rectangle boundingRect{rx, ry, strw, strh};
 		// generate data
-		const Vector3D offset = {0.0, 0.0, 0.0};
-		const Vector3D xbasis = {1.0, 0.0, 0.0};
-		const Vector3D ybasis = {0.0, 1.0, 0.0};
+		const Vec3 offset = {0.0, 0.0, 0.0};
+		const Vec3 xbasis = {1.0, 0.0, 0.0};
+		const Vec3 ybasis = {0.0, 1.0, 0.0};
 		auto data = fontRenderer.generateVertexData3d<Ind, Pos, Tex>(
 			str, fontHeight, wrap, boundingRect, textAlign, rectOrigin, offset, xbasis, ybasis
 		);
@@ -301,7 +300,7 @@ struct GameRenderer {
 			const Clr fclr = 0xffffffff;
 			// draw type code.
 			{
-				const Vector2D unitRectPoint {0.5, 1.0};
+				const Vec2 unitRectPoint {0.5, 1.0};
 				push_content_text_box_against_circle(tran, cell.typeString, textDepth, fontHeight, bclr, unitRectPoint, dist);
 				push_content_text_box_against_circle(tran, cell.typeString, textDepth, fontHeight, fclr, unitRectPoint, dist);
 			}
@@ -312,9 +311,9 @@ struct GameRenderer {
 				for(int x=0;x<16;x++) if(buf[x] == ' ') buf[x] = '0';
 				const String str = String(buf);
 				const Clr clr = (vals[i] == 0 ? 0x777777ff : fclr);
-				const Vector2D unitRectPoint = {
-					RenderTree::LINK_POINTS[i].x,
-					RenderTree::LINK_POINTS[i].y,
+				const Vec2 unitRectPoint = {
+					RenderTree::LINK_POINTS[i][0],
+					RenderTree::LINK_POINTS[i][1],
 				};
 				push_content_text_box_against_circle(tran, str, textDepth, fontHeight, bclr, unitRectPoint, dist);
 				push_content_text_box_against_circle(tran, str, textDepth, fontHeight,  clr, unitRectPoint, dist);
@@ -338,7 +337,7 @@ struct GameRenderer {
 	}
 	void draw_link_preview(Vector<Pos> points, Clr clr) {
 		// draw circles.
-		for(const Pos point : points) push_content_line_circle(Transformation2D(), DEPTH_ON_TOP, point.x, point.y, 0.2, 20, clr);
+		for(const Pos point : points) push_content_line_circle(Transformation2D(), DEPTH_ON_TOP, point, 0.2, 20, clr);
 		// draw link preview
 		if(points.size() >= 2) draw_link(points[0], points[1], clr, DEPTH_ON_TOP);
 	}
@@ -358,8 +357,8 @@ struct GameRenderer {
 			const float fontHeight = text.fhgt;
 			const ItemDim dim = text.dim;
 			const Rectangle boundingRect{dim.x, dim.y, dim.w, dim.h};
-			const Vector2D textAlign {0.0, 0.0};
-			const Vector2D rectOrigin {0.0, 0.0};
+			const Vec2 textAlign {0.0, 0.0};
+			const Vec2 rectOrigin {0.0, 0.0};
 			const bool wrap = true;
 			push_content_text_box(tran, text.str, depth, fontHeight, fontColour, boundingRect, textAlign, rectOrigin, wrap);
 		}
@@ -447,7 +446,7 @@ struct GameRenderer {
 	void drawCursor(Pos pos, float radius) {
 		const float depth = DEPTH_ON_TOP;
 		const Clr clr = 0xffff99ff;
-		push_content_line_circle(Transformation2D(), DEPTH_ON_TOP, pos.x, pos.y, radius, 30, clr);
+		push_content_line_circle(Transformation2D(), DEPTH_ON_TOP, pos, radius, 30, clr);
 	}
 
 	void drawDragArea(Rectangle rect) {
@@ -491,50 +490,5 @@ struct GameRenderer {
 		drawSelection(rendertree, ids_selected);
 		drawHovered(rendertree, ids_hovered);
 	}
-
-	// ============================================================
-	// Extra rendering + geometry related helpers.
-	// ------------------------------------------------------------
-
-	// TODO - move these to GameControls.cpp
-	using AABB = VectorUtil::AABB;
-	bool is_item_in_aabb(const RenderTree& rendertree, const AABB& drag_aabb, ItemId id) {
-		const Transformation2D& itran = rendertree.itemTrans.at(id);
-		const AABB item_aabb = VectorUtil::get_axis_aligned_bounding_box(itran);
-		return VectorUtil::collision_aabb_aabb_2d(drag_aabb, item_aabb);
-	}
-	Vector<ItemId> get_items_in_drag_area(const BlockWT& rootBlock, float x0, float y0, float x1, float y1) {
-		const AABB drag_aabb{ Vector2D{x0,y0}, Vector2D{x1,y1} };
-		const RenderTree rendertree(rootBlock, Transformation2D(), 0);
-		Vector<ItemId> ids;
-		// TODO - get seperate vectors for each item type instead.
-		for(const auto& [id, item] : rootBlock.blockTemplate->cells ) if(is_item_in_aabb(rendertree, drag_aabb, id)) ids.push_back(item.id);
-		for(const auto& [id, item] : rootBlock.blockTemplate->texts ) if(is_item_in_aabb(rendertree, drag_aabb, id)) ids.push_back(item.id);
-		for(const auto& [id, item] : rootBlock.blockTemplate->blocks) if(is_item_in_aabb(rendertree, drag_aabb, id)) ids.push_back(item.id);
-		return ids;
-	}
-
-	// TODO
-	Vector<ItemId> getItemsHovered() {}
-	Vector<ItemId> getLinksHovered() {}
-
-	/*
-	isItemHovered(item) {
-		const aabb = main.gameRenderer.renderBlock.get_axis_aligned_bounding_box(item);
-		VerificationUtil.verifyType_throw(aabb, Float32Array);
-		return VectorUtil.collision_aabb_point_2d(aabb, this.cursor_pos);
-	}
-	isLinkHovered(link) {
-		const points = main.gameRenderer.renderBlock.l_points.get(link.id);
-		const pointC = new Vector2D(this.cursor_pos.slice(0,2));
-		const pointA = new Vector2D(points.slice(0,2));
-		const pointB = new Vector2D(points.slice(3,5));
-		const nearest = VectorUtil.nearestPoint_point_line_segment_2d(pointC, pointA, pointB);
-		const nearest3d = new Vector3D([nearest[0], nearest[1], 0.0]);
-		const distance = nearest3d.add(this.cursor_pos, -1.0).hypot();
-		return distance <= this.cursor_radius;
-	}
-	*/
-
 
 };

@@ -1,5 +1,6 @@
 <script>
-	import { Button, Grid } from "./exports"
+	import { Button, Grid } from "./exports";
+	import * as Ids from "../ElementIds";
 
 	let props = $props();
 </script>
@@ -37,8 +38,8 @@
 				{@render props?.children()}
 			</div>
 			<Grid cols="1fr 1fr">
-				{#if props?.oncancel}<Button onclick={() => props.oncancel()} style="background:#300; left:0px;">Cancel</Button>{/if}
-				{#if props?.onsubmit}<Button onclick={() => props.onsubmit()} style="background:#033; right:0px;">Submit</Button>{/if}
+				{#if props?.oncancel}<Button id={Ids.id_popup_cancel} onclick={() => props.oncancel()} style="background:#300; left:0px;">Cancel</Button>{/if}
+				{#if props?.onsubmit}<Button id={Ids.id_popup_submit} onclick={() => props.onsubmit()} style="background:#033; right:0px;">Submit</Button>{/if}
 			</Grid>
 		</Grid>
 	</div>

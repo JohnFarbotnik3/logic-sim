@@ -5,6 +5,7 @@
 #include <cstdio>
 #include <cstring>
 #include "../Constants.cpp"
+#include "./Vec.cpp"
 
 struct Transformation2D {
 	float data[6];
@@ -18,21 +19,23 @@ struct Transformation2D {
 			points[i+1] = x*data[1] + y*data[3] + data[5];
 		}
 	}
-	template<class V>
-	void apply(V* vecs, int beg, int end) const {
+
+	template<class T, int N>
+	void apply(Vec<T,N>* vecs, int beg, int end) const {
 		for(int i=beg;i<end;i++) {
-			const float x = vecs[i].x;
-			const float y = vecs[i].y;
-			vecs[i].x = x*data[0] + y*data[2] + data[4];
-			vecs[i].y = x*data[1] + y*data[3] + data[5];
+			const float x = vecs[i][0];
+			const float y = vecs[i][1];
+			vecs[i][0] = x*data[0] + y*data[2] + data[4];
+			vecs[i][1] = x*data[1] + y*data[3] + data[5];
 		}
 	}
-	template<class V>
-	V apply(V vec) const {
-		const float x = vec.x;
-		const float y = vec.y;
-		vec.x = x*data[0] + y*data[2] + data[4];
-		vec.y = x*data[1] + y*data[3] + data[5];
+
+	template<class T, int N>
+	Vec<T,N> apply(Vec<T,N> vec) const {
+		const float x = vec[0];
+		const float y = vec[1];
+		vec[0] = x*data[0] + y*data[2] + data[4];
+		vec[1] = x*data[1] + y*data[3] + data[5];
 		return vec;
 	}
 

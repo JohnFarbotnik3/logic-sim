@@ -26,6 +26,7 @@ import {
 	PromiseUtil,
 } from "../lib/exports";
 import { CachedValue_Rendering } from "../CachedValue";
+import * as Ids from "../../ElementIds.js";
 
 export class GameUI {
 	// ============================================================
@@ -1114,7 +1115,7 @@ export class GameUI {
 
 	onclick_file_export() {
 		const elem = this.getElement(this.input_file_export_exp.input.id);
-		elem.value = main.blockLibrary.exportTemplates();
+		elem.value = main.blockLibrary.save();
 	}
 	onclick_file_import() {
 		const elem = this.getElement(this.input_file_export_imp.input.id);
@@ -1124,10 +1125,10 @@ export class GameUI {
 	}
 
 	show_new_template_popup() {
-		const id_w = "ntpw";
-		const id_h = "ntph";
-		const id_n = "ntpn";
-		const id_d = "ntpd";
+		const id_w = Ids.id_new_template_w;
+		const id_h = Ids.id_new_template_h;
+		const id_n = Ids.id_new_template_n;
+		const id_d = Ids.id_new_template_d;
 		let html = "";
 		html += `
 			<div>Width</div>

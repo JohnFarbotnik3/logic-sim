@@ -14,11 +14,9 @@ First, a couple basic notes about how this app works:
 4. When you place an item, the simulation will automatically rebuild (this is why cells sometimes flicker after placing an item).
 `;
 
-export const HEAD_FILE = `New Blocks + Import/Export`;
+export const HEAD_FILE = `Import/Export`;
 export const TEXT_FILE =
 `
-To create a new block template, open the "File" panel, and press "New Block". Then, fill in the "width", "height", and "name" fields in the dialog that opens, then press "submit" (the "description" field is optional).
-
 To export all loaded block templates as JSON text, open the "File" panel and press the "Export" button, this will populate the text-area underneath.
 
 To import block templates, paste valid JSON text in the text-area below the "Import" button, then press "Import".
@@ -70,6 +68,8 @@ To place blocks, open the "Blocks" panel and press the middle button with the na
 To switch to editing a different block-template, pres the "edit" button beside the name of the block you want to edit.
 
 To delete a block-template, press the "X" button beside the name of the block you want to remove.
+
+To create a new block template, press "New Block". Then, fill in the "width", "height", and "name" fields in the dialog that opens, then press "submit" (the "description" field is optional).
 
 Notes:
 - you cannot delete a block template that is currently being used by another template.

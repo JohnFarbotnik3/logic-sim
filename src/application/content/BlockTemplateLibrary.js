@@ -15,7 +15,46 @@ export class BlockTemplateLibrary {
 		// list of block templates in this library.
 		this.templates = new Map();// Map<templateId, BlockTemplate>
 		// template currently being edited.
-		this.rootBlock = null;
+		this.rootBlock = null;// TODO: move this to Main.
+	}
+
+	// ============================================================
+	// Serialization
+	// ------------------------------------------------------------
+	// NOTE: unlike other save/load functions, these convert to and from JSON.
+
+	save() {
+		let arr = [];
+		for(const [tid, template] of this.templates.entries()) {
+			arr.push(template.save());
+		}
+		return JSON.stringify(arr);
+	}
+
+	static load(json) {
+		throw("TODO");
+	}
+
+	// TODO: change this into a save/load style function.
+	importTemplates(json) {
+		const value = json.trim();
+		if(value.length > 0) try {
+			const templates = [];
+			const arr = JSON.parse(value);
+			console.log("<>arr", arr);
+			for(const item of arr) {
+				const template = BlockTemplate.load(item);
+				this.templates.set(template.templateId, template);
+				main.simulationShouldRebuild = true;
+			}
+		} catch(error) {
+			alert("failed to parse import text-area:\n\n" + error.stack);
+		}
+		if(this.templates.size === 0) {
+			main.createNewBlockTemplate(12, 12, "New template", "");
+			main.simulationShouldRebuild = true;
+		}
+		main.gameUI.on_major_blocklib_change();
 	}
 
 	// ============================================================
@@ -142,39 +181,6 @@ export class BlockTemplateLibrary {
 	}
 	get_root_template_dependency_chain(templateId) {
 		return this.get_template_dependency_chain(templateId, this.rootBlock.templateId);
-	}
-
-	// ============================================================
-	// Import, Export
-	// ------------------------------------------------------------
-
-	exportTemplates() {
-		let arr = [];
-		for(const [tid, template] of this.templates.entries()) {
-			arr.push(template.save());
-		}
-		return JSON.stringify(arr);
-	}
-
-	importTemplates(json) {
-		const value = json.trim();
-		if(value.length > 0) try {
-			const templates = [];
-			const arr = JSON.parse(value);
-			console.log("<>arr", arr);
-			for(const item of arr) {
-				const template = BlockTemplate.load(item);
-				this.templates.set(template.templateId, template);
-				main.simulationShouldRebuild = true;
-			}
-		} catch(error) {
-			alert("failed to parse import text-area:\n\n" + error.stack);
-		}
-		if(this.templates.size === 0) {
-			main.createNewBlockTemplate(12, 12, "New template", "");
-			main.simulationShouldRebuild = true;
-		}
-		main.gameUI.on_major_blocklib_change();
 	}
 
 	// ============================================================

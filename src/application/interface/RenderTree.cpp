@@ -1,3 +1,6 @@
+#ifndef RenderTree_h
+#define RenderTree_h
+
 #include "../lib/Vec.cpp"
 #include "../lib/Rectangle.cpp"
 #include "../content/BlockWT.cpp"
@@ -33,7 +36,7 @@ struct RenderTree {
 	// Data.
 	// ------------------------------------------------------------
 
-	const BlockTemplateLibrary* library;
+	alignas(8) const BlockTemplateLibrary* library;
 	BlockWT	block;
 	float	depth;
 	// item transformation.
@@ -91,6 +94,8 @@ struct RenderTree {
 		const Transformation2D etran,
 		const int depth
 	) {
+		assert(block.templateId.value != 0);
+		assert(block.blockTemplate != 0);
 		// populate fields.
 		this->block = block;
 		this->depth = depth;
@@ -166,3 +171,5 @@ struct RenderTree {
 		return nearest;
 	}
 };
+
+#endif

@@ -7,6 +7,7 @@
 #include "../interface/GameRenderer.cpp"
 #include "../WebGL/FontEngine.cpp"
 #include "../content/ItemSerializer.cpp"
+#include "../interface/GameControls.cpp"
 
 /*
 - to detect if building with emscripten (for example to use different threading model in WASM then C++),
@@ -75,6 +76,7 @@ struct GameServer_wasm {
 	// ============================================================
 	// Simulation
 	// ------------------------------------------------------------
+
 	GameSimulation simulation;
 
 	void simulation_rebuild(bool keepCellValues) {
@@ -218,6 +220,26 @@ struct GameServer_wasm {
 	// Controls
 	// ------------------------------------------------------------
 
+	GameControls controls;
+
+	String item_collection_to_string_message(const ItemCollection& collection) {
+		ItemSerializer writer;
+		writer.push_item_collection(collection);
+		return writer.to_string();
+	}
+	String get_items_in_selection_area(float x0, float y0, float x1, float y1) {
+		const auto collection = controls.get_items_in_selection_area(rootBlock, x0, y0, x1, y1);
+		return item_collection_to_string_message(collection);
+	}
+	String get_items_in_hover_area(float cx, float cy, float cr) {
+		const auto collection = controls.get_items_in_hover_area(rootBlock, cx, cy, cr);
+		return item_collection_to_string_message(collection);
+	}
+	String get_links_in_within_cursor_radius(float cx, float cy, float cr) {
+		const auto collection = controls.get_links_in_within_cursor_radius(rootBlock, cx, cy, cr);
+		return item_collection_to_string_message(collection);
+	}
+
 	// ...TODO...
 };
 
@@ -264,7 +286,10 @@ EMSCRIPTEN_BINDINGS() {
 		.function("font_clr", &GameServer_wasm::font_clr)
 		.function("font_tex", &GameServer_wasm::font_tex)
 		.function("get_nearst_cell_target", &GameServer_wasm::get_nearst_cell_target)
-
+		// controls
+		.function("get_items_in_selection_area", &GameServer_wasm::get_items_in_selection_area)
+		.function("get_items_in_hover_area", &GameServer_wasm::get_items_in_hover_area)
+		.function("get_links_in_within_cursor_radius", &GameServer_wasm::get_links_in_within_cursor_radius)
 	;
 
 	class_<BlockTemplateLibrary>("BlockTemplateLibrary")

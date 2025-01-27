@@ -107,4 +107,22 @@ export class ItemSerializer extends StringSerializer {
 		this.push_number(library.templates.size);
 		for(const [id, btmp] of library.templates.entries()) this.push_block_template(btmp);
 	}
+
+	read_item_collection() {
+		const collection = {
+			cells : [],
+			links : [],
+			texts : [],
+			blocks: [],
+		};
+		let n_c = this.read_number();
+		let n_l = this.read_number();
+		let n_t = this.read_number();
+		let n_b = this.read_number();
+		for(let x=0;x<n_c;x++) collection.cells .push(this.read_item_id());
+		for(let x=0;x<n_l;x++) collection.links .push(this.read_item_id());
+		for(let x=0;x<n_t;x++) collection.texts .push(this.read_item_id());
+		for(let x=0;x<n_b;x++) collection.blocks.push(this.read_item_id());
+		return collection;
+	}
 };

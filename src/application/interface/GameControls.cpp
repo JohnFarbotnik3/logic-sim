@@ -1,8 +1,9 @@
 #include "../lib/Vec.cpp"
 #include "../lib/Transformation2D.cpp"
-#include "../lib/EquationUtil.cpp"
+#include "../lib/SystemOfEquations.cpp"
 #include "../Imports.cpp"
 #include "./RenderTree.cpp"
+#include "../content/ItemCollection.cpp"
 
 struct GameControls {
 	// ============================================================
@@ -43,19 +44,29 @@ struct GameControls {
 	}
 
 	static Optional<Vec2> collision_line_line_2d(Vec2 pos_a, Vec2 dir_a, Vec2 pos_b, Vec2 dir_b) {
-		const int N = 2;
-		const int W = 3;
-		const int H = 2;
-		EquationMatrix<float, W, H> matrix;
-		Array<float, N> result;
-		for(int d=0;d<N;d++) {
-			matrix.set(0, d,  dir_a[d]);
-			matrix.set(1, d, -dir_b[d]);
-			matrix.set(2, d,  pos_b[d] - pos_a[d]);
-		}
-		const bool success = EquationUtil::trySolveSystemOfEquations_NxN<float, W, H, N>(matrix, result);
+		/*
+			Solve for A and B:
+				pa + A*va = pb + B*vb
+			=>	A*va - B*vb = pb - pa
+
+			System:
+				vax*A - vbx*B = pbx - pax
+				vay*A - vby*B = pby - pay
+		*/
+		const int N=2, W=3, H=2;
+		SystemOfEquations<float, W, H> matrix;
+		for(int d=0;d<N;d++) matrix.set(0, d,  dir_a[d]);
+		for(int d=0;d<N;d++) matrix.set(1, d, -dir_b[d]);
+		for(int d=0;d<N;d++) matrix.set(2, d,  pos_b[d] - pos_a[d]);
+		Array<float, N> solution;
+		const bool success = matrix.trySolveSystemOfEquations_NxN(solution);
 		if(!success) return Optional<Vec2>();
-		else return Optional<Vec2>(Vec2{ result[0], result[1] });
+		else {
+			const Vec2 sol_a = pos_a + (dir_a * solution[0]);
+			const Vec2 sol_b = pos_b + (dir_b * solution[1]);
+			assert(sol_a == sol_b);
+			return Optional<Vec2>(sol_a);
+		}
 	}
 
 	static Optional<Vec2> nearestPoint_point_line_2d(Vec2 point, Vec2 linePointA, Vec2 linePointB) {
@@ -71,11 +82,9 @@ struct GameControls {
 		const float distanceB = (point - linePointB).hypot();
 		const Vec2 nearest = (distanceA <= distanceB) ? linePointA : linePointB;
 		if(!result.has_value()) return nearest;
-		// get distance to line-intersect.
-		const Vec2 intersect = result.value();
-		const float distanceL = (point - intersect).hypot();
 		// check if intersect is within line segment,
 		// and return it if so (since it will be closest to point).
+		const Vec2 intersect = result.value();
 		const Vec2 linepoints[2]{ linePointA, linePointB };
 		const AABB_2D aabb = get_axis_aligned_bounding_box(linepoints, 0, 2);
 		const bool isWithinSegmentBounds = !(
@@ -89,20 +98,13 @@ struct GameControls {
 	// Hover and Selection.
 	// ------------------------------------------------------------
 
-	struct ItemCollection {
-		Set<ItemId> cells;
-		Set<ItemId> links;
-		Set<ItemId> texts;
-		Set<ItemId> blocks;
-	};
-
 	bool is_item_in_aabb(const RenderTree& rendertree, const AABB_2D& aabb, ItemId id) {
 		const Transformation2D& itran = rendertree.itemTrans.at(id);
 		const AABB_2D item_aabb = get_axis_aligned_bounding_box(itran);
 		return collision_aabb_aabb(aabb, item_aabb);
 	}
 
-	ItemCollection get_items_in_aabb(const BlockWT& rootBlock, const AABB_2D& aabb) {
+	ItemCollection get_items_in_aabb(const BlockWT rootBlock, const AABB_2D aabb) {
 		const RenderTree rendertree(rootBlock, Transformation2D(), 0);
 		ItemCollection ids;
 		for(const auto& [id, item] : rootBlock.blockTemplate->cells ) if(is_item_in_aabb(rendertree, aabb, id)) ids.cells .insert(item.id);
@@ -111,7 +113,7 @@ struct GameControls {
 		return ids;
 	}
 
-	ItemCollection get_items_in_selection_area(const BlockWT& rootBlock, float x0, float y0, float x1, float y1) {
+	ItemCollection get_items_in_selection_area(const BlockWT rootBlock, float x0, float y0, float x1, float y1) {
 		const AABB_2D aabb{
 			Vec2{x0,y0},
 			Vec2{x1,y1},
@@ -119,15 +121,15 @@ struct GameControls {
 		return get_items_in_aabb(rootBlock, aabb);
 	}
 
-	ItemCollection get_items_in_hover_area(const BlockWT& rootBlock, float cx, float cy, float cr) {
+	ItemCollection get_items_in_hover_area(const BlockWT rootBlock, float cx, float cy, float cr) {
 		const AABB_2D aabb{
-			Vec2{cx - cr, cy - cr},
-			Vec2{cx + cr, cy + cr},
+			Vec2{cx, cy},
+			Vec2{cx, cy},
 		};
 		return get_items_in_aabb(rootBlock, aabb);
 	}
 
-	ItemCollection get_links_in_within_cursor_radius(const BlockWT& rootBlock, float cx, float cy, float cr) {
+	ItemCollection get_links_in_within_cursor_radius(const BlockWT rootBlock, float cx, float cy, float cr) {
 		const RenderTree rendertree(rootBlock, Transformation2D(), 0);
 		ItemCollection ids;
 		for(const auto& [id, item] : rootBlock.blockTemplate->links) {

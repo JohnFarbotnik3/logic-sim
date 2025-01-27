@@ -139,4 +139,27 @@ export class GameServer_wasm {
 			return null;
 		}
 	}
+
+	// ============================================================
+	// Controls
+	// ------------------------------------------------------------
+
+	string_message_to_item_collection(msg) {
+		const reader = new ItemSerializer(msg);
+		const collection = reader.read_item_collection();
+		return collection;
+	}
+	get_items_in_selection_area(x0,  y0,  x1,  y1) {
+		const msg = this.server.get_items_in_selection_area(x0,  y0,  x1,  y1);
+		return this.string_message_to_item_collection(msg);
+	}
+	get_items_in_hover_area(cx,  cy,  cr) {
+		const msg = this.server.get_items_in_hover_area(cx,  cy,  cr);
+		return this.string_message_to_item_collection(msg);
+	}
+	get_links_in_within_cursor_radius(cx,  cy,  cr) {
+		const msg = this.server.get_links_in_within_cursor_radius(cx,  cy,  cr);
+		return this.string_message_to_item_collection(msg);
+	}
+
 }

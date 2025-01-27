@@ -492,8 +492,11 @@ export class GameUI {
 		const mult = this.cursor_snap;
 		const minv = 1.0 / mult;
 		const pos = this.cursor_pos.slice();
-		const ofs = [0, 0];
-		main.gameRenderer.renderBlock.contentTran.applyOffset(ofs, 0, 2, 2);
+		// WARNING: manually computed offset.
+		// (make sure this matches transformation behaviour in renderer)
+		const btmp = main.blockLibrary.rootBlockTemplate;
+		const ofs = [btmp.width * -0.5, btmp.height * -0.5];
+		//main.gameRenderer.renderBlock.contentTran.applyOffset(ofs, 0, 2, 2);
 		const x = Math.round((pos[0] - ofs[0]) * minv) * mult;
 		const y = Math.round((pos[1] - ofs[1]) * minv) * mult;
 		return [x,y];
@@ -607,28 +610,26 @@ export class GameUI {
 		this.collectionHovered.clear();
 		this.collectionTranslating.clear();
 	}
-	isItemInDragArea(item) {
-		const aabb = main.gameRenderer.renderBlock.get_axis_aligned_bounding_box(item);
-		VerificationUtil.verifyType_throw(aabb, Float32Array);
-		return VectorUtil.collision_aabb_aabb_2d(aabb, this.cursor_dragAABB);
-	}
-	isItemHovered(item) {
-		const aabb = main.gameRenderer.renderBlock.get_axis_aligned_bounding_box(item);
-		VerificationUtil.verifyType_throw(aabb, Float32Array);
-		return VectorUtil.collision_aabb_point_2d(aabb, this.cursor_pos);
-	}
 	selectAllItemsInDragArea() {
-		const block = main.blockLibrary.rootBlock;
-		for(const item of block.cells ) if(this.isItemInDragArea(item)) this.collectionSelected.cells .add(item);
-		for(const item of block.texts ) if(this.isItemInDragArea(item)) this.collectionSelected.texts .add(item);
-		for(const item of block.blocks) if(this.isItemInDragArea(item)) this.collectionSelected.blocks.add(item);
+		const collection = this.collectionSelected;
+		const [x0, y0, x1, y1] = this.cursor_dragAABB;
+		const ids = main.gameServer.get_items_in_selection_area(x0, y0, x1, y1);
+		const btmp = main.blockLibrary.rootBlockTemplate;
+		for(const id of ids.cells ) collection.cells .add(btmp.get_cell (id));
+		for(const id of ids.texts ) collection.texts .add(btmp.get_text (id));
+		for(const id of ids.blocks) collection.blocks.add(btmp.get_block(id));
 	}
 	updateHoveredItems() {
-		this.collectionHovered.clear();
-		const block = main.blockLibrary.rootBlock;
-		for(const item of block.cells ) if(this.isItemHovered(item)) this.collectionHovered.cells .add(item);
-		for(const item of block.texts ) if(this.isItemHovered(item)) this.collectionHovered.texts .add(item);
-		for(const item of block.blocks) if(this.isItemHovered(item)) this.collectionHovered.blocks.add(item);
+		const collection = this.collectionHovered;
+		collection.clear();
+		const cx = this.cursor_pos[0];
+		const cy = this.cursor_pos[1];
+		const cr = this.cursor_radius;
+		const ids = main.gameServer.get_items_in_hover_area(cx, cy, cr);
+		const btmp = main.blockLibrary.rootBlockTemplate;
+		for(const id of ids.cells ) collection.cells .add(btmp.get_cell (id));
+		for(const id of ids.texts ) collection.texts .add(btmp.get_text (id));
+		for(const id of ids.blocks) collection.blocks.add(btmp.get_block(id));
 	}
 	translateAllSelectedItems() {
 		this.translate_prev.set(this.translate_curr);
@@ -859,20 +860,14 @@ export class GameUI {
 		}
 	}
 
-	isLinkHovered(link) {
-		const points = main.gameRenderer.renderBlock.l_points.get(link.id);
-		const pointC = new Vector2D(this.cursor_pos.slice(0,2));
-		const pointA = new Vector2D(points.slice(0,2));
-		const pointB = new Vector2D(points.slice(3,5));
-		const nearest = VectorUtil.nearestPoint_point_line_segment_2d(pointC, pointA, pointB);
-		const nearest3d = new Vector3D([nearest[0], nearest[1], 0.0]);
-		const distance = nearest3d.add(this.cursor_pos, -1.0).hypot();
-		return distance <= this.cursor_radius;
-	}
 	deleteHoveredLinks() {
-		const block = main.blockLibrary.rootBlock;
+		const cx = this.cursor_pos[0];
+		const cy = this.cursor_pos[1];
+		const cr = this.cursor_radius;
+		const ids = main.gameServer.get_links_in_within_cursor_radius(cx, cy, cr);
+		const btmp = main.blockLibrary.rootBlockTemplate;
 		const del = new Set();
-		for(const item of block.links) if(this.isLinkHovered(item)) del.add(item);
+		for(const id of ids.links) del.add(btmp.get_link(id));
 		for(const item of del.keys()) this.rem_link(item);
 	}
 

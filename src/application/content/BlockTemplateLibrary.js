@@ -18,6 +18,10 @@ export class BlockTemplateLibrary {
 		this.rootBlock = null;// TODO: move this to Main.
 	}
 
+	get rootBlockTemplate() {
+		return this.templates.get(this.rootBlock.templateId);
+	}
+
 	// ============================================================
 	// Serialization
 	// ------------------------------------------------------------

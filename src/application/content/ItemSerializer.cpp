@@ -10,6 +10,7 @@
 #include "Block.cpp"
 #include "BlockTemplate.cpp"
 #include "BlockTemplateLibrary.cpp"
+#include "ItemCollection.cpp"
 
 struct ItemSerializer : StringSerializer {
 
@@ -164,6 +165,29 @@ struct ItemSerializer : StringSerializer {
 		int num = read_number<u32>();
 		for(int x=0;x<num;x++) { const auto item = read_block_template(); library.templates[item.templateId] = item; }
 		return library;
+	}
+
+	void push_item_collection(const ItemCollection& collection) {
+		push_number((u32)collection.cells .size());
+		push_number((u32)collection.links .size());
+		push_number((u32)collection.texts .size());
+		push_number((u32)collection.blocks.size());
+		for(const auto& id : collection.cells ) push_item_id(id);
+		for(const auto& id : collection.links ) push_item_id(id);
+		for(const auto& id : collection.texts ) push_item_id(id);
+		for(const auto& id : collection.blocks) push_item_id(id);
+	}
+	ItemCollection read_item_collection() {
+		ItemCollection collection;
+		int n_c = read_number<u32>();
+		int n_l = read_number<u32>();
+		int n_t = read_number<u32>();
+		int n_b = read_number<u32>();
+		for(int x=0;x<n_c;x++) collection.cells .insert(read_item_id());
+		for(int x=0;x<n_l;x++) collection.links .insert(read_item_id());
+		for(int x=0;x<n_t;x++) collection.texts .insert(read_item_id());
+		for(int x=0;x<n_b;x++) collection.blocks.insert(read_item_id());
+		return collection;
 	}
 };
 

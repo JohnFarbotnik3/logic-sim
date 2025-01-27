@@ -14,8 +14,14 @@ struct Vec {
 
 	// http://localhost:4000/cpp/language/friend.html
 	// https://isocpp.org/wiki/faq/friends
-	friend Vec<T,N> operator + (const Vec& a, const Vec& b) { Vec c; for(int x=0;x<N;x++) c.data[x] = a.data[x] + b.data[x]; return c; }
-	friend Vec<T,N> operator - (const Vec& a, const Vec& b) { Vec c; for(int x=0;x<N;x++) c.data[x] = a.data[x] - b.data[x]; return c; }
+	friend Vec<T,N> operator +  (const Vec& a, const Vec&  b) { Vec c; for(int x=0;x<N;x++) c.data[x] = a.data[x] + b.data[x]; return c; }
+	friend Vec<T,N> operator -  (const Vec& a, const Vec&  b) { Vec c; for(int x=0;x<N;x++) c.data[x] = a.data[x] - b.data[x]; return c; }
+	friend Vec<T,N> operator *  (const Vec& a, const float b) { Vec c; for(int x=0;x<N;x++) c.data[x] = a.data[x] * b;         return c; }
+
+	friend bool operator == (const Vec& a, const Vec&  b) {
+		for(int x=0;x<N;x++) if(a.data[x] != b.data[x]) return false;
+		return true;
+	}
 
 	T hypot() { T sum = 0; for(int x=0;x<N;x++) sum += data[x]*data[x]; return std::sqrt(sum); }
 	T hypsq() { T sum = 0; for(int x=0;x<N;x++) sum += data[x]*data[x]; return sum; }

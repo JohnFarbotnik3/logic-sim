@@ -41,9 +41,12 @@ class Main {
 		console.log("loaded templates", this.blockLibrary.templates);
 
 		// set root block.
-		let templateId = null;
-		for(const tid of this.blockLibrary.templates.keys()) { templateId = tid; break; }
-		this.set_root_block_template(templateId);
+		let rootTemplateId = null;
+		for(const tid of this.blockLibrary.templates.keys()) { rootTemplateId = tid; break; }
+		this.set_root_block_template(rootTemplateId);
+
+		// send initial templates.
+		this.gameServer.send_templates(this.blockLibrary, rootTemplateId);
 
 		// start update cycle.
 		requestAnimationFrame((t) => this.update.call(this, t));
@@ -96,7 +99,7 @@ class Main {
 			Performance.increment_time("sim.rebuild", t_s1-t_s0);
 			Performance.increment_time("sim.update ", t_s2-t_s1);
 			Performance.increment_time("main.update", t1-t0);
-			Performance.log_all();
+			//Performance.log_all();
 			requestAnimationFrame((t) => this.update.call(this, t));
 		} catch(error) {
 			this.gameUI.showCrashPopup(error, "application crashed during Main.update()");

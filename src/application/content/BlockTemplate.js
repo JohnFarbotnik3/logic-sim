@@ -110,5 +110,9 @@ export class BlockTemplate {
 	removeLink (item) { this.removeItem(this.links , item); }
 	removeText (item) { this.removeItem(this.texts , item); }
 	removeBlock(item) { this.removeItem(this.blocks, item); }
+	get_cell (id) { return this.cells .find(item => item.id === id); }
+	get_link (id) { return this.links .find(item => item.id === id); }
+	get_text (id) { return this.texts .find(item => item.id === id); }
+	get_block(id) { return this.blocks.find(item => item.id === id); }
 	
 };

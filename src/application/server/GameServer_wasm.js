@@ -84,7 +84,8 @@ export class GameServer_wasm {
 		this.server.draw_cursor(cx, cy, cr);
 	}
 	draw_drag_area() {
-		const [x0, y0, x1, y1] = main.gameUI.cursor_dragAABB;
+		const [x0, y0] = main.gameUI.cursor_dragBeg;
+		const [x1, y1] = main.gameUI.cursor_dragEnd;
 		this.server.draw_drag_area(x0, y0, x1, y1);
 	}
 	draw_cell_preview(cell) {

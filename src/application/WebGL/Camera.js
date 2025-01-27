@@ -74,7 +74,6 @@ export class Camera {
 		inputTuples.forEach(tuple => {
 			const [angle, vecA, vecB] = tuple;
 			const r = angle * 2.0 * Math.PI;
-			//VectorUtil.bivector_rotation_inplace(vecA, vecB, Math.sin(r), Math.cos(r));
 			const s = Math.sin(r);
 			const c = Math.cos(r);
 			for(let i=0;i<3;i++) {

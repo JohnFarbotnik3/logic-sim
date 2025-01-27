@@ -10,29 +10,31 @@ struct GameControls {
 	// Collision detection.
 	// ------------------------------------------------------------
 
-	struct AABB_2D { Vec2 min,max; };
+	template<int N>
+	struct AABB {
+		using VecN = Vec<float, N>;
+		VecN min,max;
 
-	static AABB_2D get_axis_aligned_bounding_box(const Vec2* points, int beg, int end) {
-		if(beg >= end) return AABB_2D();
-		AABB_2D aabb { points[beg], points[beg] };
-		for(int i=beg+1;i<end;i++) {
-			const Vec2& p = points[i];
-			aabb.min = Vec2{ std::min(aabb.min[0], p[0]), std::min(aabb.min[1], p[1]) };
-			aabb.max = Vec2{ std::max(aabb.max[0], p[0]), std::max(aabb.max[1], p[1]) };
+		AABB(VecN p) {
+			min = p;
+			max = p;
 		}
-		return aabb;
-	}
+		AABB(VecN a, VecN b) {
+			for(int x=0;x<N;x++) min[x] = std::min(a[x], b[x]);
+			for(int x=0;x<N;x++) max[x] = std::max(a[x], b[x]);
+		}
+		void add_point(VecN b) {
+			for(int x=0;x<N;x++) min[x] = std::min(min[x], b[x]);
+			for(int x=0;x<N;x++) max[x] = std::max(max[x], b[x]);
+		}
+		AABB(VecN* points, int beg, int end) {
+			min = points[beg];
+			max = points[beg];
+			for(int i=beg;i<end;i++) add_point(points[i]);
+		}
+	};
 
-	static AABB_2D get_axis_aligned_bounding_box(Transformation2D itemTran) {
-		Array<Vec2, 4> points = {
-			Vec2{0,0},
-			Vec2{1,0},
-			Vec2{1,1},
-			Vec2{0,1},
-		};
-		itemTran.apply(points.data(), 0, 4);
-		return get_axis_aligned_bounding_box(points.data(), 0, 4);
-	}
+	using AABB_2D = AABB<2>;
 
 	static bool collision_aabb_aabb(AABB_2D a, AABB_2D b) {
 		return !(
@@ -85,8 +87,7 @@ struct GameControls {
 		// check if intersect is within line segment,
 		// and return it if so (since it will be closest to point).
 		const Vec2 intersect = result.value();
-		const Vec2 linepoints[2]{ linePointA, linePointB };
-		const AABB_2D aabb = get_axis_aligned_bounding_box(linepoints, 0, 2);
+		const AABB_2D aabb(linePointA, linePointB);
 		const bool isWithinSegmentBounds = !(
 			(intersect[0] < aabb.min[0]) | (intersect[0] > aabb.max[0]) |
 			(intersect[1] < aabb.min[1]) | (intersect[1] > aabb.max[1])
@@ -98,10 +99,17 @@ struct GameControls {
 	// Hover and Selection.
 	// ------------------------------------------------------------
 
-	bool is_item_in_aabb(const RenderTree& rendertree, const AABB_2D& aabb, ItemId id) {
-		const Transformation2D& itran = rendertree.itemTrans.at(id);
-		const AABB_2D item_aabb = get_axis_aligned_bounding_box(itran);
-		return collision_aabb_aabb(aabb, item_aabb);
+	bool is_item_in_aabb(const RenderTree& rendertree, const AABB_2D& area_aabb, ItemId id) {
+		const Transformation2D& itemTran = rendertree.itemTrans.at(id);
+		Array<Vec2, 4> points = {
+			Vec2{0,0},
+			Vec2{1,0},
+			Vec2{1,1},
+			Vec2{0,1},
+		};
+		itemTran.apply(points.data(), 0, 4);
+		AABB_2D item_aabb(points.data(), 0, 4);
+		return collision_aabb_aabb(area_aabb, item_aabb);
 	}
 
 	ItemCollection get_items_in_aabb(const BlockWT rootBlock, const AABB_2D aabb) {
@@ -114,18 +122,12 @@ struct GameControls {
 	}
 
 	ItemCollection get_items_in_selection_area(const BlockWT rootBlock, float x0, float y0, float x1, float y1) {
-		const AABB_2D aabb{
-			Vec2{x0,y0},
-			Vec2{x1,y1},
-		};
+		const AABB_2D aabb(Vec2{x0,y0}, Vec2{x1,y1});
 		return get_items_in_aabb(rootBlock, aabb);
 	}
 
 	ItemCollection get_items_in_hover_area(const BlockWT rootBlock, float cx, float cy, float cr) {
-		const AABB_2D aabb{
-			Vec2{cx, cy},
-			Vec2{cx, cy},
-		};
+		const AABB_2D aabb(Vec2{cx, cy});
 		return get_items_in_aabb(rootBlock, aabb);
 	}
 

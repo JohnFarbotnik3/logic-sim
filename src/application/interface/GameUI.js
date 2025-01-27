@@ -20,7 +20,6 @@ import {
 import { main } from "../Main.js";
 import {
 	Vector3D,
-	Vector2D,
 	VectorUtil,
 	VerificationUtil,
 	PromiseUtil,
@@ -98,14 +97,7 @@ export class GameUI {
 
 		// update cursor drag area
 		if(this.dragBegan  ) this.cursor_dragBeg.set(this.cursor_pos, 0);
-		if(this.buttonDownL) {
-			this.cursor_dragEnd.set(this.cursor_pos, 0);
-			const drag_points = new Float32Array([
-				...this.cursor_dragBeg,
-				...this.cursor_dragEnd,
-			]);
-			this.cursor_dragAABB.set(VectorUtil.get_AABB_from_points_2d(drag_points, 0, 6, 3), 0);
-		}
+		if(this.buttonDownL) this.cursor_dragEnd.set(this.cursor_pos, 0);
 
 		// update hovered items.
 		this.updateHoveredItems();
@@ -496,7 +488,6 @@ export class GameUI {
 		// (make sure this matches transformation behaviour in renderer)
 		const btmp = main.blockLibrary.rootBlockTemplate;
 		const ofs = [btmp.width * -0.5, btmp.height * -0.5];
-		//main.gameRenderer.renderBlock.contentTran.applyOffset(ofs, 0, 2, 2);
 		const x = Math.round((pos[0] - ofs[0]) * minv) * mult;
 		const y = Math.round((pos[1] - ofs[1]) * minv) * mult;
 		return [x,y];
@@ -550,7 +541,6 @@ export class GameUI {
 	cursor_pos			= new Vector3D();
 	cursor_dragBeg		= new Vector3D();
 	cursor_dragEnd		= new Vector3D();
-	cursor_dragAABB		= new Float32Array(4);// [x,y,x,y]
 
 	translate_start		= new Vector3D();
 	translate_prev		= new Vector3D();
@@ -612,7 +602,8 @@ export class GameUI {
 	}
 	selectAllItemsInDragArea() {
 		const collection = this.collectionSelected;
-		const [x0, y0, x1, y1] = this.cursor_dragAABB;
+		const [x0, y0] = this.cursor_dragBeg;
+		const [x1, y1] = this.cursor_dragEnd;
 		const ids = main.gameServer.get_items_in_selection_area(x0, y0, x1, y1);
 		const btmp = main.blockLibrary.rootBlockTemplate;
 		for(const id of ids.cells ) collection.cells .add(btmp.get_cell (id));

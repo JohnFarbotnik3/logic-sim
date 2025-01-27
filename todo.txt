@@ -204,13 +204,8 @@ that scans the entire library, setting flags (sim-change, render-change, etc.) i
 
 > move from JS to CPP:
 *** migrate game-controls and collections to cpp instead, then just transmit relevant user-input states.
-- GameUI:
-	isItemInDragArea
-	isItemHovered
-- RenderTree
+- VectorUtil
 
-
-> move New Template button to Blocks panel.
 
 
 

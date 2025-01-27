@@ -30,6 +30,4 @@ struct Vec {
 using Vec2 = Vec<float, 2>;
 using Vec3 = Vec<float, 3>;
 
-// TODO: replace uses of Vector2D and Vector3D.
-
 #endif

@@ -144,8 +144,8 @@ struct GameServer_wasm {
 		VertexPos cursor_pos{cx, cy, 0};
 		renderer.drawCursor(cursor_pos, cr);
 	}
-	void draw_drag_area(float dx0, float dy0, float dx1, float dy1) {
-		Rectangle drag_area{dx0, dy0, dx1-dx0, dy1-dy0};
+	void draw_drag_area(float x0, float y0, float x1, float y1) {
+		Rectangle drag_area{x0, y0, x1-x0, y1-y0};
 		renderer.drawDragArea(drag_area);
 	}
 	void draw_cell_preview(String msg) {

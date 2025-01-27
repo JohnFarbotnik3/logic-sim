@@ -1,4 +1,3 @@
-import { RenderTreeBlock } from "./exports";
 import { main } from "../Main";
 import {
 	mat4,
@@ -201,20 +200,4 @@ export class GameRenderer {
 		Performance.increment_time("render.gather", t2-t1);
 		Performance.increment_time("render.draw", t3-t2);
 	}
-
-	// ============================================================
-	// Render Tree
-	// ------------------------------------------------------------
-
-	_renderBlock() {
-		const block = main.blockLibrary.rootBlock;
-		const etran = new Transformation2D();
-		const ctran = RenderTreeBlock.get_content_transformation(block, etran);
-		const depth = 0;
-		const renblock = new RenderTreeBlock(null, block, etran, depth, main.maxDrawDepth);
-		return renblock;
-	}
-	_renderBlock_cache = new CachedValue_Rendering(() => this._renderBlock());
-	get renderBlock() { return this._renderBlock_cache.value; }
-
 };

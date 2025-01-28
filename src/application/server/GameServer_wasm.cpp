@@ -9,6 +9,12 @@
 #include "../content/ItemSerializer.cpp"
 #include "../interface/GameControls.cpp"
 
+//#define RUN_TESTS
+#ifdef RUN_TESTS
+	#include "../lib/SystemOfEquations.test.cpp"
+	SystemOfEquations_test test_soe(13370);
+#endif
+
 /*
 - to detect if building with emscripten (for example to use different threading model in WASM then C++),
 	the __EMSCRIPTEN__ is defined by emcc/em++, see:

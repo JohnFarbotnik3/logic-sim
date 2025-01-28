@@ -4,6 +4,7 @@
 #include "../Imports.cpp"
 #include "./RenderTree.cpp"
 #include "../content/ItemIdCollection.cpp"
+#include <cstdlib>
 
 struct GameControls {
 	// ============================================================
@@ -55,18 +56,19 @@ struct GameControls {
 				vax*A - vbx*B = pbx - pax
 				vay*A - vby*B = pby - pay
 		*/
-		const int N=2, W=3, H=2;
-		SystemOfEquations<float, W, H> matrix;
+		const int N=2;
+		SystemOfEquations<float> matrix(N);
 		for(int d=0;d<N;d++) matrix.set(0, d,  dir_a[d]);
 		for(int d=0;d<N;d++) matrix.set(1, d, -dir_b[d]);
 		for(int d=0;d<N;d++) matrix.set(2, d,  pos_b[d] - pos_a[d]);
-		Array<float, N> solution;
+		Vector<float> solution(N);
 		const bool success = matrix.trySolveSystemOfEquations_NxN(solution);
 		if(!success) return Optional<Vec2>();
 		else {
 			const Vec2 sol_a = pos_a + (dir_a * solution[0]);
 			const Vec2 sol_b = pos_b + (dir_b * solution[1]);
-			assert(sol_a == sol_b);
+			// assert(close_enough)
+			assert(std::abs(sol_a[0] - sol_b[0]) < 0.0001f && std::abs(sol_a[1] - sol_b[1]) < 0.0001f);
 			return Optional<Vec2>(sol_a);
 		}
 	}

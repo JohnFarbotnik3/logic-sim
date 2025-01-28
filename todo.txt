@@ -202,6 +202,8 @@ that scans the entire library, setting flags (sim-change, render-change, etc.) i
 - add tests for data structures and utils as well to make sure stuff is computed correctly (remember to test edge cases!)
 *** write randomized tests that perform all possible actions at random (use seed when generating random for determinism).
 	^ complete 1000 random actions with randomized parameters (sometimes linear, and sometimes exponential scaling).
+- write unit tests for ItemSerializer
+
 
 
 > move from JS to CPP:

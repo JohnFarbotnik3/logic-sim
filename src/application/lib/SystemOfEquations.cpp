@@ -1,25 +1,37 @@
 #ifndef SystemOfEquations_h
 #define SystemOfEquations_h
 
-#include <array>
+#include <memory>
+#include <vector>
 #include <cstdio>
 #include <string>
 
-template<class T, int W, int H>
+template<class T>
 struct SystemOfEquations {
-	T data[W*H];
+	std::unique_ptr<T> data;
+	int W;
+	int H;
 
+	SystemOfEquations(int w, int h) {
+		data = std::unique_ptr<T>(new T[w*h]);
+		W = w;
+		H = h;
+		// clear allocated memory.
+		const int L = w*h;
+		for(int x=0;x<L;x++) data.get()[x] = 0;
+	}
+	SystemOfEquations(int n) : SystemOfEquations(n+1, n) {}
+	SystemOfEquations(const SystemOfEquations<T>& other) : SystemOfEquations(other.W, other.H) {
+		// copy values from other.
+		const int L = W*H;
+		for(int x=0;x<L;x++) data.get()[x] = other.data.get()[x];
+	}
 
-	inline int index(const int x, const int y) {
-		return y*W + x;
-	}
-	inline T get(const int x, const int y) {
-		return data[y*W + x];
-	}
-	inline void set(const int x, const int y, const T value) {
-		data[y*W + x] = value;
-	}
+	//const	T& operator[] (int x, int y) const { return data[y*W + x]; }
+	//		T& operator[] (int x, int y)       { return data[y*W + x]; }
 
+	T    get(int x, int y) const    { return data.get()[y*W + x]; }
+	void set(int x, int y, T value) {        data.get()[y*W + x] = value; }
 
 	void row_swap(int ya, int yb) {
 		T temp[W];
@@ -36,13 +48,15 @@ struct SystemOfEquations {
 		for(int x=0;x<W;x++) set(x, ydst, get(x, ydst) + get(x, ysrc)*m);
 	}
 
-	void print(std::string before, std::string after) {
+	void print(std::string before, std::string after) const {
+		/*
 		printf(before.c_str());
 		for(int y=0;y<H;y++) {
-			for(int x=0;x<W;x++) printf("%f\t", data[index(x,y)]);
+			for(int x=0;x<W;x++) printf("%.4f\t", get(x,y));
 			printf("\n");
 		}
 		printf(after.c_str());
+		//*/
 	}
 
 	/*
@@ -80,7 +94,7 @@ struct SystemOfEquations {
 		This function attempts to solve the system, returning a solution of form:
 			x, y, ..., z
 	*/
-	bool trySolveSystemOfEquations_NxN(std::array<T, H>& result) {
+	bool trySolveSystemOfEquations_NxN(std::vector<T>& result) {
 		/*
 			for each row[x], find an equations for which variable[x] is non-zero,
 			normalize variable[x] (multiply equation so that coefficient[x] == 1.0),
@@ -91,7 +105,8 @@ struct SystemOfEquations {
 				0 +    0 +    z = k3
 			if a substitution is not valid (due to divide-by-zero), return false.
 		*/
-		SystemOfEquations<T, W, H> matrix = *this;
+		SystemOfEquations<T> matrix = *this;
+		matrix.print("before\n", "\n");
 		for(int row=0;row<H;row++) {
 			const int x = row;
 			// find row with non-zero coefficient[x].
@@ -104,6 +119,7 @@ struct SystemOfEquations {
 			if(rswap != row) matrix.row_swap(row, rswap);
 			if(!matrix.normalizeTermInMatrix(x, row)) return false;// failed: unable to normalize.
 			for(int r=row+1;r<H;r++) matrix.eliminateTermInMatrix(x, row, r);
+			matrix.print("lower step\n", "\n");
 		}
 		/*
 			working from last row to first, normalize each variable and eliminate c[x] from other rows.
@@ -116,7 +132,9 @@ struct SystemOfEquations {
 			const int x = row;
 			if(!matrix.normalizeTermInMatrix(x, row)) return false;// failed: unable to normalize.
 			for(int r=0;r<row;r++) matrix.eliminateTermInMatrix(x, row, r);
+			matrix.print("upper step\n", "\n");
 		}
+		matrix.print("after\n", "\n");
 		for(int x=0;x<H;x++) result[x] = matrix.get(W-1,x);// x = k
 		// return success status
 		return true;

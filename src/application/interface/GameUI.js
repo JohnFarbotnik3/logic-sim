@@ -20,7 +20,6 @@ import {
 import { main } from "../Main.js";
 import {
 	Vector3D,
-	VectorUtil,
 	VerificationUtil,
 	PromiseUtil,
 } from "../lib/exports";
@@ -87,13 +86,11 @@ export class GameUI {
 		const canvas_xy = [mx, my];
 
 		// update cursor position (compute z-intersect)
-		const linePos   = new Vector3D(camera.pos.slice());
-		const lineVec   = new Vector3D(camera.getRayDirection(canvas_xy));
-		const planePos  = new Vector3D([0,0,0]);
-		const planeVecA = new Vector3D([1,0,0]);
-		const planeVecB = new Vector3D([0,1,0]);
-		const [success, position] = VectorUtil.collision_line_plane_3d(linePos, lineVec, planePos, planeVecA, planeVecB);
-		this.cursor_pos.set(position, 0);
+		const [cx, cy, cz] = camera.pos;
+		const fov = camera.FOV;
+		const mult = -cz * Math.tan(fov * Math.PI);
+		this.cursor_pos[0] = mx * mult + cx;
+		this.cursor_pos[1] = my * mult + cy;
 
 		// update cursor drag area
 		if(this.dragBegan  ) this.cursor_dragBeg.set(this.cursor_pos, 0);
@@ -600,27 +597,27 @@ export class GameUI {
 		this.collectionHovered.clear();
 		this.collectionTranslating.clear();
 	}
+	addItemsToCollection(collection, ids) {
+		const btmp = main.blockLibrary.rootBlockTemplate;
+		for(const id of ids.cells ) { const item = btmp.get_cell (id); if(item) collection.cells .add(item); }
+		for(const id of ids.texts ) { const item = btmp.get_text (id); if(item) collection.texts .add(item); }
+		for(const id of ids.blocks) { const item = btmp.get_block(id); if(item) collection.blocks.add(item); }
+	}
 	selectAllItemsInDragArea() {
-		const collection = this.collectionSelected;
 		const [x0, y0] = this.cursor_dragBeg;
 		const [x1, y1] = this.cursor_dragEnd;
 		const ids = main.gameServer.get_items_in_selection_area(x0, y0, x1, y1);
-		const btmp = main.blockLibrary.rootBlockTemplate;
-		for(const id of ids.cells ) collection.cells .add(btmp.get_cell (id));
-		for(const id of ids.texts ) collection.texts .add(btmp.get_text (id));
-		for(const id of ids.blocks) collection.blocks.add(btmp.get_block(id));
+		const collection = this.collectionSelected;
+		this.addItemsToCollection(collection, ids);
 	}
 	updateHoveredItems() {
-		const collection = this.collectionHovered;
-		collection.clear();
 		const cx = this.cursor_pos[0];
 		const cy = this.cursor_pos[1];
 		const cr = this.cursor_radius;
 		const ids = main.gameServer.get_items_in_hover_area(cx, cy, cr);
-		const btmp = main.blockLibrary.rootBlockTemplate;
-		for(const id of ids.cells ) collection.cells .add(btmp.get_cell (id));
-		for(const id of ids.texts ) collection.texts .add(btmp.get_text (id));
-		for(const id of ids.blocks) collection.blocks.add(btmp.get_block(id));
+		const collection = this.collectionHovered;
+		collection.clear();
+		this.addItemsToCollection(collection, ids);
 	}
 	translateAllSelectedItems() {
 		this.translate_prev.set(this.translate_curr);
